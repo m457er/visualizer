@@ -1748,7 +1748,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
             }
 
             // Set up edges
-            List<Link> links = new ArrayList<>(graph.getLinks());
+            List<?extends Link> links = new ArrayList<>(graph.getLinks());
             Collections.sort(links, linkComparator);
             for (Link l : links) {
                 LayoutEdge edge = new LayoutEdge();

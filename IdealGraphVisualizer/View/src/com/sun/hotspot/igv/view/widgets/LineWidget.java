@@ -239,7 +239,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
 
     private void setHighlighted(boolean b) {
         this.highlighted = b;
-        Set<Object> highlightedObjects = new HashSet<>(scene.getHighlightedObjects());
+        Set<Object> highlightedObjects = new HashSet<Object>(scene.getHighlightedObjects());
         Set<Object> highlightedObjectsChange = new HashSet<>();
         for (Connection c : connections) {
             highlightedObjectsChange.add(c.getInputSlot().getFigure());

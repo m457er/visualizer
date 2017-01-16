@@ -74,7 +74,7 @@ public class ParserTest {
                 Parser parser = new Parser(Channels.newChannel(in));
                 final GraphDocument parsedDocument = parser.parse();
                 Util.assertGraphDocumentEquals(document, parsedDocument);
-            } catch (SAXException ex) {
+            } catch (IOException ex) {
                 fail(ex.toString());
             }
         } catch (UnsupportedEncodingException ex) {

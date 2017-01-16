@@ -1,0 +1,6 @@
+build
+nbplatform*
+nbproject/private
+*/nbproject/private
+*/build
+
