@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package com.sun.hotspot.igv.controlflow;
 
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
+import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.BorderLayout;
 import java.io.Serializable;
 import javax.swing.JScrollPane;
@@ -63,17 +64,7 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
         this.add(panel, BorderLayout.CENTER);
     }
 
-    @Override
-    public void requestFocus() {
-        super.requestFocus();
-        scene.getView().requestFocus();
-    }
 
-    @Override
-    public boolean requestFocusInWindow() {
-        super.requestFocusInWindow();
-        return scene.getView().requestFocusInWindow();
-    }
 
     /** This method is called from within the constructor to
      * initialize the form.
@@ -131,7 +122,7 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
 
     @Override
     public void componentOpened() {
-        Lookup.Template tpl = new Lookup.Template(Object.class);
+        Lookup.Template<InputGraphProvider> tpl = new Lookup.Template<InputGraphProvider>(InputGraphProvider.class);
         result = Utilities.actionsGlobalContext().lookup(tpl);
         result.addLookupListener(this);
     }
@@ -143,16 +134,16 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
     }
 
     public void resultChanged(LookupEvent lookupEvent) {
-
-        final InputGraphProvider p = Lookup.getDefault().lookup(InputGraphProvider.class);
+        final InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);//Utilities.actionsGlobalContext().lookup(InputGraphProvider.class);
         if (p != null) {
             SwingUtilities.invokeLater(new Runnable() {
+
                 public void run() {
-            InputGraph g = p.getGraph();
-            if (g != null) {
-                scene.setGraph(g);
-            }
-        }
+                    InputGraph g = p.getGraph();
+                    if (g != null) {
+                        scene.setGraph(g);
+                    }
+                }
             });
         }
     }
@@ -169,8 +160,8 @@ final class ControlFlowTopComponent extends TopComponent implements LookupListen
 
     @Override
     public void requestActive() {
-        scene.getView().requestFocusInWindow();
         super.requestActive();
+        scene.getView().requestFocus();
     }
 
     final static class ResolvableHelper implements Serializable {
