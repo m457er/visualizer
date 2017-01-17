@@ -3,11 +3,11 @@
     <type>org.netbeans.modules.apisupport.project</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/nb-module-project/3">
-            <code-name-base>com.sun.hotspot.igv.view</code-name-base>
+            <code-name-base>org.graalvm.visualizer.view</code-name-base>
             <suite-component/>
             <module-dependencies>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.data</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.data</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -15,7 +15,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.difference</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.difference</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -23,7 +23,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.filter</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.filter</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -31,7 +31,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.graph</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.graph</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -39,7 +39,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.hierarchicallayout</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.hierarchicallayout</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -47,7 +47,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.layout</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.layout</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -55,7 +55,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.selectioncoordinator</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.selectioncoordinator</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -63,7 +63,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.settings</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.settings</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -71,7 +71,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.svg</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.svg</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -79,7 +79,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.util</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.util</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -176,7 +176,7 @@
                 </dependency>
             </module-dependencies>
             <public-packages>
-                <package>com.sun.hotspot.igv.view</package>
+                <package>org.graalvm.visualizer.view</package>
             </public-packages>
         </data>
     </configuration>

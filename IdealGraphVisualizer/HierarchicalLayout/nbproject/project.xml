@@ -3,11 +3,11 @@
     <type>org.netbeans.modules.apisupport.project</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/nb-module-project/3">
-            <code-name-base>com.sun.hotspot.igv.hierarchicallayout</code-name-base>
+            <code-name-base>org.graalvm.visualizer.hierarchicallayout</code-name-base>
             <suite-component/>
             <module-dependencies>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.layout</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.layout</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -16,7 +16,7 @@
                 </dependency>
             </module-dependencies>
             <public-packages>
-                <package>com.sun.hotspot.igv.hierarchicallayout</package>
+                <package>org.graalvm.visualizer.hierarchicallayout</package>
             </public-packages>
         </data>
     </configuration>
