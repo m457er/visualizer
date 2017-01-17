@@ -365,7 +365,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         @Override
         public void hoverChanged(ObjectSceneEvent e, Object oldObject, Object newObject) {
-            Set<Object> newHighlightedObjects = new HashSet<>(DiagramScene.this.getHighlightedObjects());
+            Set<Object> newHighlightedObjects = new HashSet<Object>(DiagramScene.this.getHighlightedObjects());
             if (oldObject != null) {
                 newHighlightedObjects.remove(oldObject);
             }
@@ -508,7 +508,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         rebuilding = true;
 
-        Collection<Object> objects = new ArrayList<>(this.getObjects());
+        Collection<? extends Object> objects = new ArrayList<>(this.getObjects());
         for (Object o : objects) {
             this.removeObject(o);
         }

@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="platform" default="download" basedir="..">
     <condition property="download.required">
-        <and>
-            <not>
-                <available file="${harness.dir}/suite.xml"/>
-            </not>
-            <isset property="bootstrap.url"/>
-            <isset property="autoupdate.catalog.url"/>
-        </and>
+	<or>
+	    <isset property="platform.force.download"/>
+    	    <and>
+        	<not>
+            	    <available file="${harness.dir}/suite.xml"/>
+                </not>
+	        <isset property="bootstrap.url"/>
+    	        <isset property="autoupdate.catalog.url"/>
+            </and>
+	</or>
     </condition>
     <target name="download" if="download.required">
         <mkdir dir="${harness.dir}"/>
