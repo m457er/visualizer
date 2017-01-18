@@ -38,10 +38,6 @@ import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Vertex;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class HierarchicalClusterLayoutManager implements LayoutManager {
 
     private HierarchicalLayoutManager.Combine combine;
@@ -53,10 +49,12 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
         this.combine = combine;
     }
 
+    @Override
     public void doLayout(LayoutGraph graph) {
         doLayout(graph, new HashSet<Vertex>(), new HashSet<Vertex>(), new HashSet<Link>());
     }
-
+    
+    @Override
     public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
         doLayout(graph);
     }
@@ -73,20 +71,20 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
 
         assert graph.verify();
 
-        HashMap<Cluster, List<Vertex>> lists = new HashMap<Cluster, List<Vertex>>();
-        HashMap<Cluster, List<Link>> listsConnection = new HashMap<Cluster, List<Link>>();
-        HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>> clusterInputSlotHash = new HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>>();
-        HashMap<Cluster, HashMap<Port, ClusterOutputSlotNode>> clusterOutputSlotHash = new HashMap<Cluster, HashMap<Port, ClusterOutputSlotNode>>();
+        HashMap<Cluster, List<Vertex>> lists = new HashMap<>();
+        HashMap<Cluster, List<Link>> listsConnection = new HashMap<>();
+        HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>> clusterInputSlotHash = new HashMap<>();
+        HashMap<Cluster, HashMap<Port, ClusterOutputSlotNode>> clusterOutputSlotHash = new HashMap<>();
 
-        HashMap<Cluster, ClusterNode> clusterNodes = new HashMap<Cluster, ClusterNode>();
-        HashMap<Cluster, Set<ClusterInputSlotNode>> clusterInputSlotSet = new HashMap<Cluster, Set<ClusterInputSlotNode>>();
-        HashMap<Cluster, Set<ClusterOutputSlotNode>> clusterOutputSlotSet = new HashMap<Cluster, Set<ClusterOutputSlotNode>>();
-        Set<Link> clusterEdges = new HashSet<Link>();
-        Set<Link> interClusterEdges = new HashSet<Link>();
-        HashMap<Link, ClusterOutgoingConnection> linkClusterOutgoingConnection = new HashMap<Link, ClusterOutgoingConnection>();
-        HashMap<Link, InterClusterConnection> linkInterClusterConnection = new HashMap<Link, InterClusterConnection>();
-        HashMap<Link, ClusterIngoingConnection> linkClusterIngoingConnection = new HashMap<Link, ClusterIngoingConnection>();
-        Set<ClusterNode> clusterNodeSet = new HashSet<ClusterNode>();
+        HashMap<Cluster, ClusterNode> clusterNodes = new HashMap<>();
+        HashMap<Cluster, Set<ClusterInputSlotNode>> clusterInputSlotSet = new HashMap<>();
+        HashMap<Cluster, Set<ClusterOutputSlotNode>> clusterOutputSlotSet = new HashMap<>();
+        Set<Link> clusterEdges = new HashSet<>();
+        Set<Link> interClusterEdges = new HashSet<>();
+        HashMap<Link, ClusterOutgoingConnection> linkClusterOutgoingConnection = new HashMap<>();
+        HashMap<Link, InterClusterConnection> linkInterClusterConnection = new HashMap<>();
+        HashMap<Link, ClusterIngoingConnection> linkClusterIngoingConnection = new HashMap<>();
+        Set<ClusterNode> clusterNodeSet = new HashSet<>();
 
         Set<Cluster> cluster = graph.getClusters();
         int z = 0;
@@ -194,7 +192,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
         Timing t = null;
 
         if (TRACE) {
-            new Timing("Child timing");
+            t = new Timing("Child timing");
             t.start();
         }
 
@@ -235,7 +233,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
                 assert conn2 != null;
                 assert conn3 != null;
 
-                List<Point> points = new ArrayList<Point>();
+                List<Point> points = new ArrayList<>();
 
                 points.addAll(conn1.getControlPoints());
                 points.addAll(conn2.getControlPoints());
@@ -246,6 +244,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
         }
     }
 
+    @Override
     public void doRouting(LayoutGraph graph) {
     }
 }

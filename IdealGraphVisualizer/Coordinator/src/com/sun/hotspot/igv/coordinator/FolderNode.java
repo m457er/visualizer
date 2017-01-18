@@ -36,22 +36,18 @@ import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class FolderNode extends AbstractNode {
 
     private InstanceContent content;
     private FolderChildren children;
 
-    private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener {
+    private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener<Folder> {
 
         private final Folder folder;
 
         public FolderChildren(Folder folder) {
             this.folder = folder;
-            folder.getChangedEvent().addListener(this);
+            ((ChangedEvent<Folder>)folder.getChangedEvent()).addListener(this);
         }
 
         @Override
@@ -71,7 +67,7 @@ public class FolderNode extends AbstractNode {
         }
 
         @Override
-        public void changed(Object source) {
+        public void changed(Folder source) {
             addNotify();
          }
     }

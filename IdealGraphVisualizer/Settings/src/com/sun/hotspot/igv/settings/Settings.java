@@ -26,10 +26,6 @@ package com.sun.hotspot.igv.settings;
 
 import java.util.prefs.Preferences;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Settings {
 
     public final static String NODE_TEXT = "nodeText";

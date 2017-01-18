@@ -31,10 +31,6 @@ import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CookieAction;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class MoveFilterUpAction extends CookieAction {
 
     @Override
@@ -60,8 +56,8 @@ public final class MoveFilterUpAction extends CookieAction {
     }
 
     @Override
-    protected Class[] cookieClasses() {
-        return new Class[]{
+    protected Class<?>[] cookieClasses() {
+        return new Class<?>[]{
             Filter.class
         };
     }

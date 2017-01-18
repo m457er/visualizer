@@ -28,13 +28,9 @@ import java.awt.event.*;
 import javax.swing.JComponent;
 import org.netbeans.api.visual.widget.Scene;
 
-/**
- * @author David Kaspar
- * @author Thomas Wuerthinger
- */
-public class ExtendedSatelliteComponent extends JComponent implements MouseListener, MouseMotionListener, Scene.SceneListener, ComponentListener {
+public final class ExtendedSatelliteComponent extends JComponent implements MouseListener, MouseMotionListener, Scene.SceneListener, ComponentListener {
 
-    private DiagramScene scene;
+    private final DiagramScene scene;
     private Image image;
     private int imageWidth;
     private int imageHeight;

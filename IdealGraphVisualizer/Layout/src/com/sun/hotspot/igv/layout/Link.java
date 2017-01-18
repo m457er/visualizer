@@ -26,10 +26,6 @@ package com.sun.hotspot.igv.layout;
 import java.awt.Point;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public interface Link {
 
     public Port getFrom();

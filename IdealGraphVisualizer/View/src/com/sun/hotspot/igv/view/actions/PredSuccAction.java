@@ -29,11 +29,7 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import org.openide.util.ImageUtilities;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class PredSuccAction extends AbstractAction {
+public final class PredSuccAction extends AbstractAction {
 
     private boolean state;
     public static final String STATE = "state";

@@ -36,20 +36,16 @@ import org.netbeans.api.visual.border.BorderFactory;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.LabelWidget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class BlockWidget extends LabelWidget implements Vertex {
 
     public static final Dimension MIN_SIZE = new Dimension(20, 20);
     private InputBlock block;
     private Port inputSlot;
-    private Port outputSlot;
+    private final Port outputSlot;
     private Cluster cluster;
     private boolean root;
-    private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
-    private static final Font boldFont = font.deriveFont(Font.BOLD);
+    private static final Font FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 12);
+    private static final Font BOLD_FONT = FONT.deriveFont(Font.BOLD);
     public static final Color NORMAL_FOREGROUND_COLOR = Color.BLACK;
     public static final Color HOVER_FOREGROUND_COLOR = Color.BLUE;
 
@@ -62,7 +58,7 @@ public class BlockWidget extends LabelWidget implements Vertex {
         this.setBorder(BorderFactory.createLineBorder(1, NORMAL_FOREGROUND_COLOR));
         this.setMinimumSize(MIN_SIZE);
 
-        this.setFont(font);
+        this.setFont(FONT);
         this.setAlignment(Alignment.CENTER);
 
         final BlockWidget widget = this;
@@ -152,9 +148,9 @@ public class BlockWidget extends LabelWidget implements Vertex {
 
         if (previousState.isSelected() != state.isSelected()) {
             if (state.isSelected()) {
-                this.setFont(boldFont);
+                this.setFont(BOLD_FONT);
             } else {
-                this.setFont(font);
+                this.setFont(FONT);
             }
         }
     }

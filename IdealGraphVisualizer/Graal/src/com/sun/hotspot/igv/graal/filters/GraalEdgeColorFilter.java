@@ -23,7 +23,6 @@
  */
 package com.sun.hotspot.igv.graal.filters;
 
-import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.filter.AbstractFilter;
 import com.sun.hotspot.igv.graph.Connection;
 import com.sun.hotspot.igv.graph.Connection.ConnectionStyle;
@@ -36,8 +35,6 @@ import java.util.List;
 
 /**
  * Filter that colors usage and successor edges differently.
- *
- * @author Peter Hofer
  */
 public class GraalEdgeColorFilter extends AbstractFilter {
 

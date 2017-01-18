@@ -45,11 +45,7 @@ import org.netbeans.api.visual.animator.SceneAnimator;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class LineWidget extends Widget implements PopupMenuProvider {
+public final class LineWidget extends Widget implements PopupMenuProvider {
 
     public final int BORDER = 5;
     public final int ARROW_SIZE = 6;
@@ -57,7 +53,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     public final int HOVER_ARROW_SIZE = 8;
     public final int BOLD_STROKE_WIDTH = 2;
     public final int HOVER_STROKE_WIDTH = 3;
-    private static double ZOOM_FACTOR = 0.1;
+    private static final double ZOOM_FACTOR = 0.1;
     private OutputSlot outputSlot;
     private DiagramScene scene;
     private List<Connection> connections;

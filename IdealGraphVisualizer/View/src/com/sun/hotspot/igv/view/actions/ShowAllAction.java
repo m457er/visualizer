@@ -31,10 +31,6 @@ import javax.swing.KeyStroke;
 import org.openide.util.HelpCtx;
 import org.openide.util.actions.CallableSystemAction;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class ShowAllAction extends CallableSystemAction {
 
     @Override

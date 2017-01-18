@@ -26,16 +26,11 @@ package com.sun.hotspot.igv.filter;
 
 import org.openide.windows.WindowManager;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class EditFilterDialog extends javax.swing.JDialog {
 
-    private CustomFilter customFilter;
+    private final CustomFilter customFilter;
     private boolean accepted;
 
-    /** Creates new form EditFilterDialog */
     public EditFilterDialog(CustomFilter customFilter) {
         super(WindowManager.getDefault().getMainWindow(), true);
         this.customFilter = customFilter;

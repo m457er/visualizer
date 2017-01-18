@@ -31,13 +31,9 @@ import com.sun.hotspot.igv.util.LookupHistory;
 import org.openide.nodes.Node;
 import org.openide.util.Lookup;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class DiffGraphCookie implements Node.Cookie {
 
-    private InputGraph graph;
+    private final InputGraph graph;
 
     public DiffGraphCookie(InputGraph graph) {
         this.graph = graph;

@@ -26,10 +26,6 @@ package com.sun.hotspot.igv.util;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.widget.Widget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class DoubleClickAction extends WidgetAction.Adapter {
 
     private DoubleClickHandler handler;

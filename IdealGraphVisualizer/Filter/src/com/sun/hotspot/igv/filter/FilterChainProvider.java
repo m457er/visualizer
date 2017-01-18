@@ -23,10 +23,6 @@
  */
 package com.sun.hotspot.igv.filter;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public interface FilterChainProvider {
 
     public FilterChain getFilterChain();

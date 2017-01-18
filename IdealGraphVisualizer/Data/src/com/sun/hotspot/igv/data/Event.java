@@ -26,13 +26,9 @@ package com.sun.hotspot.igv.data;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public abstract class Event<L> {
 
-    private List<L> listener;
+    private final List<L> listener;
     private boolean fireEvents;
     private boolean eventWasFired;
 
@@ -45,10 +41,6 @@ public abstract class Event<L> {
         listener.add(l);
     }
 
-    /**
-     * Remove listener
-     * @param l
-     */
     public void removeListener(final L l) {
         listener.remove(l);
     }

@@ -54,11 +54,6 @@ import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.SystemAction;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-
 @ActionID(
         category = "File",
         id = "com.sun.hotspot.igv.coordinator.actions.ImportAction"

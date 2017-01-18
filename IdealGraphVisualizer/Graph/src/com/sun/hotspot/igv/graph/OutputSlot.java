@@ -25,10 +25,6 @@ package com.sun.hotspot.igv.graph;
 
 import java.awt.Point;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class OutputSlot extends Slot {
 
     protected OutputSlot(Figure figure, int wantedIndex) {

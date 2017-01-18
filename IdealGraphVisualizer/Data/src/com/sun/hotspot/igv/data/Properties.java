@@ -26,15 +26,10 @@ package com.sun.hotspot.igv.data;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Properties implements Serializable, Iterable<Property> {
 
     public static final long serialVersionUID = 1L;

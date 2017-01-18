@@ -29,10 +29,6 @@ import java.util.HashSet;
 import static org.junit.Assert.assertEquals;
 import org.junit.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class GroupTest {
 
     public GroupTest() {

@@ -30,10 +30,6 @@ import java.lang.reflect.InvocationTargetException;
 import org.openide.nodes.Node;
 import org.openide.nodes.Sheet;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class PropertiesSheet {
 
     public static void initializeSheet(final Properties properties, Sheet s) {

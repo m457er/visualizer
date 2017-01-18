@@ -24,10 +24,6 @@
  */
 package com.sun.hotspot.igv.util;
 
-/**
- *
- * @author tkrodrig
- */
 public class StringUtils {
 
     public static String escapeHTML(String s) {

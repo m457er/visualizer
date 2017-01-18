@@ -55,11 +55,7 @@ import org.netbeans.api.visual.action.WidgetAction.WidgetMouseEvent;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 
-/**
- * @author David Kaspar
- * @author Peter Hofer
- */
-public class CustomizablePanAction extends WidgetAction.LockedAdapter {
+public final class CustomizablePanAction extends WidgetAction.LockedAdapter {
     private boolean enabled = true;
 
     private Scene scene;

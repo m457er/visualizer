@@ -28,10 +28,6 @@ import java.awt.Component;
 import java.awt.Graphics;
 import javax.swing.Icon;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class ColorIcon implements Icon {
 
     private final Color color;

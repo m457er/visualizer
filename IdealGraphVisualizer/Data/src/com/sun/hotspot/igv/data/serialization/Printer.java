@@ -30,10 +30,6 @@ import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Printer {
 
     private InputStream in;

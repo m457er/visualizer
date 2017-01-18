@@ -69,8 +69,8 @@ public class BinaryParser implements GraphParser {
 
     private static final String NO_BLOCK = "noBlock";
 
-    private static final Charset utf8 = Charset.forName("UTF-8");
-    private static final Charset utf16 = Charset.forName("UTF-16");
+    private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final Charset UTF16 = Charset.forName("UTF-16");
 
     private final GroupCallback callback;
     private final List<Object> constantPool;
@@ -111,7 +111,7 @@ public class BinaryParser implements GraphParser {
 
         majorVersion = newMajorVersion;
         minorVersion = newMinorVersion;
-        stringCharset = utf8;
+        stringCharset = UTF8;
     }
 
     private enum Length {
@@ -373,12 +373,12 @@ public class BinaryParser implements GraphParser {
     }
 
     private String readString() throws IOException {
-        if (stringCharset == utf8) {
-                return new String(readBytes(), utf8).intern();
-        } else if (stringCharset == utf16) {
+        if (stringCharset == UTF8) {
+                return new String(readBytes(), UTF8).intern();
+        } else if (stringCharset == UTF16) {
                 int len = readInt();
                 byte[] b = readBytes(len * 2);
-                return new String(b, utf16).intern();
+                return new String(b, UTF16).intern();
         }
         int len = readInt();
         // Backwards compatibility
@@ -388,11 +388,11 @@ public class BinaryParser implements GraphParser {
         byte[] b = peekBytes(1);
         if (b[0] == '\0') {
             // Assume UTF16 encoding
-            stringCharset = utf16;
-            return new String(readBytes(len * 2), utf16).intern();
+            stringCharset = UTF16;
+            return new String(readBytes(len * 2), UTF16).intern();
         } else {
             setVersion(1, 0);
-            return new String(readBytes(len), utf8).intern();
+            return new String(readBytes(len), UTF8).intern();
         }
     }
 
@@ -932,10 +932,10 @@ public class BinaryParser implements GraphParser {
         }
     }
 
-    static final Pattern templatePattern = Pattern.compile("\\{(p|i)#([a-zA-Z0-9$_]+)(/(l|m|s))?\\}");
+    static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{(p|i)#([a-zA-Z0-9$_]+)(/(l|m|s))?\\}");
 
     private String createName(List<Edge> edges, Map<String, Object> properties, String template) {
-        Matcher m = templatePattern.matcher(template);
+        Matcher m = TEMPLATE_PATTERN.matcher(template);
         StringBuffer sb = new StringBuffer();
         while (m.find()) {
             String name = m.group(2);

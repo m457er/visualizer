@@ -25,19 +25,15 @@ package com.sun.hotspot.igv.data;
 
 import java.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class InputGraph extends Properties.Entity implements FolderElement {
 
-    private Map<Integer, InputNode> nodes;
-    private List<InputEdge> edges;
+    private final Map<Integer, InputNode> nodes;
+    private final List<InputEdge> edges;
     private Folder parent;
     private Group parentGroup;
-    private Map<String, InputBlock> blocks;
-    private List<InputBlockEdge> blockEdges;
-    private Map<Integer, InputBlock> nodeToBlock;
+    private final Map<String, InputBlock> blocks;
+    private final List<InputBlockEdge> blockEdges;
+    private final Map<Integer, InputBlock> nodeToBlock;
 
     public InputGraph(String name) {
         setName(name);

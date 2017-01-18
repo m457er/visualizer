@@ -31,10 +31,6 @@ import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class GraphViewerImplementation implements GraphViewer {
 
     @Override

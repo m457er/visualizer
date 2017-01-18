@@ -30,10 +30,6 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import org.openide.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class PrevDiagramAction extends ContextAction<DiagramViewModel> implements ChangedListener<DiagramViewModel> {
 
     private DiagramViewModel model;

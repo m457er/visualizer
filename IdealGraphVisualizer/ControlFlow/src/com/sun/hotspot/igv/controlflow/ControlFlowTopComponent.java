@@ -39,16 +39,12 @@ import org.openide.util.Utilities;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 final class ControlFlowTopComponent extends TopComponent implements LookupListener {
 
     private static ControlFlowTopComponent instance;
-    private Lookup.Result result = null;
+    private Lookup.Result<InputGraphProvider> result;
     private static final String PREFERRED_ID = "ControlFlowTopComponent";
-    private ControlFlowScene scene;
+    private final ControlFlowScene scene;
 
     private ControlFlowTopComponent() {
         initComponents();

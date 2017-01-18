@@ -29,7 +29,6 @@ import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Pair;
 import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.services.Scheduler;
 import com.sun.hotspot.igv.graph.*;
 import com.sun.hotspot.igv.hierarchicallayout.HierarchicalClusterLayoutManager;
 import com.sun.hotspot.igv.hierarchicallayout.HierarchicalLayoutManager;
@@ -63,29 +62,25 @@ import org.openide.util.Lookup;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class DiagramScene extends ObjectScene implements DiagramViewer {
+public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
-    private CustomizablePanAction panAction;
-    private WidgetAction hoverAction;
-    private WidgetAction selectAction;
-    private Lookup lookup;
+    private final CustomizablePanAction panAction;
+    private final WidgetAction hoverAction;
+    private final WidgetAction selectAction;
+    private final Lookup lookup;
     private InstanceContent content;
-    private Action[] actions;
-    private Action[] actionsWithSelection;
-    private LayerWidget connectionLayer;
-    private JScrollPane scrollPane;
+    private final Action[] actions;
+    private final Action[] actionsWithSelection;
+    private final LayerWidget connectionLayer;
+    private final JScrollPane scrollPane;
     private UndoRedo.Manager undoRedoManager;
-    private LayerWidget mainLayer;
-    private LayerWidget blockLayer;
-    private Widget topLeft;
-    private Widget bottomRight;
+    private final LayerWidget mainLayer;
+    private final LayerWidget blockLayer;
+    private final Widget topLeft;
+    private final Widget bottomRight;
     private DiagramViewModel model;
     private DiagramViewModel modelCopy;
-    private WidgetAction zoomAction;
+    private final WidgetAction zoomAction;
     private boolean rebuilding;
 
     /**
@@ -291,7 +286,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         result.getHorizontalScrollBar().setBlockIncrement(SCROLL_BLOCK_INCREMENT);
         return result;
     }
-    private ObjectSceneListener selectionChangedListener = new ObjectSceneListener() {
+    private final ObjectSceneListener selectionChangedListener = new ObjectSceneListener() {
 
         @Override
         public void objectAdded(ObjectSceneEvent arg0, Object arg1) {
@@ -515,14 +510,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
         Diagram d = getModel().getDiagramToView();
 
-        if (d.getGraph().getBlocks().isEmpty()) {
-            Scheduler s = Lookup.getDefault().lookup(Scheduler.class);
-            d.getGraph().clearBlocks();
-            s.schedule(d.getGraph());
-            d.getGraph().ensureNodesInBlocks();
-            d.updateBlocks();
-        }
-
         for (Figure f : d.getFigures()) {
             FigureWidget w = new FigureWidget(f, hoverAction, selectAction, this, mainLayer);
             w.getActions().addAction(ActionFactory.createPopupMenuAction(w));
@@ -577,12 +564,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
     private boolean isVisible(Connection c) {
         FigureWidget w1 = getWidget(c.getInputSlot().getFigure());
         FigureWidget w2 = getWidget(c.getOutputSlot().getFigure());
-
-        if (w1.isVisible() && w2.isVisible()) {
-            return true;
-        }
-
-        return false;
+        return w1.isVisible() && w2.isVisible();
     }
 
     private void relayout(Set<Widget> oldVisibleWidgets) {
@@ -825,10 +807,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private class ConnectionSet {
 
-        private Set<Connection> connections;
+        private final Set<Connection> connections;
 
         public ConnectionSet(Collection<Connection> connections) {
-            connections = new HashSet<>(connections);
+            this.connections = new HashSet<>(connections);
         }
 
         public Set<Connection> getConnectionSet() {
@@ -1023,7 +1005,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
         Diagram diagram = getModel().getDiagramToView();
         assert diagram != null;
 
-        Set<InputBlock> visibleBlocks = new HashSet<InputBlock>();
+        Set<InputBlock> visibleBlocks = new HashSet<>();
         Set<Widget> oldVisibleWidgets = new HashSet<>();
 
         for (Figure f : diagram.getFigures()) {
@@ -1171,10 +1153,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private static class DiagramUndoRedo extends AbstractUndoableEdit implements ChangedListener<DiagramViewModel> {
 
-        private DiagramViewModel oldModel;
-        private DiagramViewModel newModel;
-        private Point oldScrollPosition;
-        private DiagramScene scene;
+        private final DiagramViewModel oldModel;
+        private final DiagramViewModel newModel;
+        private final Point oldScrollPosition;
+        private final DiagramScene scene;
 
         public DiagramUndoRedo(DiagramScene scene, Point oldScrollPosition, DiagramViewModel oldModel, DiagramViewModel newModel) {
             assert oldModel != null;

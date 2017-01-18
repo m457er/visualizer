@@ -35,17 +35,13 @@ import java.awt.geom.Rectangle2D;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class BlockWidget extends Widget {
+public final class BlockWidget extends Widget {
 
     public static final int BORDER = 20;
     public static final Color BACKGROUND_COLOR = new Color(235, 235, 255);
-    private static final Font titleFont = new Font("Serif", Font.PLAIN, 14).deriveFont(Font.BOLD);
-    private InputBlock blockNode;
-    private Diagram diagram;
+    private static final Font TITLE_FONT = new Font("Serif", Font.PLAIN, 14).deriveFont(Font.BOLD);
+    private final InputBlock blockNode;
+    private final Diagram diagram;
 
     public BlockWidget(Scene scene, Diagram d, InputBlock blockNode) {
         super(scene);
@@ -72,7 +68,7 @@ public class BlockWidget extends Widget {
 
         Color titleColor = Color.BLACK;
         g.setColor(titleColor);
-        g.setFont(titleFont);
+        g.setFont(TITLE_FONT);
 
         String s = "B" + blockNode.getName();
         Rectangle2D r1 = g.getFontMetrics().getStringBounds(s, g);

@@ -28,14 +28,10 @@ import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.Properties;
 import org.openide.cookies.OpenCookie;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public abstract class AbstractFilter implements Filter {
 
-    private ChangedEvent<Filter> changedEvent;
-    private Properties properties;
+    private final ChangedEvent<Filter> changedEvent;
+    private final Properties properties;
 
     public AbstractFilter() {
         changedEvent = new ChangedEvent<Filter>(this);

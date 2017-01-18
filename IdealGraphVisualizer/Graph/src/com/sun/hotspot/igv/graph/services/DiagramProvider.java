@@ -27,10 +27,6 @@ package com.sun.hotspot.igv.graph.services;
 import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.graph.Diagram;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public interface DiagramProvider {
     Diagram getDiagram();
     ChangedEvent<DiagramProvider> getChangedEvent();

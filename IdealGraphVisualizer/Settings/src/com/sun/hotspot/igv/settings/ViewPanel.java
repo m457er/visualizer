@@ -23,10 +23,6 @@
  */
 package com.sun.hotspot.igv.settings;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 final class ViewPanel extends javax.swing.JPanel {
 
     private final ViewOptionsPanelController controller;

@@ -31,10 +31,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> {
 
     // Warning: Update setData method if fields are added

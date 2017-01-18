@@ -68,10 +68,6 @@ import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
 
     private DiagramViewer scene;

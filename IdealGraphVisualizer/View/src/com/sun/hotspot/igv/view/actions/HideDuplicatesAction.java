@@ -29,11 +29,7 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import org.openide.util.ImageUtilities;
 
-/**
- *
- * @author Tom Rodriguez
- */
-public class HideDuplicatesAction extends AbstractAction {
+public final class HideDuplicatesAction extends AbstractAction {
 
     private boolean state;
     public static final String STATE = "state";

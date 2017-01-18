@@ -29,22 +29,18 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class ClusterIngoingConnection implements Link {
+public final class ClusterIngoingConnection implements Link {
 
     private List<Point> controlPoints;
-    private ClusterInputSlotNode inputSlotNode;
-    private Link connection;
-    private Port inputSlot;
-    private Port outputSlot;
+    private final ClusterInputSlotNode inputSlotNode;
+    private final Link connection;
+    private final Port inputSlot;
+    private final Port outputSlot;
 
     public ClusterIngoingConnection(ClusterInputSlotNode inputSlotNode, Link c) {
         this.inputSlotNode = inputSlotNode;
         this.connection = c;
-        this.controlPoints = new ArrayList<Point>();
+        this.controlPoints = new ArrayList<>();
 
         inputSlot = c.getTo();
         outputSlot = inputSlotNode.getOutputSlot();
@@ -58,22 +54,27 @@ public class ClusterIngoingConnection implements Link {
         return inputSlotNode;
     }
 
+    @Override
     public Port getTo() {
         return inputSlot;
     }
 
+    @Override
     public Port getFrom() {
         return outputSlot;
     }
 
+    @Override
     public void setControlPoints(List<Point> p) {
         this.controlPoints = p;
     }
 
+    @Override
     public List<Point> getControlPoints() {
         return controlPoints;
     }
 
+    @Override
     public boolean isVIP() {
         return false;
     }

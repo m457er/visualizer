@@ -25,15 +25,11 @@ package com.sun.hotspot.igv.hierarchicallayout;
 
 import java.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Graph<N, E> {
 
-    private HashMap<Object, Node<N, E>> nodes;
-    private HashMap<Object, Edge<N, E>> edges;
-    private List<Node<N, E>> nodeList;
+    private final HashMap<Object, Node<N, E>> nodes;
+    private final HashMap<Object, Edge<N, E>> edges;
+    private final List<Node<N, E>> nodeList;
 
     public Graph() {
         nodes = new HashMap<>();

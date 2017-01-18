@@ -36,10 +36,6 @@ import org.netbeans.api.visual.animator.SceneAnimator;
 import org.netbeans.api.visual.widget.Scene;
 import org.netbeans.api.visual.widget.Widget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class BoundedZoomAction extends WidgetAction.Adapter {
 
     private double minFactor = 0.0;

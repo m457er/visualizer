@@ -28,13 +28,9 @@ import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.util.Lookup;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class CheckNode extends AbstractNode {
 
-    private ChangedEvent<CheckNode> selectionChangedEvent;
+    private final ChangedEvent<CheckNode> selectionChangedEvent;
     public boolean selected;
     public boolean enabled;
 

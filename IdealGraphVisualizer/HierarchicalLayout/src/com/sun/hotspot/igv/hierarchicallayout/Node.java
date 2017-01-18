@@ -27,19 +27,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Node<N, E> {
 
     private N data;
-    private List<Edge<N, E>> inEdges;
-    private List<Edge<N, E>> outEdges;
+    private final List<Edge<N, E>> inEdges;
+    private final List<Edge<N, E>> outEdges;
     private boolean visited;
     private boolean active;
     private boolean reachable;
-    private Graph<N, E> graph;
+    private final Graph<N, E> graph;
 
     protected boolean isVisited() {
         return visited;
@@ -150,7 +146,7 @@ public class Node<N, E> {
         return data;
     }
 
-    public void setData(N d) {
+    public final void setData(N d) {
         data = d;
     }
 

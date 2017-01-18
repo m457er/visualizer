@@ -24,17 +24,13 @@
 package com.sun.hotspot.igv.data.serialization;
 
 import com.sun.hotspot.igv.data.Properties;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Stack;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class XMLParser implements ContentHandler {
 
     public static class MissingAttributeException extends SAXException {
@@ -47,7 +43,7 @@ public class XMLParser implements ContentHandler {
         }
 
         public String getAttributeName() {
-            return this.getMessage();
+            return this.name;
         }
     }
 
@@ -77,25 +73,25 @@ public class XMLParser implements ContentHandler {
     public static class ElementHandler<T, P> {
 
         private String name;
-        private Stack<T> object = new Stack<>();
+        private final ArrayList<T> object = new ArrayList<>();
         private Attributes attr;
         private StringBuilder currentText;
         private ParseMonitor monitor;
         private HashMap<String, ElementHandler<?, ? super T>> hashtable;
         private boolean needsText;
-        private Stack<ElementHandler<P, ?>> parentElement = new Stack<>();
-        private Stack<P> parentObject = new Stack<>();
+        private final ArrayList<ElementHandler<P, ?>> parentElement = new ArrayList<>();
+        private final ArrayList<P> parentObject = new ArrayList<>();
 
         public ElementHandler(String name) {
             this(name, false);
         }
 
         public ElementHandler<P, ?> getParentElement() {
-            return parentElement.peek();
+            return parentElement.get(parentElement.size() - 1);
         }
 
         public P getParentObject() {
-            return parentObject.peek();
+            return parentObject.get(parentElement.size() - 1);
         }
 
         protected boolean needsText() {
@@ -126,7 +122,7 @@ public class XMLParser implements ContentHandler {
         }
 
         public T getObject() {
-            return object.size() == 0 ? null : object.peek();
+            return object.isEmpty() ? null : object.get(object.size() - 1);
         }
 
         public String readAttribute(String name) {
@@ -154,9 +150,9 @@ public class XMLParser implements ContentHandler {
             this.currentText = new StringBuilder();
             this.attr = attr;
             this.monitor = monitor;
-            this.parentElement.push(parentElement);
-            parentObject.push(parentElement.getObject());
-            object.push(start());
+            this.parentElement.add(parentElement);
+            parentObject.add(parentElement.getObject());
+            object.add(start());
         }
 
         protected T start() throws SAXException {
@@ -169,9 +165,9 @@ public class XMLParser implements ContentHandler {
 
         public void endElement() throws SAXException {
             end(currentText.toString());
-            object.pop();
-            parentElement.pop();
-            parentObject.pop();
+            object.remove(object.size() - 1);
+            parentElement.remove(parentElement.size() - 1);
+            parentObject.remove(parentObject.size() - 1);
         }
 
         protected void text(char[] c, int start, int length) {
@@ -179,13 +175,13 @@ public class XMLParser implements ContentHandler {
             currentText.append(c, start, length);
         }
     }
-    private Stack<ElementHandler> stack;
+    private ArrayList<ElementHandler> stack;
     private ParseMonitor monitor;
 
     public XMLParser(TopElementHandler rootHandler, ParseMonitor monitor) {
-        this.stack = new Stack<>();
+        this.stack = new ArrayList<>();
         this.monitor = monitor;
-        this.stack.push(rootHandler);
+        this.stack.add(rootHandler);
     }
 
     @Override
@@ -214,22 +210,22 @@ public class XMLParser implements ContentHandler {
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         assert !stack.isEmpty();
 
-        ElementHandler parent = stack.peek();
+        ElementHandler parent = stack.get(stack.size() - 1);
         if (parent != null) {
             ElementHandler child = parent.getChild(qName);
             if (child != null) {
                 child.startElement(parent, atts, monitor);
-                stack.push(child);
+                stack.add(child);
                 return;
             }
         }
 
-        stack.push(null);
+        stack.add(null);
     }
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
-        ElementHandler handler = stack.pop();
+        ElementHandler handler = stack.remove(stack.size() - 1);
         if (handler != null) {
             handler.endElement();
         }
@@ -241,7 +237,7 @@ public class XMLParser implements ContentHandler {
         assert !stack.isEmpty();
 
 
-        ElementHandler top = stack.peek();
+        ElementHandler top = stack.get(stack.size() - 1);
         if (top != null && top.needsText()) {
             top.text(ch, start, length);
         }

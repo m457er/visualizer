@@ -32,7 +32,7 @@ import java.util.List;
 
 public class GraalColoringFilter extends AbstractFilter {
 
-    private String colorName;
+    private final String colorName;
 
     public GraalColoringFilter(String colorName) {
         this.colorName = colorName;

@@ -29,7 +29,7 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import org.openide.util.ImageUtilities;
 
-public class PanModeAction extends AbstractAction {
+public final class PanModeAction extends AbstractAction {
 
     private boolean state;
 

@@ -26,14 +26,10 @@ package com.sun.hotspot.igv.graph;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class AndSelector implements Selector {
 
-    private Selector selector1;
-    private Selector selector2;
+    private final Selector selector1;
+    private final Selector selector2;
 
     public AndSelector(Selector s1, Selector s2) {
         this.selector1 = s1;

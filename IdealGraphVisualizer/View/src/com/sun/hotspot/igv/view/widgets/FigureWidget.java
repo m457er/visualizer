@@ -55,11 +55,7 @@ import org.openide.nodes.Node;
 import org.openide.nodes.Sheet;
 import org.openide.util.Lookup;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class FigureWidget extends Widget implements Properties.Provider, PopupMenuProvider, DoubleClickHandler {
+public final class FigureWidget extends Widget implements Properties.Provider, PopupMenuProvider, DoubleClickHandler {
 
     public static final boolean VERTICAL_LAYOUT = true;
     private static final double LABEL_ZOOM_FACTOR = 0.3;

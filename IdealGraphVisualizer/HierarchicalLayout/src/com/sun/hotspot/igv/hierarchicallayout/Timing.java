@@ -23,10 +23,6 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Timing {
 
     private long lastValue;

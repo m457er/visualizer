@@ -25,11 +25,7 @@ package com.sun.hotspot.igv.data;
 
 import java.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class Group extends Properties.Entity implements ChangedEventProvider<Group>, Folder, FolderElement {
+public final class Group extends Properties.Entity implements ChangedEventProvider<Group>, Folder, FolderElement {
 
     private final List<FolderElement> elements;
     private final List<InputGraph> graphs;

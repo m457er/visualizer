@@ -25,10 +25,6 @@ package com.sun.hotspot.igv.layout;
 
 import java.util.Set;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public interface LayoutManager {
 
     public void doLayout(LayoutGraph graph);

@@ -31,16 +31,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class FilterChain implements ChangedEventProvider<FilterChain> {
 
-    private List<Filter> filters;
+    private final List<Filter> filters;
     private transient ChangedEvent<FilterChain> changedEvent;
 
-    private ChangedListener<Filter> changedListener = new ChangedListener<Filter>() {
+    private final ChangedListener<Filter> changedListener = new ChangedListener<Filter>() {
         @Override
         public void changed(Filter source) {
             changedEvent.fire();

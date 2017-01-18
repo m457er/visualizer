@@ -29,10 +29,6 @@ import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import java.util.Set;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class EditorInputGraphProvider implements InputGraphProvider {
 
     private EditorTopComponent editor;

@@ -40,10 +40,6 @@ import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.NotifyDescriptor.Message;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class NodeQuickSearch implements SearchProvider {
 
     private static final String DEFAULT_PROPERTY = "name";

@@ -27,10 +27,6 @@ import com.sun.hotspot.igv.view.EditorTopComponent;
 import org.openide.util.HelpCtx;
 import org.openide.util.actions.CallableSystemAction;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class ExpandPredecessorsAction extends CallableSystemAction {
 
     @Override

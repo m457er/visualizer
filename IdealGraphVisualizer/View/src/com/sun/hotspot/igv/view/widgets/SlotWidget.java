@@ -39,17 +39,14 @@ import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public abstract class SlotWidget extends Widget implements DoubleClickHandler {
 
-    private Slot slot;
-    private FigureWidget figureWidget;
-    private static double TEXT_ZOOM_FACTOR = 0.9;
-    private static double ZOOM_FACTOR = 0.6;
-    private DiagramScene diagramScene;
+    private static final double TEXT_ZOOM_FACTOR = 0.9;
+    private static final double ZOOM_FACTOR = 0.6;
+    
+    private final Slot slot;
+    private final FigureWidget figureWidget;
+    private final DiagramScene diagramScene;
 
     public SlotWidget(Slot slot, DiagramScene scene, Widget parent, FigureWidget fw) {
         super(scene);
@@ -59,8 +56,6 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
         this.setToolTipText("<HTML>" + slot.getToolTipText() + "</HTML>");
         this.setCheckClipping(true);
         parent.addChild(this);
-
-        //this.setPreferredBounds(this.calculateClientArea());
     }
 
     @Override
@@ -85,7 +80,6 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
         }
 
         Graphics2D g = this.getGraphics();
-        // g.setColor(Color.DARK_GRAY);
         int w = this.getBounds().width;
         int h = this.getBounds().height;
 

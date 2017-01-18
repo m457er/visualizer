@@ -29,11 +29,7 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import org.openide.util.ImageUtilities;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class EnableBlockLayoutAction extends AbstractAction {
+public final class EnableBlockLayoutAction extends AbstractAction {
 
     private boolean state;
     public static final String STATE = "state";
@@ -45,6 +41,7 @@ public class EnableBlockLayoutAction extends AbstractAction {
         putValue(Action.SHORT_DESCRIPTION, "Cluster nodes into blocks");
     }
 
+    @Override
     public void actionPerformed(ActionEvent ev) {
         this.state = !state;
         this.putValue(STATE, state);

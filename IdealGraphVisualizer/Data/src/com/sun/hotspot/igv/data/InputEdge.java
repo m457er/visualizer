@@ -27,10 +27,6 @@ import java.util.Comparator;
 import java.util.WeakHashMap;
 import java.lang.ref.WeakReference;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class InputEdge {
 
     public enum State {

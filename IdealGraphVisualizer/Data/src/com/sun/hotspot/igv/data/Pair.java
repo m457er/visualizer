@@ -23,10 +23,6 @@
  */
 package com.sun.hotspot.igv.data;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Pair<L, R> {
 
     private L l;

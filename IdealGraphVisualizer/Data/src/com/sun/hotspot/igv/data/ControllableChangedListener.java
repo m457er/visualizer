@@ -24,10 +24,6 @@
 
 package com.sun.hotspot.igv.data;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public abstract class ControllableChangedListener<T> implements ChangedListener<T>{
 
     private boolean enabled;

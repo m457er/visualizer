@@ -35,19 +35,15 @@ import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
-import org.openide.util.NbBundle.Messages;
 import org.openide.util.actions.CallableSystemAction;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 @ActionID(
         category = "File",
         id = "com.sun.hotspot.igv.coordinator.actions.SaveAllAction"
 )
 @ActionRegistration(
-        displayName = "#CTL_SaveAllAction"
+        displayName = "#CTL_SaveAllAction",
+        lazy = true
 )
 @ActionReferences({
     @ActionReference(path = "Menu/File", position = 0),

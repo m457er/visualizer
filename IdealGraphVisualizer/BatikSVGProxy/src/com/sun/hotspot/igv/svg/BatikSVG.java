@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import org.w3c.dom.DOMImplementation;
 
-/**
- * Utility class
- * @author Thomas Wuerthinger
- */
 public class BatikSVG {
 
     private BatikSVG() {
@@ -79,17 +75,7 @@ public class BatikSVG {
             setEmbeddedFontsOnMethod.invoke(ctx, true);
             Graphics2D svgGenerator = (Graphics2D) SVGGraphics2DConstructor.newInstance(ctx, true);
             return svgGenerator;
-        } catch (ClassNotFoundException e) {
-            return null;
-        } catch (NoSuchMethodException e) {
-            return null;
-        } catch (IllegalAccessException e) {
-            return null;
-        } catch (InvocationTargetException e) {
-            return null;
-        } catch (InstantiationException e) {
-            return null;
-        } catch (MalformedURLException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException | MalformedURLException e) {
             return null;
         }
     }
@@ -105,9 +91,7 @@ public class BatikSVG {
         assert classSVGGraphics2D.isInstance(svgGenerator);
         try {
             streamMethod.invoke(svgGenerator, stream, useCSS);
-        } catch (IllegalAccessException e) {
-            assert false;
-        } catch (InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
             assert false;
         }
     }

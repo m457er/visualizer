@@ -26,14 +26,9 @@ package com.sun.hotspot.igv.difference;
 
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.*;
-import com.sun.hotspot.igv.data.services.Scheduler;
 import java.util.*;
 import org.openide.util.Lookup;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Difference {
 
     public static final String PROPERTY_STATE = "state";
@@ -77,18 +72,7 @@ public class Difference {
         return createDiff(a, b, pairs);
     }
 
-    private static void ensureScheduled(InputGraph a) {
-        if (a.getBlocks().isEmpty()) {
-            Scheduler s = Lookup.getDefault().lookup(Scheduler.class);
-            a.clearBlocks();
-            s.schedule(a);
-            a.ensureNodesInBlocks();
-        }
-    }
-
     private static InputGraph createDiff(InputGraph a, InputGraph b, Set<NodePair> pairs) {
-        ensureScheduled(a);
-        ensureScheduled(b);
 
         Group g = new Group(null);
         g.setMethod(a.getGroup().getMethod());

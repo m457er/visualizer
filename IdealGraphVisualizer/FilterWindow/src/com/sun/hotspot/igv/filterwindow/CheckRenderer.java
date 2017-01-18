@@ -30,13 +30,10 @@ import javax.swing.JCheckBox;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
-/**
- * @author Thomas Wuerthinger
- */
-public class CheckRenderer extends JCheckBox implements ListCellRenderer<Object> {
+public final class CheckRenderer extends JCheckBox implements ListCellRenderer<Object> {
 
-    private JList<Object> list;
-    private Color startBackground;
+    private final JList<Object> list;
+    private final Color startBackground;
 
     public CheckRenderer(final JList<Object> list) {
         this.list = list;

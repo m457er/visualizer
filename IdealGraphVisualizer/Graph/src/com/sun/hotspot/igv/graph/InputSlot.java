@@ -26,10 +26,6 @@ package com.sun.hotspot.igv.graph;
 import java.awt.Point;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class InputSlot extends Slot {
 
     protected InputSlot(Figure figure, int wantedIndex) {
@@ -53,7 +49,6 @@ public class InputSlot extends Slot {
         double gapRatio = (double)gap / (double)(getFigure().getInputSlots().size() + 1);
         int gapAmount = (int)((getPosition() + 1)*gapRatio);
         return new Point(gapAmount + Figure.getSlotsWidth(Figure.getAllBefore(getFigure().getInputSlots(), this)) + getWidth()/2, -Figure.SLOT_START);
-        //return new Point((getFigure().getWidth() / (getFigure().getInputSlots().size() * 2)) * (getPosition() * 2 + 1), -Figure.SLOT_START);
     }
 
     @Override

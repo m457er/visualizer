@@ -23,11 +23,7 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class Edge<N, E> {
+public final class Edge<N, E> {
 
     private E data;
     private Node<N, E> source;

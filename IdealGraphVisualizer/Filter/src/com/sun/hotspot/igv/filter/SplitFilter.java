@@ -26,15 +26,11 @@ package com.sun.hotspot.igv.filter;
 import com.sun.hotspot.igv.graph.*;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class SplitFilter extends AbstractFilter {
 
-    private String name;
-    private Selector selector;
-    private String propertyName;
+    private final String name;
+    private final Selector selector;
+    private final String propertyName;
 
     public SplitFilter(String name, Selector selector, String propertyName) {
         this.name = name;

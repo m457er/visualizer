@@ -30,13 +30,9 @@ import java.awt.Point;
 import java.util.List;
 import org.netbeans.api.visual.widget.Widget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class OutputSlotWidget extends SlotWidget {
+public final class OutputSlotWidget extends SlotWidget {
 
-    private OutputSlot outputSlot;
+    private final OutputSlot outputSlot;
 
     public OutputSlotWidget(OutputSlot slot, DiagramScene scene, Widget parent, FigureWidget fw) {
         super(slot, scene, parent, fw);

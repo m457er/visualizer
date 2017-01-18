@@ -32,10 +32,6 @@ import com.sun.hotspot.igv.data.Properties.StringPropertyMatcher;
 import java.awt.Font;
 import java.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Diagram {
 
     private List<Figure> figures;
@@ -142,7 +138,7 @@ public class Diagram {
         d.updateBlocks();
 
         Collection<InputNode> nodes = graph.getNodes();
-        Hashtable<Integer, Figure> figureHash = new Hashtable<>();
+        HashMap<Integer, Figure> figureHash = new HashMap<>();
         for (InputNode n : nodes) {
             Figure f = d.createFigure();
             f.getSource().addSourceNode(n);
@@ -212,10 +208,10 @@ public class Diagram {
             succ.removeOutputSlot(s);
         }
 
-        assert succ.getInputSlots().size() == 0;
-        assert succ.getOutputSlots().size() == 0;
-        assert succ.getPredecessors().size() == 0;
-        assert succ.getSuccessors().size() == 0;
+        assert succ.getInputSlots().isEmpty();
+        assert succ.getOutputSlots().isEmpty();
+        assert succ.getPredecessors().isEmpty();
+        assert succ.getSuccessors().isEmpty();
 
     }
 
@@ -303,7 +299,7 @@ public class Diagram {
     public List<Figure> getRootFigures() {
         ArrayList<Figure> rootFigures = new ArrayList<>();
         for (Figure f : figures) {
-            if (f.getPredecessors().size() == 0) {
+            if (f.getPredecessors().isEmpty()) {
                 rootFigures.add(f);
             }
         }

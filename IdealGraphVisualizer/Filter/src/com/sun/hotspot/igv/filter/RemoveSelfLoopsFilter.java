@@ -27,15 +27,10 @@ import com.sun.hotspot.igv.graph.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class RemoveSelfLoopsFilter extends AbstractFilter {
 
     private String name;
 
-    /** Creates a new instance of RemoveSelfLoops */
     public RemoveSelfLoopsFilter(String name) {
         this.name = name;
     }
@@ -65,7 +60,7 @@ public class RemoveSelfLoopsFilter extends AbstractFilter {
                     c.remove();
 
                     OutputSlot os = c.getOutputSlot();
-                    if (os.getConnections().size() == 0) {
+                    if (os.getConnections().isEmpty()) {
                         f.removeSlot(os);
                     }
 

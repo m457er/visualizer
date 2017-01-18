@@ -45,15 +45,15 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     public static final boolean VERTICAL_LAYOUT = true;
     protected List<InputSlot> inputSlots;
     protected List<OutputSlot> outputSlots;
-    private Source source;
-    private Diagram diagram;
+    private final Source source;
+    private final Diagram diagram;
     private Point position;
-    private List<Figure> predecessors;
-    private List<Figure> successors;
+    private final List<Figure> predecessors;
+    private final List<Figure> successors;
     private List<InputGraph> subgraphs;
     private Color color;
-    private int id;
-    private String idString;
+    private final int id;
+    private final String idString;
     private String[] lines;
     private int heightCash = -1;
     private int widthCash = -1;
@@ -342,7 +342,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     }
 
     public Cluster getCluster() {
-        if (getSource().getSourceNodes().size() == 0) {
+        if (getSource().getSourceNodes().isEmpty()) {
             assert false : "Should never reach here, every figure must have at least one source node!";
             return null;
         } else {

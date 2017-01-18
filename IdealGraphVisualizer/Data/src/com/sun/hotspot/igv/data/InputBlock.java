@@ -25,16 +25,12 @@ package com.sun.hotspot.igv.data;
 
 import java.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class InputBlock {
+public final class InputBlock {
 
-    private List<InputNode> nodes;
-    private String name;
-    private InputGraph graph;
-    private Set<InputBlock> successors;
+    private final List<InputNode> nodes;
+    private final String name;
+    private final InputGraph graph;
+    private final Set<InputBlock> successors;
 
     @Override
     public int hashCode() {

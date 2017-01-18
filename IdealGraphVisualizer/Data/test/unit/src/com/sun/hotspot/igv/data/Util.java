@@ -27,10 +27,6 @@ package com.sun.hotspot.igv.data;
 
 import static org.junit.Assert.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Util {
 
     public static void assertGraphDocumentNotEquals(GraphDocument a, GraphDocument b) {

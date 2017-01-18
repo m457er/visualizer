@@ -23,10 +23,6 @@
  */
 package com.sun.hotspot.igv.data;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class InputBlockEdge {
 
     public enum State {
@@ -35,8 +31,8 @@ public class InputBlockEdge {
         DELETED
     }
 
-    private InputBlock from;
-    private InputBlock to;
+    private final InputBlock from;
+    private final InputBlock to;
     private State state = State.SAME;
 
     public InputBlockEdge(InputBlock from, InputBlock to) {

@@ -29,10 +29,6 @@ import java.util.LinkedHashSet;
 import static org.junit.Assert.assertEquals;
 import org.junit.*;
 
-/**
- *
- * @author Thomas
- */
 public class SourceTest {
 
     public SourceTest() {

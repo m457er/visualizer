@@ -33,10 +33,6 @@ import javax.swing.JComponent;
 import org.openide.awt.UndoRedo;
 import org.openide.util.Lookup;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 interface DiagramViewer {
 
     enum InteractionMode {

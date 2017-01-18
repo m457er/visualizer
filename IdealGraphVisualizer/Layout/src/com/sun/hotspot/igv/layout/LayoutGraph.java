@@ -25,11 +25,7 @@ package com.sun.hotspot.igv.layout;
 
 import java.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class LayoutGraph {
+public final class LayoutGraph {
 
     private Set<? extends Link> links;
     private SortedSet<Vertex> vertices;
@@ -131,8 +127,8 @@ public class LayoutGraph {
         }
         Set<Port> outPorts = getOutputPorts(v);
         for (Port p : outPorts) {
-            Set<Link> portLinks = getPortLinks(p);
-            for (Link l : portLinks) {
+            Set<Link> curPortLinks = getPortLinks(p);
+            for (Link l : curPortLinks) {
                 Port other = l.getTo();
                 Vertex otherVertex = other.getVertex();
                 if (otherVertex != startingVertex) {
@@ -158,7 +154,7 @@ public class LayoutGraph {
         Set<Vertex> tmpVertices = getVertices();
         for (Vertex v : tmpVertices) {
             if (!notRootSet.contains(v)) {
-                if (this.getInputPorts(v).size() == 0) {
+                if (this.getInputPorts(v).isEmpty()) {
                     markNotRoot(notRootSet, v, v);
                 }
             }
@@ -176,7 +172,7 @@ public class LayoutGraph {
                 result.add(v);
             }
         }
-        assert tmpVertices.size() == 0 || result.size() > 0;
+        assert tmpVertices.isEmpty() || result.size() > 0;
         return result;
     }
 
@@ -186,7 +182,7 @@ public class LayoutGraph {
 
     public SortedSet<Cluster> getClusters() {
 
-        SortedSet<Cluster> clusters = new TreeSet<Cluster>();
+        SortedSet<Cluster> clusters = new TreeSet<>();
         for (Vertex v : getVertices()) {
             if (v.getCluster() != null) {
                 clusters.add(v.getCluster());

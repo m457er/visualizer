@@ -46,10 +46,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Parser implements GraphParser {
 
     public static final String INDENT = "  ";
@@ -116,7 +112,7 @@ public class Parser implements GraphParser {
             id = maxId++;
             idCache.put(i, id);
         }
-        return id.intValue();
+        return id;
     }
 
     // <graphDocument>

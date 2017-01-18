@@ -25,10 +25,6 @@ package com.sun.hotspot.igv.layout;
 
 import java.awt.Point;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public interface Port {
 
     public Vertex getVertex();

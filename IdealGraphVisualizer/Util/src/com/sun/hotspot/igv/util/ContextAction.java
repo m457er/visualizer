@@ -28,10 +28,6 @@ import java.awt.EventQueue;
 import org.openide.util.*;
 import org.openide.util.actions.CallableSystemAction;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public abstract class ContextAction<T> extends CallableSystemAction implements LookupListener, ContextAwareAction {
 
     private Lookup context = null;

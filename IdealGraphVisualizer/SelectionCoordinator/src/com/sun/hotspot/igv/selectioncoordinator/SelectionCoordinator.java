@@ -29,20 +29,16 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- *
- * @author Thomas
- */
 public class SelectionCoordinator {
 
-    private static SelectionCoordinator singleInstance = new SelectionCoordinator();
-    private Set<Object> selectedObjects;
-    private Set<Object> highlightedObjects;
-    private ChangedEvent<SelectionCoordinator> selectedChangedEvent;
-    private ChangedEvent<SelectionCoordinator> highlightedChangedEvent;
+    private static final SelectionCoordinator SINGLETON = new SelectionCoordinator();
+    private final Set<Object> selectedObjects;
+    private final Set<Object> highlightedObjects;
+    private final ChangedEvent<SelectionCoordinator> selectedChangedEvent;
+    private final ChangedEvent<SelectionCoordinator> highlightedChangedEvent;
 
     public static SelectionCoordinator getInstance() {
-        return singleInstance;
+        return SINGLETON;
     }
 
     private SelectionCoordinator() {

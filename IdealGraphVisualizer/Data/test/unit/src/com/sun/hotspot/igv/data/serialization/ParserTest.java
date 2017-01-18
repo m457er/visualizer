@@ -32,13 +32,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.*;
 import org.openide.util.Exceptions;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class ParserTest {
 
     public ParserTest() {

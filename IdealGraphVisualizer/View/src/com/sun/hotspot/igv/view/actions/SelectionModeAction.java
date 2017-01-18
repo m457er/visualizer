@@ -29,7 +29,7 @@ import javax.swing.Action;
 import javax.swing.ImageIcon;
 import org.openide.util.ImageUtilities;
 
-public class SelectionModeAction extends AbstractAction {
+public final class SelectionModeAction extends AbstractAction {
 
     public SelectionModeAction() {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));

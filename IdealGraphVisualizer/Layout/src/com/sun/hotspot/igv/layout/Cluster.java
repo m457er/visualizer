@@ -26,10 +26,6 @@ package com.sun.hotspot.igv.layout;
 import java.awt.Rectangle;
 import java.util.Set;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public interface Cluster extends Comparable<Cluster> {
 
     public Cluster getOuter();

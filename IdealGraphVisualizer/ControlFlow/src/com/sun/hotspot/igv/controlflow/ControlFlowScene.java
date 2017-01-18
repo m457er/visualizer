@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,20 +53,16 @@ import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.layout.SceneLayout;
 import org.netbeans.api.visual.widget.ConnectionWidget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> implements SelectProvider, MoveProvider, RectangularSelectDecorator, RectangularSelectProvider {
 
-    private HashSet<BlockWidget> selection;
+    private final HashSet<BlockWidget> selection;
     private InputGraph oldGraph;
-    private LayerWidget edgeLayer;
-    private LayerWidget mainLayer;
-    private LayerWidget selectLayer;
-    private WidgetAction hoverAction = this.createWidgetHoverAction();
-    private WidgetAction selectAction = new DoubleClickSelectAction(this);
-    private WidgetAction moveAction = ActionFactory.createMoveAction(null, this);
+    private final LayerWidget edgeLayer;
+    private final LayerWidget mainLayer;
+    private final LayerWidget selectLayer;
+    private final WidgetAction hoverAction = this.createWidgetHoverAction();
+    private final WidgetAction selectAction = new DoubleClickSelectAction(this);
+    private final WidgetAction moveAction = ActionFactory.createMoveAction(null, this);
 
     public ControlFlowScene() {
         selection = new HashSet<BlockWidget>();
@@ -196,12 +192,12 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
     }
 
     public void setNewLocation(Widget widget, Point location) {
-        if (selection.contains(widget)) {
+        if (widget instanceof BlockWidget && selection.contains((BlockWidget) widget)) {
             // move entire selection
             Point originalLocation = getOriginalLocation(widget);
             int xOffset = location.x - originalLocation.x;
             int yOffset = location.y - originalLocation.y;
-            for (Widget w : selection) {
+            for (BlockWidget w : selection) {
                 Point p = new Point(w.getPreferredLocation());
                 p.translate(xOffset, yOffset);
                 w.setPreferredLocation(p);

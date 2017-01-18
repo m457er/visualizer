@@ -42,10 +42,6 @@ import org.netbeans.api.visual.graph.layout.GraphLayout;
 import org.netbeans.api.visual.graph.layout.UniversalGraph;
 import org.netbeans.api.visual.widget.Widget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
     public HierarchicalGraphLayout() {
@@ -53,8 +49,8 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
     private class LinkWrapper implements Link {
 
-        private VertexWrapper from;
-        private VertexWrapper to;
+        private final VertexWrapper from;
+        private final VertexWrapper to;
 
         public LinkWrapper(VertexWrapper from, VertexWrapper to) {
             this.from = from;
@@ -86,7 +82,7 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
         private N node;
         private UniversalGraph<N, E> graph;
-        private Port slot;
+        private final Port slot;
         private Point position;
 
         public VertexWrapper(N node, UniversalGraph<N, E> graph) {

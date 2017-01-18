@@ -27,10 +27,6 @@ package com.sun.hotspot.igv.data;
 import static org.junit.Assert.assertEquals;
 import org.junit.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class ChangedEventTest {
 
     public ChangedEventTest() {

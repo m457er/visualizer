@@ -22,11 +22,6 @@
  *
  */
  
- /**
- *
- * @author Thomas Wuerthinger
- */
- 
 function colorize(property, regexp, color) {
     var f = new ColorFilter("");
     f.addRule(new ColorFilter.ColorRule(new MatcherSelector(new Properties.RegexpPropertyMatcher(property, regexp)), color));

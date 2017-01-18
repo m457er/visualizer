@@ -38,10 +38,6 @@ import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.util.ImageUtilities;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class BytecodeNode extends AbstractNode {
 
     private Set<InputNode> nodes;

@@ -29,10 +29,6 @@ import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.graph.Diagram;
 import org.openide.cookies.OpenCookie;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public interface Filter extends Properties.Provider, ChangedEventProvider<Filter> {
 
     public String getName();

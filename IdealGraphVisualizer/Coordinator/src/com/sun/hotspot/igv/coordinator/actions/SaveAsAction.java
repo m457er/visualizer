@@ -37,10 +37,6 @@ import org.openide.util.NbBundle;
 import org.openide.util.actions.CookieAction;
 import org.openide.util.actions.NodeAction;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class SaveAsAction extends NodeAction {
 
     public SaveAsAction() {

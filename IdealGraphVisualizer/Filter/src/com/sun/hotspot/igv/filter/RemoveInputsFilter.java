@@ -27,10 +27,6 @@ import com.sun.hotspot.igv.graph.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class RemoveInputsFilter extends AbstractFilter {
 
     private List<RemoveInputsRule> rules;

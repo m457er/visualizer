@@ -30,10 +30,6 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class ColorFilter extends AbstractFilter {
 
     private List<ColorRule> colorRules;
@@ -51,8 +47,6 @@ public class ColorFilter extends AbstractFilter {
 
     @Override
     public void apply(Diagram diagram) {
-
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(diagram.getFigures());
         for (ColorRule rule : colorRules) {
             if (rule.getSelector() != null) {
                 List<Figure> figures = rule.getSelector().selected(diagram);

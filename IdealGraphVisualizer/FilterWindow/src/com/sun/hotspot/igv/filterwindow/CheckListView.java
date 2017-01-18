@@ -27,10 +27,6 @@ import javax.swing.JList;
 import org.openide.explorer.view.ListView;
 import org.openide.explorer.view.NodeListModel;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class CheckListView extends ListView {
 
     @Override

@@ -49,16 +49,12 @@ import org.openide.util.actions.NodeAction;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class OutlineTopComponent extends TopComponent implements ExplorerManager.Provider, LookupListener {
 
     public static OutlineTopComponent instance;
     public static final String PREFERRED_ID = "OutlineTopComponent";
     private ExplorerManager manager;
-    private GraphDocument document;
+    private final GraphDocument document;
     private FolderNode root;
     private Server server;
     private Server binaryServer;

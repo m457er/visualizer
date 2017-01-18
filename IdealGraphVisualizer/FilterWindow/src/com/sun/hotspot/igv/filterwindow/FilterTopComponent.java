@@ -56,10 +56,6 @@ import org.openide.util.actions.SystemAction;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class FilterTopComponent extends TopComponent implements LookupListener, ExplorerManager.Provider {
 
     private static FilterTopComponent instance;
@@ -67,16 +63,16 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     public static final String AFTER_ID = "after";
     public static final String ENABLED_ID = "enabled";
     public static final String PREFERRED_ID = "FilterTopComponent";
-    private CheckListView view;
-    private ExplorerManager manager;
-    private FilterChain filterChain;
-    private FilterChain sequence;
+    private final CheckListView view;
+    private final ExplorerManager manager;
+    private final FilterChain filterChain;
+    private final FilterChain sequence;
     private Lookup.Result<FilterChain> result;
-    private JComboBox comboBox;
-    private List<FilterSetting> filterSettings;
-    private FilterSetting customFilterSetting = new FilterSetting("-- Custom --");
-    private ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
-    private ActionListener comboBoxActionListener = new ActionListener() {
+    private final JComboBox<FilterSetting> comboBox;
+    private final List<FilterSetting> filterSettings;
+    private final FilterSetting customFilterSetting = new FilterSetting("-- Custom --");
+    private final ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
+    private final ActionListener comboBoxActionListener = new ActionListener() {
 
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -319,7 +315,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         Toolbar toolBar = new Toolbar();
         Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); //NOI18N
         toolBar.setBorder(b);
-        comboBox = new JComboBox();
+        comboBox = new JComboBox<>();
         toolBar.add(comboBox);
         this.add(toolBar, BorderLayout.NORTH);
         toolBar.add(SaveFilterSettingsAction.get(SaveFilterSettingsAction.class));
@@ -364,7 +360,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     private static class FilterChangedListener implements ChangedListener<Filter> {
 
         private FileObject fileObject;
-        private CustomFilter filter;
+        private final CustomFilter filter;
 
         public FilterChangedListener(FileObject fo, CustomFilter cf) {
             fileObject = fo;

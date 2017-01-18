@@ -33,10 +33,6 @@ import org.openide.util.NbBundle;
 import org.openide.util.actions.CookieAction;
 import org.openide.windows.WindowManager;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class RemoveFilterAction extends CookieAction {
 
     @Override
@@ -75,8 +71,8 @@ public final class RemoveFilterAction extends CookieAction {
     }
 
     @Override
-    protected Class[] cookieClasses() {
-        return new Class[]{
+    protected Class<?>[] cookieClasses() {
+        return new Class<?>[]{
             Filter.class
         };
     }

@@ -31,19 +31,15 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class InputMethod extends Properties.Entity {
 
-    private String name;
-    private int bci;
-    private String shortName;
-    private List<InputMethod> inlined;
+    private final String name;
+    private final int bci;
+    private final String shortName;
+    private final List<InputMethod> inlined;
     private InputMethod parentMethod;
-    private Group group;
-    private List<InputBytecode> bytecodes;
+    private final Group group;
+    private final List<InputBytecode> bytecodes;
 
     @Override
     public int hashCode() {
@@ -66,9 +62,6 @@ public class InputMethod extends Properties.Entity {
                inlined.equals(im.inlined) && bytecodes.equals(im.bytecodes);
     }
 
-
-
-    /** Creates a new instance of InputMethod */
     public InputMethod(Group parent, String name, String shortName, int bci) {
         this.group = parent;
         this.name = name;
@@ -133,16 +126,16 @@ public class InputMethod extends Properties.Entity {
                         comment = comment.trim();
                     }
 
-                    int bci = Integer.parseInt(bciString);
+                    int curBci = Integer.parseInt(bciString);
 
                     // assert correct order of bytecodes
-                    assert bci > oldBci;
+                    assert curBci > oldBci;
 
-                    InputBytecode bc = new InputBytecode(bci, opcode, operands, comment);
+                    InputBytecode bc = new InputBytecode(curBci, opcode, operands, comment);
                     bytecodes.add(bc);
 
                     for (InputMethod m : inlined) {
-                        if (m.getBci() == bci) {
+                        if (m.getBci() == curBci) {
                             bc.setInlined(m);
                             break;
                         }

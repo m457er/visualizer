@@ -31,11 +31,7 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class Connection implements Source.Provider, Link {
+public final class Connection implements Source.Provider, Link {
 
     @Override
     public boolean isVIP() {
@@ -48,14 +44,14 @@ public class Connection implements Source.Provider, Link {
         DASHED,
         BOLD
     }
-    private InputSlot inputSlot;
-    private OutputSlot outputSlot;
-    private Source source;
+    private final InputSlot inputSlot;
+    private final OutputSlot outputSlot;
+    private final Source source;
     private Color color;
     private ConnectionStyle style;
     private List<Point> controlPoints;
-    private String label;
-    private String type;
+    private final String label;
+    private final String type;
 
     protected Connection(InputSlot inputSlot, OutputSlot outputSlot, String label, String type) {
         this.inputSlot = inputSlot;

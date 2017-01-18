@@ -31,10 +31,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class CombineFilter extends AbstractFilter {
 
     private List<CombineRule> rules;
@@ -162,7 +158,7 @@ public class CombineFilter extends AbstractFilter {
 
                                 figuresToRemove.add(succ);
 
-                                if (oldSlot.getConnections().size() == 0) {
+                                if (oldSlot.getConnections().isEmpty()) {
                                     f.removeSlot(oldSlot);
                                 }
                             }

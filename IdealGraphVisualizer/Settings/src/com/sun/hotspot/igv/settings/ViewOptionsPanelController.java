@@ -30,10 +30,6 @@ import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.util.HelpCtx;
 import org.openide.util.Lookup;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 final class ViewOptionsPanelController extends OptionsPanelController {
 
     private ViewPanel panel;

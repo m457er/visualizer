@@ -26,14 +26,10 @@ package com.sun.hotspot.igv.data;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class GraphDocument extends Properties.Entity implements ChangedEventProvider<GraphDocument>, Folder {
 
-    private List<FolderElement> elements;
-    private ChangedEvent<GraphDocument> changedEvent;
+    private final List<FolderElement> elements;
+    private final ChangedEvent<GraphDocument> changedEvent;
 
     public GraphDocument() {
         elements = new ArrayList<>();

@@ -37,10 +37,6 @@ import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
 import org.openide.util.RequestProcessor;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Server implements PreferenceChangeListener {
     private final boolean binary;
     private ServerSocketChannel serverSocket;
@@ -73,7 +69,7 @@ public class Server implements PreferenceChangeListener {
         try {
             serverSocket = ServerSocketChannel.open();
             serverSocket.bind(new InetSocketAddress(curPort));
-        } catch (Throwable ex) {
+        } catch (IOException ex) {
             NotifyDescriptor message = new NotifyDescriptor.Message("Could not create server. Listening for incoming binary data is disabled.", NotifyDescriptor.ERROR_MESSAGE);
             DialogDisplayer.getDefault().notifyLater(message);
             return;

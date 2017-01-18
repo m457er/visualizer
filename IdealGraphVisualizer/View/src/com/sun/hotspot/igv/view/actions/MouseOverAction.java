@@ -28,14 +28,10 @@ import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.action.WidgetAction.State;
 import org.netbeans.api.visual.widget.Widget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class MouseOverAction extends WidgetAction.Adapter {
 
     private long eventID = Integer.MIN_VALUE;
-    private HoverProvider provider;
+    private final HoverProvider provider;
 
     public MouseOverAction(HoverProvider provider) {
         this.provider = provider;

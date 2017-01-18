@@ -33,10 +33,6 @@ import java.awt.event.MouseMotionListener;
 import java.util.List;
 import javax.swing.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class RangeSlider extends JComponent implements ChangedListener<RangeSliderModel>, MouseListener, MouseMotionListener, Scrollable {
 
     public static final int HEIGHT = 40;

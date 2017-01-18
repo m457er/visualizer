@@ -35,10 +35,6 @@ import javax.swing.filechooser.FileFilter;
 import org.openide.util.*;
 import org.openide.util.actions.CallableSystemAction;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class ExportAction extends CallableSystemAction implements LookupListener {
 
     private final Lookup lookup;

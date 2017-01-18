@@ -28,10 +28,6 @@ import javax.swing.AbstractAction;
 import org.openide.util.NbBundle;
 import org.openide.windows.TopComponent;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class ControlFlowAction extends AbstractAction {
 
     public ControlFlowAction() {

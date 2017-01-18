@@ -42,17 +42,14 @@ import org.openide.util.Utilities;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
-/**
- * @author Thomas Wuerthinger
- */
 final class BytecodeViewTopComponent extends TopComponent implements ExplorerManager.Provider, LookupListener {
 
     private static BytecodeViewTopComponent instance;
     private static final String PREFERRED_ID = "BytecodeViewTopComponent";
-    private ExplorerManager manager;
-    private BeanTreeView treeView;
-    private Lookup.Result result = null;
-    private MethodNode rootNode;
+    private final ExplorerManager manager;
+    private final BeanTreeView treeView;
+    private Lookup.Result result;
+    private final MethodNode rootNode;
 
     private BytecodeViewTopComponent() {
         initComponents();

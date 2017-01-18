@@ -37,11 +37,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.Exceptions;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class CustomFilter extends AbstractFilter {
+public final class CustomFilter extends AbstractFilter {
 
     public static final String JAVASCRIPT_HELPER_ID = "JavaScriptHelper";
     private String code;

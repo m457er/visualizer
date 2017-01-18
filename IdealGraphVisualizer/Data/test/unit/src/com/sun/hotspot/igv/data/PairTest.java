@@ -28,10 +28,6 @@ package com.sun.hotspot.igv.data;
 import static org.junit.Assert.*;
 import org.junit.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class PairTest {
 
     public PairTest() {
@@ -65,8 +61,8 @@ public class PairTest {
         assertFalse(p.equals(null));
 
         Pair<Integer, Integer> p2 = new Pair(1, 2);
-        assertTrue(p2.getLeft().intValue() == 1);
-        assertTrue(p2.getRight().intValue() == 2);
+        assertTrue(p2.getLeft() == 1);
+        assertTrue(p2.getRight() == 2);
         assertFalse(p.equals(p2));
         assertFalse(p2.equals(p));
         assertFalse(p.hashCode() == p2.hashCode());
@@ -78,15 +74,15 @@ public class PairTest {
 
         p2.setLeft(2);
         assertFalse(p2.equals(p3));
-        assertTrue(p2.getLeft().intValue() == 2);
-        assertTrue(p2.getRight().intValue() == 2);
+        assertTrue(p2.getLeft() == 2);
+        assertTrue(p2.getRight() == 2);
         assertFalse(p2.hashCode() == p3.hashCode());
         assertEquals("[2/2]", p2.toString());
 
         p2.setRight(1);
         assertFalse(p2.equals(p3));
-        assertTrue(p2.getLeft().intValue() == 2);
-        assertTrue(p2.getRight().intValue() == 1);
+        assertTrue(p2.getLeft() == 2);
+        assertTrue(p2.getRight() == 1);
         assertFalse(p2.hashCode() == p3.hashCode());
         assertEquals("[2/1]", p2.toString());
 

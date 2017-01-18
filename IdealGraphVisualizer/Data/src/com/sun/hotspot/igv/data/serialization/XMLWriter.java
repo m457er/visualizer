@@ -28,20 +28,16 @@ import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.data.Property;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Stack;
+import java.util.ArrayList;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class XMLWriter extends Writer {
 
-    private Writer inner;
-    private Stack<String> elementStack;
+    private final Writer inner;
+    private final ArrayList<String> elementStack;
 
     public XMLWriter(Writer inner) {
         this.inner = inner;
-        elementStack = new Stack<>();
+        elementStack = new ArrayList<>();
     }
 
     @Override
@@ -53,14 +49,19 @@ public class XMLWriter extends Writer {
     public void write(char[] cbuf, int off, int len) throws IOException {
         for (int i = off; i < off + len; i++) {
             char c = cbuf[i];
-            if (c == '>') {
-                inner.write("&gt;");
-            } else if (c == '<') {
-                inner.write("&lt;");
-            } else if (c == '&') {
-                inner.write("&amp;");
-            } else {
-                inner.write(c);
+            switch (c) {
+                case '>':
+                    inner.write("&gt;");
+                    break;
+                case '<':
+                    inner.write("&lt;");
+                    break;
+                case '&':
+                    inner.write("&amp;");
+                    break;
+                default:
+                    inner.write(c);
+                    break;
             }
         }
     }
@@ -76,12 +77,12 @@ public class XMLWriter extends Writer {
     }
 
     public void endTag() throws IOException {
-        inner.write("</" + elementStack.pop() + ">\n");
+        inner.write("</" + elementStack.remove(elementStack.size() - 1) + ">\n");
     }
 
     public void startTag(String name) throws IOException {
         inner.write("<" + name + ">\n");
-        elementStack.push(name);
+        elementStack.add(name);
     }
 
     public void simpleTag(String name) throws IOException {
@@ -90,7 +91,7 @@ public class XMLWriter extends Writer {
 
     public void startTag(String name, Properties attributes) throws IOException {
         inner.write("<" + name);
-        elementStack.push(name);
+        elementStack.add(name);
 
         for (Property p : attributes) {
             inner.write(" " + p.getName() + "=\"");

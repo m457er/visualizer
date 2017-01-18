@@ -28,13 +28,9 @@ import java.util.Collections;
 import java.util.Set;
 import org.openide.nodes.Node;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class SelectBytecodesCookie implements Node.Cookie {
 
-    private Set<InputNode> nodes;
+    private final Set<InputNode> nodes;
 
     /** Creates a new instance of SelectBytecodesCookie */
     public SelectBytecodesCookie(Set<InputNode> nodes) {

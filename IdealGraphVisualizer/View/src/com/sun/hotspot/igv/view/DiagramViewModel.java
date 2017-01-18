@@ -35,10 +35,6 @@ import com.sun.hotspot.igv.util.RangeSliderModel;
 import java.awt.Color;
 import java.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class DiagramViewModel extends RangeSliderModel implements ChangedListener<RangeSliderModel> {
 
     // Warning: Update setData method if fields are added
@@ -51,15 +47,15 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private FilterChain sequenceFilterChain;
     private Diagram diagram;
     private InputGraph inputGraph;
-    private ChangedEvent<DiagramViewModel> groupChangedEvent;
-    private ChangedEvent<DiagramViewModel> diagramChangedEvent;
-    private ChangedEvent<DiagramViewModel> viewChangedEvent;
-    private ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent;
-    private ChangedEvent<DiagramViewModel> viewPropertiesChangedEvent;
+    private final ChangedEvent<DiagramViewModel> groupChangedEvent;
+    private final ChangedEvent<DiagramViewModel> diagramChangedEvent;
+    private final ChangedEvent<DiagramViewModel> viewChangedEvent;
+    private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent;
+    private final ChangedEvent<DiagramViewModel> viewPropertiesChangedEvent;
     private boolean showBlocks;
     private boolean showNodeHull;
     private boolean hideDuplicates;
-    private ChangedListener<FilterChain> filterChainChangedListener = new ChangedListener<FilterChain>() {
+    private final ChangedListener<FilterChain> filterChainChangedListener = new ChangedListener<FilterChain>() {
 
         @Override
         public void changed(FilterChain source) {

@@ -29,16 +29,12 @@ import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Dimension;
 import java.awt.Point;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class ClusterOutputSlotNode implements Vertex {
 
-    private final int SIZE = 0;
+    private static final int SIZE = 0;
     private Point position;
     private Port inputSlot;
-    private Port outputSlot;
+    private final Port outputSlot;
     private ClusterNode blockNode;
     private boolean root;
     private Cluster cluster;
@@ -69,10 +65,12 @@ public class ClusterOutputSlotNode implements Vertex {
 
         inputSlot = new Port() {
 
+            @Override
             public Point getRelativePosition() {
                 return new Point(0, 0);
             }
 
+            @Override
             public Vertex getVertex() {
                 return thisNode;
             }
@@ -85,13 +83,15 @@ public class ClusterOutputSlotNode implements Vertex {
 
         outputSlot = new Port() {
 
+            @Override
             public Point getRelativePosition() {
                 Point p = new Point(thisNode.getPosition());
                 p.x += ClusterNode.BORDER;
-                p.y = 0;//thisBlockNode.getSize().height;
+                p.y = 0;
                 return p;
             }
 
+            @Override
             public Vertex getVertex() {
                 return thisBlockNode;
             }
@@ -103,14 +103,17 @@ public class ClusterOutputSlotNode implements Vertex {
         };
     }
 
+    @Override
     public Dimension getSize() {
         return new Dimension(SIZE, SIZE);
     }
 
+    @Override
     public void setPosition(Point p) {
         this.position = p;
     }
 
+    @Override
     public Point getPosition() {
         return position;
     }
@@ -131,14 +134,17 @@ public class ClusterOutputSlotNode implements Vertex {
         root = b;
     }
 
+    @Override
     public Cluster getCluster() {
         return cluster;
     }
 
+    @Override
     public boolean isRoot() {
         return root;
     }
 
+    @Override
     public int compareTo(Vertex o) {
         return toString().compareTo(o.toString());
     }

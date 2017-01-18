@@ -25,14 +25,10 @@ package com.sun.hotspot.igv.data;
 
 import java.util.*;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class Source {
 
-    private List<InputNode> sourceNodes;
-    private Set<Integer> set;
+    private final List<InputNode> sourceNodes;
+    private final Set<Integer> set;
 
     public Source() {
         sourceNodes = new ArrayList<>(1);

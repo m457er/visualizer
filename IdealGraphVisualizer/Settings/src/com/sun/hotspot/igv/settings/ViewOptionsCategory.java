@@ -30,10 +30,6 @@ import org.netbeans.spi.options.OptionsPanelController;
 import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class ViewOptionsCategory extends OptionsCategory {
 
     @Override

@@ -41,11 +41,7 @@ import org.openide.util.Utilities;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public class FilterNode extends CheckNode implements LookupListener, ChangedListener<FilterTopComponent> {
+public final class FilterNode extends CheckNode implements LookupListener, ChangedListener<FilterTopComponent> {
 
     private Filter filter;
     private Lookup.Result<FilterChain> result;

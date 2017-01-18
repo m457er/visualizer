@@ -28,10 +28,6 @@ import org.openide.nodes.Node;
 import org.openide.util.HelpCtx;
 import org.openide.util.actions.CookieAction;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public final class CloneGraphAction extends CookieAction {
 
     @Override

@@ -39,14 +39,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public abstract class Slot implements Port, Source.Provider, Properties.Provider {
 
     private int wantedIndex;
-    private Source source;
+    private final Source source;
     protected List<Connection> connections;
     private InputNode associatedNode;
     private Color color;

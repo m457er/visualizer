@@ -28,14 +28,10 @@ import com.sun.hotspot.igv.layout.Port;
 import java.awt.Point;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class ClusterEdge implements Link {
 
-    private ClusterNode from;
-    private ClusterNode to;
+    private final ClusterNode from;
+    private final ClusterNode to;
     private List<Point> points;
 
     public ClusterEdge(ClusterNode from, ClusterNode to) {
@@ -45,22 +41,27 @@ public class ClusterEdge implements Link {
         this.to = to;
     }
 
+    @Override
     public Port getTo() {
         return to.getInputSlot();
     }
 
+    @Override
     public Port getFrom() {
         return from.getInputSlot();
     }
 
+    @Override
     public void setControlPoints(List<Point> p) {
         this.points = p;
     }
 
+    @Override
     public List<Point> getControlPoints() {
         return points;
     }
 
+    @Override
     public boolean isVIP() {
         return false;
     }

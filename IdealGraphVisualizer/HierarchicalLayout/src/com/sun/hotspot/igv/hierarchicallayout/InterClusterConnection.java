@@ -29,42 +29,42 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class InterClusterConnection implements Link {
 
-    private Port inputSlot;
-    private Port outputSlot;
+    private final Port inputSlot;
+    private final Port outputSlot;
     private List<Point> intermediatePoints;
-    private ClusterInputSlotNode inputSlotNode;
-    private ClusterOutputSlotNode outputSlotNode;
+    private final ClusterInputSlotNode inputSlotNode;
+    private final ClusterOutputSlotNode outputSlotNode;
 
     public InterClusterConnection(ClusterOutputSlotNode outputSlotNode, ClusterInputSlotNode inputSlotNode) {
         this.outputSlotNode = outputSlotNode;
         this.inputSlotNode = inputSlotNode;
         this.inputSlot = inputSlotNode.getInputSlot();
         this.outputSlot = outputSlotNode.getOutputSlot();
-        intermediatePoints = new ArrayList<Point>();
+        intermediatePoints = new ArrayList<>();
     }
 
     public ClusterOutputSlotNode getOutputSlotNode() {
         return outputSlotNode;
     }
 
+    @Override
     public Port getTo() {
         return inputSlot;
     }
 
+    @Override
     public Port getFrom() {
         return outputSlot;
     }
 
+    @Override
     public void setControlPoints(List<Point> p) {
         this.intermediatePoints = p;
     }
 
+    @Override
     public List<Point> getControlPoints() {
         return intermediatePoints;
     }
@@ -74,6 +74,7 @@ public class InterClusterConnection implements Link {
         return "InterClusterConnection[from=" + getFrom() + ", to=" + getTo() + "]";
     }
 
+    @Override
     public boolean isVIP() {
         return false;
     }

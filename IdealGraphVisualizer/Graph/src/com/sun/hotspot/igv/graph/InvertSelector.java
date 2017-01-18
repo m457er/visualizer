@@ -26,10 +26,6 @@ package com.sun.hotspot.igv.graph;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class InvertSelector implements Selector {
 
     private Selector selector;

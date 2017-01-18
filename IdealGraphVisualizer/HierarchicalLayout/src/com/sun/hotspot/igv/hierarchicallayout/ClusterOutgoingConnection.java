@@ -29,43 +29,44 @@ import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class ClusterOutgoingConnection implements Link {
 
     private List<Point> intermediatePoints;
-    private ClusterOutputSlotNode outputSlotNode;
-    private Link connection;
-    private Port inputSlot;
-    private Port outputSlot;
+    private final ClusterOutputSlotNode outputSlotNode;
+    private final Link connection;
+    private final Port inputSlot;
+    private final Port outputSlot;
 
     public ClusterOutgoingConnection(ClusterOutputSlotNode outputSlotNode, Link c) {
         this.outputSlotNode = outputSlotNode;
         this.connection = c;
-        this.intermediatePoints = new ArrayList<Point>();
+        this.intermediatePoints = new ArrayList<>();
 
         outputSlot = c.getFrom();
         inputSlot = outputSlotNode.getInputSlot();
     }
 
+    @Override
     public Port getTo() {
         return inputSlot;
     }
 
+    @Override
     public Port getFrom() {
         return outputSlot;
     }
 
+    @Override
     public void setControlPoints(List<Point> p) {
         this.intermediatePoints = p;
     }
 
+    @Override
     public List<Point> getControlPoints() {
         return intermediatePoints;
     }
 
+    @Override
     public boolean isVIP() {
         return false;
     }

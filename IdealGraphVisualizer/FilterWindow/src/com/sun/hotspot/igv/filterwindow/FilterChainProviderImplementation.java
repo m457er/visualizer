@@ -26,10 +26,6 @@ package com.sun.hotspot.igv.filterwindow;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class FilterChainProviderImplementation implements FilterChainProvider {
 
     @Override

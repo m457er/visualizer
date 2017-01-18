@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.netbeans.api.visual.widget.ConnectionWidget;
 
-/**
- *
- * @author Thomas Wuerthinger
- */
 public class BlockConnectionWidget extends ConnectionWidget implements Link {
 
     private static final Stroke NORMAL_STROKE = new BasicStroke(1.0f);
@@ -44,14 +40,14 @@ public class BlockConnectionWidget extends ConnectionWidget implements Link {
     private static final Stroke DASHED_STROKE = new BasicStroke(1.0f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f, new float[]{5, 5}, 0);
     private static final Stroke BOLD_DASHED_STROKE = new BasicStroke(2.5f, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f, new float[]{5, 5}, 0);
 
-    private BlockWidget from;
-    private BlockWidget to;
-    private Port inputSlot;
-    private Port outputSlot;
+    private final BlockWidget from;
+    private final BlockWidget to;
+    private final Port inputSlot;
+    private final Port outputSlot;
     private List<Point> points;
-    private InputBlockEdge edge;
-    private boolean isDashed = false;
-    private boolean isBold = false;
+    private final InputBlockEdge edge;
+    private boolean isDashed;
+    private boolean isBold;
 
     public BlockConnectionWidget(ControlFlowScene scene, InputBlockEdge edge) {
         super(scene);

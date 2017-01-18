@@ -29,10 +29,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import org.junit.*;
 
-/**
- *
- * @author Thomas
- */
 public class InputMethodTest {
 
     public InputMethodTest() {
