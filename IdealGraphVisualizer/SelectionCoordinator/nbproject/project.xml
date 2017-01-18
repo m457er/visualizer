@@ -3,11 +3,11 @@
     <type>org.netbeans.modules.apisupport.project</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/nb-module-project/3">
-            <code-name-base>com.sun.hotspot.igv.selectioncoordinator</code-name-base>
+            <code-name-base>org.graalvm.visualizer.selectioncoordinator</code-name-base>
             <suite-component/>
             <module-dependencies>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.data</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.data</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -16,7 +16,7 @@
                 </dependency>
             </module-dependencies>
             <public-packages>
-                <package>com.sun.hotspot.igv.selectioncoordinator</package>
+                <package>org.graalvm.visualizer.selectioncoordinator</package>
             </public-packages>
         </data>
     </configuration>

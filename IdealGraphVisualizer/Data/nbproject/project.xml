@@ -3,7 +3,7 @@
     <type>org.netbeans.modules.apisupport.project</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/nb-module-project/3">
-            <code-name-base>com.sun.hotspot.igv.data</code-name-base>
+            <code-name-base>org.graalvm.visualizer.data</code-name-base>
             <suite-component/>
             <module-dependencies/>
             <test-dependencies>
@@ -27,9 +27,9 @@
                 </test-type>
             </test-dependencies>
             <public-packages>
-                <package>com.sun.hotspot.igv.data</package>
-                <package>com.sun.hotspot.igv.data.serialization</package>
-                <package>com.sun.hotspot.igv.data.services</package>
+                <package>org.graalvm.visualizer.data</package>
+                <package>org.graalvm.visualizer.data.serialization</package>
+                <package>org.graalvm.visualizer.data.services</package>
             </public-packages>
         </data>
     </configuration>
