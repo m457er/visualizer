@@ -3,11 +3,11 @@
     <type>org.netbeans.modules.apisupport.project</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/nb-module-project/3">
-            <code-name-base>com.sun.hotspot.igv.controlflow</code-name-base>
+            <code-name-base>org.graalvm.visualizer.controlflow</code-name-base>
             <suite-component/>
             <module-dependencies>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.data</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.data</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -15,7 +15,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.hierarchicallayout</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.hierarchicallayout</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -23,7 +23,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.layout</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.layout</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>
@@ -31,7 +31,7 @@
                     </run-dependency>
                 </dependency>
                 <dependency>
-                    <code-name-base>com.sun.hotspot.igv.util</code-name-base>
+                    <code-name-base>org.graalvm.visualizer.util</code-name-base>
                     <build-prerequisite/>
                     <compile-dependency/>
                     <run-dependency>

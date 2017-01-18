@@ -1,1 +1,1 @@
-com.sun.hotspot.igv.filterwindow.FilterChainProviderImplementation
+org.graalvm.visualizer.filterwindow.FilterChainProviderImplementation
