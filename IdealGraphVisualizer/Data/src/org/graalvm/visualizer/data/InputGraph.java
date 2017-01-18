@@ -214,8 +214,8 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         return nodes.get(id);
     }
 
-    public InputNode removeNode(int index) {
-        return nodes.remove(index);
+    public InputNode removeNode(int id) {
+        return nodes.remove(id);
     }
 
     public Collection<InputEdge> getEdges() {
