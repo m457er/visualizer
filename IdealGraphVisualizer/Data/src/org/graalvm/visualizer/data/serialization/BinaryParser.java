@@ -989,8 +989,18 @@ public class BinaryParser implements GraphParser {
                     result = "#?#";
                     break;
             }
-            result = result.replace("\\", "\\\\");
-            result = result.replace("$", "\\$");
+            
+            // Escape '\' and '$' to not interfere with the regular expression.
+            StringBuilder newResult = new StringBuilder();
+            for (int i = 0; i < result.length(); ++i) {
+                char c = result.charAt(i);
+                if (c == '\\') {
+                    newResult.append("\\\\");
+                } else if (c == '$') {
+                    newResult.append("\\$");
+                }
+            }
+            result = newResult.toString();
             m.appendReplacement(sb, result);
         }
         m.appendTail(sb);

@@ -332,7 +332,7 @@ public class Properties implements Serializable, Iterable<Property> {
 
     public static class PropertySelector<T extends Properties.Provider> {
 
-        private Collection<T> objects;
+        private final Collection<T> objects;
 
         public PropertySelector(Collection<T> objects) {
             this.objects = objects;
