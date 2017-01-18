@@ -42,7 +42,6 @@ import org.graalvm.visualizer.data.InputBlock;
 import org.graalvm.visualizer.data.InputNode;
 import org.graalvm.visualizer.data.Pair;
 import org.graalvm.visualizer.data.Properties;
-import org.graalvm.visualizer.data.services.Scheduler;
 import org.graalvm.visualizer.hierarchicallayout.HierarchicalClusterLayoutManager;
 import org.graalvm.visualizer.hierarchicallayout.HierarchicalLayoutManager;
 import org.graalvm.visualizer.layout.LayoutGraph;

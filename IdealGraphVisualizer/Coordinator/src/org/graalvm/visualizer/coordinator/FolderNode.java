@@ -28,6 +28,7 @@ import org.graalvm.visualizer.data.Folder;
 import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.FolderElement;
 import org.graalvm.visualizer.data.ChangedListener;
+import org.graalvm.visualizer.data.ChangedEvent;
 import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.coordinator.actions.RemoveCookie;
 import org.graalvm.visualizer.util.PropertiesSheet;

@@ -586,7 +586,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
             }
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"rawtypes", "unchecked"})
         private void createArrays() {
             space = new ArrayList[layers.length];
             downProcessingOrder = new ArrayList[layers.length];
@@ -812,7 +812,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
             }
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         private void createLayers() {
             layers = new List[layerCount];
 

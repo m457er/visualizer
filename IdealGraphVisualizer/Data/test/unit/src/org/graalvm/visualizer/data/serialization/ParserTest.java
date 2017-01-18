@@ -25,8 +25,6 @@
 
 package org.graalvm.visualizer.data.serialization;
 
-import org.graalvm.visualizer.data.serialization.Printer;
-import org.graalvm.visualizer.data.serialization.Parser;
 import org.graalvm.visualizer.data.InputEdge;
 import org.graalvm.visualizer.data.InputBlock;
 import org.graalvm.visualizer.data.Group;
@@ -36,6 +34,7 @@ import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.data.InputMethod;
 import java.io.*;
 import java.nio.channels.Channels;
+import org.graalvm.visualizer.data.Util;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.*;

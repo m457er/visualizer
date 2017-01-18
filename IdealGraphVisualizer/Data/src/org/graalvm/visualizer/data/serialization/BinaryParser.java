@@ -482,6 +482,7 @@ public class BinaryParser implements GraphParser {
         return sb.toString().intern();
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T readPoolObject(Class<T> klass) throws IOException {
         int type = readByte();
         if (type == POOL_NULL) {

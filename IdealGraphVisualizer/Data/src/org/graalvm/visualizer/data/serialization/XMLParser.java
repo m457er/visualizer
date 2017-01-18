@@ -24,7 +24,6 @@
 package org.graalvm.visualizer.data.serialization;
 
 import org.graalvm.visualizer.data.Properties;
-import com.sun.hotspot.igv.data.Properties;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.xml.sax.Attributes;
@@ -176,10 +175,10 @@ public class XMLParser implements ContentHandler {
             currentText.append(c, start, length);
         }
     }
-    private ArrayList<ElementHandler> stack;
+    private ArrayList<ElementHandler<?, ?>> stack;
     private ParseMonitor monitor;
 
-    public XMLParser(TopElementHandler rootHandler, ParseMonitor monitor) {
+    public XMLParser(TopElementHandler<?> rootHandler, ParseMonitor monitor) {
         this.stack = new ArrayList<>();
         this.monitor = monitor;
         this.stack.add(rootHandler);
@@ -211,7 +210,7 @@ public class XMLParser implements ContentHandler {
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         assert !stack.isEmpty();
 
-        ElementHandler parent = stack.get(stack.size() - 1);
+        ElementHandler<?,?> parent = stack.get(stack.size() - 1);
         if (parent != null) {
             ElementHandler child = parent.getChild(qName);
             if (child != null) {

@@ -33,9 +33,7 @@ import org.graalvm.visualizer.data.InputBlockEdge;
 import org.graalvm.visualizer.data.Property;
 import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.data.Properties;
-import org.graalvm.visualizer.data.services.Scheduler;
 import java.util.*;
-import org.openide.util.Lookup;
 
 public class Difference {
 
