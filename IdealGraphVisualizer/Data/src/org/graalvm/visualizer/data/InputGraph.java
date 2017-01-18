@@ -151,18 +151,9 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     public void ensureNodesInBlocks() {
         InputBlock noBlock = null;
-        Set<InputNode> scheduledNodes = new HashSet<>();
-
-        for (InputBlock b : getBlocks()) {
-            for (InputNode n : b.getNodes()) {
-                assert !scheduledNodes.contains(n);
-                scheduledNodes.add(n);
-            }
-        }
-
         for (InputNode n : this.getNodes()) {
             assert nodes.get(n.getId()) == n;
-            if (!scheduledNodes.contains(n)) {
+            if (!nodeToBlock.containsKey(n.getId())) {
                 if (noBlock == null) {
                     noBlock = this.addBlock("(no block)");
                 }
