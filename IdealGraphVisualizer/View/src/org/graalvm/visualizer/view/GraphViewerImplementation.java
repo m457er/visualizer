@@ -27,10 +27,12 @@ import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.data.services.GraphViewer;
 import org.graalvm.visualizer.graph.Diagram;
 import org.graalvm.visualizer.settings.Settings;
+import org.openide.util.lookup.ServiceProvider;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
+@ServiceProvider(service = GraphViewer.class)
 public class GraphViewerImplementation implements GraphViewer {
 
     @Override

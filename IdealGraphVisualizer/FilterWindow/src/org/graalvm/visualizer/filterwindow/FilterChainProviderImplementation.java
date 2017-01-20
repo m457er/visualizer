@@ -25,7 +25,9 @@ package org.graalvm.visualizer.filterwindow;
 
 import org.graalvm.visualizer.filter.FilterChain;
 import org.graalvm.visualizer.filter.FilterChainProvider;
+import org.openide.util.lookup.ServiceProvider;
 
+@ServiceProvider(service = FilterChainProvider.class)
 public class FilterChainProviderImplementation implements FilterChainProvider {
 
     @Override
