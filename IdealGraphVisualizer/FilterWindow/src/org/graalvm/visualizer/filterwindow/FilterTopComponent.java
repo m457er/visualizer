@@ -43,6 +43,7 @@ import java.util.*;
 import javax.swing.JComboBox;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
+import org.graalvm.visualizer.util.ListenerSupport;
 import org.openide.DialogDisplayer;
 import org.openide.ErrorManager;
 import org.openide.NotifyDescriptor;
@@ -246,7 +247,9 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     private class FilterChildren extends Children.Keys<Filter> implements ChangedListener<CheckNode> {
 
         private HashMap<Filter, Node> nodeHash = new HashMap<>();
-
+        private ChangedListener seqL;
+        private ChangedListener keep;
+        
         @Override
         protected Node[] createNodes(Filter filter) {
             if (nodeHash.containsKey(filter)) {
@@ -260,19 +263,28 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         }
 
         public FilterChildren() {
-            sequence.getChangedEvent().addListener(new ChangedListener<FilterChain>() {
-
-                @Override
-                public void changed(FilterChain source) {
-                    addNotify();
-                }
-            });
-
             setBefore(false);
         }
 
         @Override
         protected void addNotify() {
+            seqL = ListenerSupport.addWeakListener(keep = new ChangedListener<FilterChain>() {
+                    @Override
+                    public void changed(FilterChain source) {
+                        makeRefresh();
+                    }
+                }, sequence.getChangedEvent());
+            makeRefresh();
+        }
+        
+        @Override
+        protected void removeNotify() {
+            if (seqL != null) {
+                sequence.getChangedEvent().removeListener(seqL);
+            }
+        }
+        
+        private void makeRefresh() {
             setKeys(sequence.getFilters());
             updateSelection();
         }
@@ -346,6 +358,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             FileObject fo = getFileObject(cf);
             FilterChangedListener listener = new FilterChangedListener(fo, cf);
             listener.changed(cf);
+            // listener does not reference this TC
             cf.getChangedEvent().addListener(listener);
         }
     }
@@ -448,7 +461,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             if (enabled != null && (boolean) enabled) {
                 enabledSet.add(cf);
             }
-
+            // FCL does not reference this TC
             cf.getChangedEvent().addListener(new FilterChangedListener(fo, cf));
 
             customFilters.add(cf);

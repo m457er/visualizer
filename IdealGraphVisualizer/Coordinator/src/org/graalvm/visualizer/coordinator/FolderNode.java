@@ -28,12 +28,12 @@ import org.graalvm.visualizer.data.Folder;
 import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.FolderElement;
 import org.graalvm.visualizer.data.ChangedListener;
-import org.graalvm.visualizer.data.ChangedEvent;
 import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.coordinator.actions.RemoveCookie;
 import org.graalvm.visualizer.util.PropertiesSheet;
 import java.awt.Image;
 import java.util.List;
+import org.graalvm.visualizer.util.ListenerSupport;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
@@ -50,10 +50,10 @@ public class FolderNode extends AbstractNode {
     private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener<Folder> {
 
         private final Folder folder;
-
+        private ChangedListener   l;
+        
         public FolderChildren(Folder folder) {
             this.folder = folder;
-            ((ChangedEvent<Folder>)folder.getChangedEvent()).addListener(this);
         }
 
         @Override
@@ -69,12 +69,21 @@ public class FolderNode extends AbstractNode {
 
         @Override
         public void addNotify() {
+            this.l = ListenerSupport.addWeakListener(this, folder.getChangedEvent());
             this.setKeys(folder.getElements());
         }
 
         @Override
+        protected void removeNotify() {
+            if (l != null) {
+                folder.getChangedEvent().removeListener(l);
+            }
+            super.removeNotify();
+        }
+
+        @Override
         public void changed(Folder source) {
-            addNotify();
+            this.setKeys(folder.getElements());
          }
     }
 
