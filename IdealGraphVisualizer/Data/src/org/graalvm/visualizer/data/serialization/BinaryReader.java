@@ -1,50 +1,40 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
  */
+
 package org.graalvm.visualizer.data.serialization;
 
-import org.graalvm.visualizer.data.Group;
-import org.graalvm.visualizer.data.Folder;
-import org.graalvm.visualizer.data.InputMethod;
-import org.graalvm.visualizer.data.GraphDocument;
-import org.graalvm.visualizer.data.InputEdge;
-import org.graalvm.visualizer.data.InputGraph;
-import org.graalvm.visualizer.data.InputBlock;
-import org.graalvm.visualizer.data.InputNode;
-import org.graalvm.visualizer.data.Properties;
-import org.graalvm.visualizer.data.services.GroupCallback;
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.swing.SwingUtilities;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import org.graalvm.visualizer.data.FolderElement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.logging.Logger;
+import org.graalvm.visualizer.data.Folder;
+import org.graalvm.visualizer.data.GraphDocument;
+import org.graalvm.visualizer.data.Group;
+import org.graalvm.visualizer.data.InputGraph;
+import org.graalvm.visualizer.data.serialization.ModelBuilder.EdgeInfo;
+import org.graalvm.visualizer.data.serialization.ModelBuilder.TypedPort;
+import org.graalvm.visualizer.data.serialization.ModelBuilder.Length;
+import org.graalvm.visualizer.data.serialization.ModelBuilder.LengthToString;
+import org.graalvm.visualizer.data.serialization.ModelBuilder.NodeClass;
+import org.graalvm.visualizer.data.serialization.ModelBuilder.Port;
 
-public class BinaryParser implements GraphParser {
+/**
+ *
+ */
+public final class BinaryReader {
+    private static final Logger LOG = Logger.getLogger(BinaryReader.class.getName());
+    
+    private BinarySource    dataSource;
+    
     private static final int BEGIN_GROUP = 0x00;
     private static final int BEGIN_GRAPH = 0x01;
     private static final int CLOSE_GROUP = 0x02;
@@ -72,37 +62,16 @@ public class BinaryParser implements GraphParser {
     private static final int PROPERTY_ARRAY = 0x07;
     private static final int PROPERTY_SUBGRAPH = 0x08;
 
-    private static final String NO_BLOCK = "noBlock";
-
-    private final GroupCallback callback;
-    private final GraphDocument rootDocument;
-    private final Deque<Folder> folderStack;
     private final Deque<byte[]> hashStack;
-    private final ParseMonitor monitor;
+    private int folderLevel;
 
     private MessageDigest digest;
 
-
     private int constantPoolSize;
     
-    private BinarySource    dataSource;
-    protected ConstantPool    constantPool;
-
-    static class VersionMismatchException extends IOException {
-        VersionMismatchException(String message) {
-            super(message);
-        }
-    }
-
-    private enum Length {
-        S,
-        M,
-        L
-    }
-
-    private interface LengthToString {
-        String toString(Length l);
-    }
+    private ConstantPool    constantPool;
+    
+    private ModelBuilder    builder;
 
     private static abstract class Member implements LengthToString {
         public final Klass holder;
@@ -225,40 +194,6 @@ public class BinaryParser implements GraphParser {
         }
     }
 
-    public static class Port {
-        public final boolean isList;
-        public final String name;
-        private Port(boolean isList, String name) {
-            this.isList = isList;
-            this.name = name;
-        }
-    }
-
-    public static class TypedPort extends Port {
-        public final EnumValue type;
-        private TypedPort(boolean isList, String name, EnumValue type) {
-            super(isList, name);
-            this.type = type;
-        }
-    }
-
-    private static class NodeClass {
-        public final String className;
-        public final String nameTemplate;
-        public final List<TypedPort> inputs;
-        public final List<Port> sux;
-        private NodeClass(String className, String nameTemplate, List<TypedPort> inputs, List<Port> sux) {
-            this.className = className;
-            this.nameTemplate = nameTemplate;
-            this.inputs = inputs;
-            this.sux = sux;
-        }
-        @Override
-        public String toString() {
-            return className;
-        }
-    }
-
     private static class EnumValue implements LengthToString {
         public EnumKlass enumKlass;
         public int ordinal;
@@ -283,34 +218,20 @@ public class BinaryParser implements GraphParser {
         }
     }
 
-    public BinaryParser(BinarySource dataSource, ParseMonitor monitor, GraphDocument rootDocument, GroupCallback callback) {
-        this.callback = callback;
-        constantPool = new ConstantPool();
-        this.dataSource = dataSource;
-        this.rootDocument = rootDocument;
-        folderStack = new LinkedList<>();
-        hashStack = new LinkedList<>();
-        this.monitor = monitor;
-        try {
-            this.digest = MessageDigest.getInstance("SHA-1");
-            dataSource.useDigest(digest);
-        } catch (NoSuchAlgorithmException e) {
-        }
+    public BinaryReader(BinarySource dataSource) {
+        this(dataSource, new ConstantPool());
     }
     
-    public BinaryParser(BinarySource dataSource, ConstantPool pool, GraphDocument rootDocument, GroupCallback callback) {
-        this.callback = callback;
+    public BinaryReader(BinarySource dataSource, ConstantPool pool) {
         this.constantPool = pool;
         this.dataSource = dataSource;
-        this.rootDocument = rootDocument;
-        this.monitor = null;
-        folderStack = new LinkedList<>();
         hashStack = new LinkedList<>();
         try {
             this.digest = MessageDigest.getInstance("SHA-1");
             dataSource.useDigest(digest);
         } catch (NoSuchAlgorithmException e) {
         }
+        pool.withReader(this);
     }
     
     private static final boolean INTERN = Boolean.getBoolean("IGV.internStrings");
@@ -481,7 +402,7 @@ public class BinaryParser implements GraphParser {
         return constantPool.addPoolEntry(index, obj, where);
     }
 
-    private Object readPropertyObject() throws IOException {
+    private Object readPropertyObject(String key) throws IOException {
         int type = dataSource.readByte();
         switch (type) {
             case PROPERTY_INT:
@@ -511,84 +432,67 @@ public class BinaryParser implements GraphParser {
                         throw new IOException("Unknown type");
                 }
             case PROPERTY_SUBGRAPH:
-                InputGraph graph = parseGraph("");
-                new Group(null).addElement(graph);
-                return graph;
+                builder.startNestedProperty(key);
+                return parseGraph("", false);
             default:
                 throw new IOException("Unknown type");
         }
     }
     
-    @Override
-    public GraphDocument parse() throws IOException {
-        folderStack.push(rootDocument);
+    public GraphDocument parse(ModelBuilder builder) throws IOException {
+        this.builder = builder;
         hashStack.push(null);
-        if (monitor != null) {
-            monitor.setState("Starting parsing");
-        }
+        
+        boolean restart = false;
         try {
-            // Check for a version specification
-            dataSource.readHeader();
             while(true) {
+                // allows to concatenate BGV files; at the top-level, either BIGV signature,
+                // or 0x00-0x02 should be present.
+                if (folderLevel == 0) {
+                    // Check for a version specification
+                    if (dataSource.readHeader() && restart) {
+                        // if not at the start of the stream, reinitialize the constant pool.
+                        constantPool = constantPool.restart();
+                    }
+                    restart = true;
+                }
                 parseRoot();
             }
         } catch (EOFException e) {
-
+            // ignore
         }
-        while (folderStack.peek() != rootDocument) {
+        while (folderLevel > 0) {
             doCloseGroup();
         }
-        if (monitor != null) {
-            monitor.setState("Finished parsing");
-        }
-        return rootDocument;
+        return builder.rootDocument();
     }
     
-    protected void registerGraph(Folder parent, FolderElement graph) {
-        SwingUtilities.invokeLater(new Runnable(){
-            @Override
-            public void run() {
-                parent.addElement(graph);
-            }
-        });
-    }
     
-    protected void beginGroup(Folder parent) throws IOException {
-        final Group group = parseGroup(parent);
-        if (callback == null || parent instanceof Group) {
-            registerGraph(parent, group);
-        }
-        folderStack.push(group);
+    protected void beginGroup() throws IOException {
+        parseGroup();
+        builder.startGroupContent();
+        folderLevel++;
         hashStack.push(null);
-        if (callback != null && parent instanceof GraphDocument) {
-            callback.started(group);
-        }
     }
     
     private void doCloseGroup() throws IOException {
-        if (folderStack.isEmpty()) {
+        if (folderLevel-- == 0) {
             throw new IOException("Unbalanced groups");
         }
-        Group g = (Group)folderStack.pop();
+        builder.endGroup();
         hashStack.pop();
-        closeGroup(g);
     }
     
-    protected void closeGroup(Group g) throws IOException {
-    }
 
     protected void parseRoot() throws IOException {
         int type = dataSource.readByte();
         switch(type) {
             case BEGIN_GRAPH: {
-                final Folder parent = folderStack.peek();
-                final InputGraph graph = parseGraph();
-                registerGraph(parent, graph);
+                parseGraph();
                 break;
             }
             case BEGIN_GROUP: {
-                final Folder parent = folderStack.peek();
-                beginGroup(parent);
+                beginGroup();
                 break;
             }
             case CLOSE_GROUP: {
@@ -604,35 +508,35 @@ public class BinaryParser implements GraphParser {
         return new Group(parent);
     }
     
-    protected Group parseGroup(Folder parent) throws IOException {
+    protected Group parseGroup() throws IOException {
+        Group group = builder.startGroup();
         String name = readPoolObject(String.class);
         String shortName = readPoolObject(String.class);
-        if (monitor != null) {
-            monitor.setState(shortName);
-        }
         Method method = readPoolObject(Method.class);
         int bci = dataSource.readInt();
-        Group group = createGroup(parent);
-        group.getProperties().setProperty("name", name);
-        parseProperties(group.getProperties());
+        builder.setGroupName(name, shortName);
+        parseProperties();
         if (method != null) {
-            InputMethod inMethod = new InputMethod(group, method.name, shortName, bci);
-            // TODO
-            inMethod.setBytecodes("");
-            group.setMethod(inMethod);
+            builder.setMethod(name, shortName, bci);
         }
         return group;
     }
 
-    private InputGraph  lastGraph;
-
     private InputGraph parseGraph() throws IOException {
-        if (monitor != null) {
-            monitor.updateProgress();
-        }
         String title = readPoolObject(String.class);
-        InputGraph graph = parseGraph(title);
+        return parseGraph(title, true);
+    }
 
+    private void parseProperties() throws IOException {
+        int propCount = dataSource.readShort();
+        for (int j = 0; j < propCount; j++) {
+            String key = readPoolObject(String.class);
+            Object value = readPropertyObject(key);
+            builder.setProperty(key, value);
+        }
+    }
+    
+    private void computeGraphDigest() {
         int position = dataSource.buffer.position();
         dataSource.buffer.position(dataSource.lastPosition);
         byte[] remaining = new byte[position - dataSource.buffer.position()];
@@ -644,99 +548,54 @@ public class BinaryParser implements GraphParser {
         byte[] d = digest.digest();
         byte[] hash = hashStack.peek();
         if (hash != null && Arrays.equals(hash, d)) {
-            graph.getProperties().setProperty("_isDuplicate", "t        rue");
+            builder.markGraphDuplicate();
         } else {
             hashStack.pop();
             hashStack.push(d);
         }
-        lastGraph = graph;
-        return graph;
     }
 
-    private void parseProperties(Properties properties) throws IOException {
-        int propCount = dataSource.readShort();
-        for (int j = 0; j < propCount; j++) {
-            String key = readPoolObject(String.class);
-            Object value = readPropertyObject();
-            properties.setProperty(key, value != null ? value.toString() : "null");
-        }
-    }
-
-    private InputGraph parseGraph(String title) throws IOException {
-        InputGraph graph = new InputGraph(title);
-        parseProperties(graph.getProperties());
+    private InputGraph parseGraph(String title, boolean toplevel) throws IOException {
+        builder.startGraph(title);
+        parseProperties();
         digest.reset();
         dataSource.lastPosition = dataSource.buffer.position();
-        parseNodes(graph);
-        parseBlocks(graph);
-        graph.ensureNodesInBlocks();
-        for (InputNode node : graph.getNodes()) {
-            node.internProperties();
+        parseNodes();
+        parseBlocks();
+        if (toplevel) {
+            computeGraphDigest();
         }
-        return graph;
+        return builder.endGraph();
     }
     
-    protected InputBlock createBlock(InputGraph graph, String name) {
-        return graph.addBlock(name);
-    }
-    
-    protected Properties getNodeProperties(InputGraph graph, int nodeId) {
-        return graph.getNode(nodeId).getProperties();
-    }
-    
-    protected void addEdge(int id, int to, List<Edge> edges) {
-        edges.add(new Edge(id, to));
-    }
-    
-    private void readEdges(int id, List<Edge> edges) throws IOException {
-        int edgeCount = dataSource.readInt();
-        for (int j = 0; j < edgeCount; j++) {
-            int to = dataSource.readInt();
-            addEdge(id, to, edges);
-        }
-    }
-    
-    protected void addNodeToBlock(InputGraph graph, InputBlock block, 
-            int nodeId, String name) {
-        final Properties properties = getNodeProperties(graph, nodeId);
-        final String oldBlock = properties.get("block");
-        if(oldBlock != null) {
-            properties.setProperty("block", oldBlock + ", " + name);
-        } else {
-            block.addNode(nodeId);
-            properties.setProperty("block", name);
-        }
-    }
-    
-    private void parseBlocks(InputGraph graph) throws IOException {
+    private void parseBlocks() throws IOException {
         int blockCount = dataSource.readInt();
-        List<Edge> edges = new LinkedList<>();
         for (int i = 0; i < blockCount; i++) {
             int id = dataSource.readInt();
-            String name = id >= 0 ? Integer.toString(id) : NO_BLOCK;
-            InputBlock block = createBlock(graph, name);
+            builder.startBlock(id);
             int nodeCount = dataSource.readInt();
             for (int j = 0; j < nodeCount; j++) {
                 int nodeId = dataSource.readInt();
                 if (nodeId < 0) {
                     continue;
                 }
-                addNodeToBlock(graph, block, nodeId, name);
+                builder.addNodeToBlock(nodeId);
             }
-            readEdges(id, edges);
+            builder.endBlock(id);
+            int edgeCount = dataSource.readInt();
+            for (int j = 0; j < edgeCount; j++) {
+                int to = dataSource.readInt();
+                builder.addBlockEdge(id, to);
+            }
         }
-        for (Edge e : edges) {
-            String fromName = e.from >= 0 ? Integer.toString(e.from) : NO_BLOCK;
-            String toName = e.to >= 0 ? Integer.toString(e.to) : NO_BLOCK;
-            graph.addBlockEdge(graph.getBlock(fromName), graph.getBlock(toName));
-        }
+        builder.createBlockEdges();
     }
     
     protected final void createEdges(int id, int preds, List<? extends Port> portList, 
             boolean dir,
             EdgeFactory factory,
-            List<Edge> currentEdges, 
-            List<Edge> inputEdges) throws IOException {
+            List<EdgeInfo> currentEdges, 
+            List<EdgeInfo> inputEdges) throws IOException {
         int portNum = 0;
         for (Port p : portList) { 
             if (p.isList) {
@@ -744,7 +603,7 @@ public class BinaryParser implements GraphParser {
                 for (int j = 0; j < size; j++) {
                     int in = dataSource.readInt();
                     if (in >= 0) {
-                        Edge e = factory.inputEdge(p, in, id, (char) (preds + portNum), p.name + "[" + j + "]");
+                        EdgeInfo e = factory.inputEdge(p, in, id, (char) (preds + portNum), j);
                         if (e != null) { 
                             currentEdges.add(e);
                             inputEdges.add(e);
@@ -755,7 +614,7 @@ public class BinaryParser implements GraphParser {
             } else {
                 int in = dataSource.readInt();
                 if (in >= 0) {
-                    Edge e = factory.inputEdge(p, in, id, (char) (preds + portNum), p.name);
+                    EdgeInfo e = factory.inputEdge(p, in, id, (char) (preds + portNum), -1);
                     if (e != null) {
                         currentEdges.add(e);
                         inputEdges.add(e);
@@ -767,185 +626,41 @@ public class BinaryParser implements GraphParser {
     }
     
     interface EdgeFactory {
-        Edge inputEdge(Port p, int from, int to, char num, String label);
+        EdgeInfo inputEdge(Port p, int from, int to, char num, int index);
     }
     
-    protected Edge inputEdge(Port p, int from, int to, char num, String label) {
-        return new Edge(from, to, num, label, ((TypedPort)p).type.toString(Length.S), true);
-    }
-
-    protected Edge successorEdge(Port p, int from, int to, char num, String label) {
-        return new Edge(to, from, num, label, "Successor", false);
-    }
-    
-    protected InputEdge immutableEdge(char fromIndex, char toIndex, int from, int to, String label, String type) {
-        return InputEdge.createImmutable(fromIndex, toIndex, from, to, label, type);
-    }
-    
-    private String portToType(TypedPort p) {
-        return p.type.toString(Length.S);
-    }
-    
-    InputNode   createNode(InputGraph graph, int id) {
-        InputNode node = new InputNode(id);
-        graph.addNode(node);
-        return node;
-    }
-
-    private void parseNodes(InputGraph graph) throws IOException {
+    private void parseNodes() throws IOException {
         int count = dataSource.readInt();
-        Map<String, Object> props = new HashMap<>();
-        List<Edge> inputEdges = new ArrayList<>(count);
-        List<Edge> succEdges = new ArrayList<>(count);
+        List<EdgeInfo> inputEdges = new ArrayList<>(count);
+        List<EdgeInfo> succEdges = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             int id = dataSource.readInt();
-            InputNode node = createNode(graph, id);
-            final Properties properties = node.getProperties();
             NodeClass nodeClass = readPoolObject(NodeClass.class);
             int preds = dataSource.readByte();
+            builder.startNode(id, preds > 0);
             if (preds > 0) {
-                properties.setProperty("hasPredecessor", "true");
+                
             }
-            properties.setProperty("idx", Integer.toString(id));
             int propCount = dataSource.readShort();
             for (int j = 0; j < propCount; j++) {
                 String key = readPoolObject(String.class);
-                if (key.equals("hasPredecessor") || key.equals("name") || key.equals("class") || key.equals("id") || key.equals("idx")) {
-                    key = "!data." + key;
-                }
-                Object value = readPropertyObject();
-                if (value instanceof InputGraph) {
-                    InputGraph subgraph = (InputGraph) value;
-                    subgraph.getProperties().setProperty("name", node.getId() + ":" + key);
-                    node.addSubgraph((InputGraph) value);
-                } else {
-                    properties.setProperty(key, value != null ? value.toString() : "null");
-                    props.put(key, value);
-                }
+                Object value = readPropertyObject(key);
+                builder.setNodeProperty(key, value);
             }
-            ArrayList<Edge> currentEdges = new ArrayList<>();
-            createEdges(id, preds, nodeClass.inputs, true, this::inputEdge, currentEdges, inputEdges);
-            createEdges(id, 0, nodeClass.sux, true, this::successorEdge, currentEdges, succEdges);
-            properties.setProperty("name", createName(currentEdges, props, nodeClass.nameTemplate));
-            properties.setProperty("class", nodeClass.className);
-            switch (nodeClass.className) {
-                case "BeginNode":
-                    properties.setProperty("shortName", "B");
-                    break;
-                case "EndNode":
-                    properties.setProperty("shortName", "E");
-                    break;
-            }
-            props.clear();
+            ArrayList<EdgeInfo> currentEdges = new ArrayList<>();
+            createEdges(id, preds, nodeClass.inputs, true, builder::inputEdge, currentEdges, inputEdges);
+            createEdges(id, 0, nodeClass.sux, true, builder::successorEdge, currentEdges, succEdges);
+            builder.setNodeName(currentEdges, nodeClass);
+            builder.endNode(id);
         }
-
-        Set<InputNode> nodesWithSuccessor = new HashSet<>();
-
-        for (Edge e : succEdges) {
-            assert !e.input;
-            char fromIndex = e.num;
-            nodesWithSuccessor.add(graph.getNode(e.from));
-            char toIndex = 0;
-            graph.addEdge(immutableEdge(fromIndex, toIndex, e.from, e.to, e.label, e.type));
-        }
-        for (Edge e : inputEdges) {
-            assert e.input;
-            char fromIndex = (char) (nodesWithSuccessor.contains(graph.getNode(e.from)) ? 1 : 0);
-            char toIndex = e.num;
-            graph.addEdge(immutableEdge(fromIndex, toIndex, e.from, e.to, e.label, e.type));
-        }
+        builder.createGraphEdges(inputEdges, succEdges);
     }
 
-    static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{(p|i)#([a-zA-Z0-9$_]+)(/(l|m|s))?\\}");
-
-    protected String createName(List<Edge> edges, Map<String, Object> properties, String template) {
-        Matcher m = TEMPLATE_PATTERN.matcher(template);
-        StringBuffer sb = new StringBuffer();
-        while (m.find()) {
-            String name = m.group(2);
-            String type = m.group(1);
-            String result;
-            switch (type) {
-                case "i":
-                    StringBuilder inputString = new StringBuilder();
-                    for(Edge edge : edges) {
-                        if (edge.label.startsWith(name) && (name.length() == edge.label.length() || edge.label.charAt(name.length()) == '[')) {
-                            if (inputString.length() > 0) {
-                                inputString.append(", ");
-                            }
-                            inputString.append(edge.from);
-                        }
-                    }
-                    result = inputString.toString();
-                    break;
-                case "p":
-                    Object prop = properties.get(name);
-                    String length = m.group(4);
-                    if (prop == null) {
-                        result = "?";
-                    } else if (length != null && prop instanceof LengthToString) {
-                        LengthToString lengthProp = (LengthToString) prop;
-                        switch(length) {
-                            default:
-                            case "l":
-                                result = lengthProp.toString(Length.L);
-                                break;
-                            case "m":
-                                result = lengthProp.toString(Length.M);
-                                break;
-                            case "s":
-                                result = lengthProp.toString(Length.S);
-                                break;
-                        }
-                    } else {
-                        result = prop.toString();
-                    }
-                    break;
-                default:
-                    result = "#?#";
-                    break;
-            }
-            
-            // Escape '\' and '$' to not interfere with the regular expression.
-            StringBuilder newResult = new StringBuilder();
-            for (int i = 0; i < result.length(); ++i) {
-                char c = result.charAt(i);
-                if (c == '\\') {
-                    newResult.append("\\\\");
-                } else if (c == '$') {
-                    newResult.append("\\$");
-                } else {
-                    newResult.append(c);
-                }
-            }
-            result = newResult.toString();
-            m.appendReplacement(sb, result);
-        }
-        m.appendTail(sb);
-        return maybeIntern(sb.toString());
-    }
-
-    public static final class Edge {
-        final int from;
-        final int to;
-        final char num;
-        final String label;
-        final String type;
-        final boolean input;
-        public Edge(int from, int to) {
-            this(from, to, (char) 0, null, null, false);
-        }
-        public Edge(int from, int to, char num, String label, String type, boolean input) {
-            this.from = from;
-            this.to = to;
-            this.label = maybeIntern(label);
-            this.type = maybeIntern(type);
-            this.num = num;
-            this.input = input;
-        }
-    }
-    
     public final ConstantPool getConstantPool() {
         return constantPool;
+    }
+    
+    final void replacePool(ConstantPool pool) {
+        this.constantPool = pool;
     }
 }

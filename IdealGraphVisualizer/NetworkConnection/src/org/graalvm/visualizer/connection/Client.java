@@ -25,11 +25,15 @@
 package org.graalvm.visualizer.connection;
 
 import org.graalvm.visualizer.data.GraphDocument;
-import org.graalvm.visualizer.data.serialization.BinaryParser;
 import org.graalvm.visualizer.data.serialization.Parser;
 import org.graalvm.visualizer.data.services.GroupCallback;
 import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import javax.swing.SwingUtilities;
+import org.graalvm.visualizer.data.serialization.BinaryReader;
+import org.graalvm.visualizer.data.serialization.BinarySource;
+import org.graalvm.visualizer.data.serialization.ConstantPool;
+import org.graalvm.visualizer.data.serialization.ModelBuilder;
 import org.openide.util.Exceptions;
 
 public class Client implements Runnable {
@@ -37,28 +41,53 @@ public class Client implements Runnable {
     private final SocketChannel socket;
     private final GraphDocument rootDocument;
     private final GroupCallback callback;
-
+    
     public Client(SocketChannel socket, GraphDocument rootDocument, GroupCallback callback, boolean  binary) {
         this.callback = callback;
         this.socket = socket;
         this.binary = binary;
         this.rootDocument = rootDocument;
     }
-
+    
+    private void runInAWT(Runnable r) {
+        SwingUtilities.invokeLater(r);
+    }
+    
+    BinaryReader reader;
+    
+    ConstantPool readerPool() {
+        return reader.getConstantPool();
+    }
+    
     @Override
     public void run() {
-
         try {
             final SocketChannel channel = socket;
             channel.configureBlocking(true);
-            if (binary) {
-                new BinaryParser(channel, null, rootDocument, callback).parse();
-            } else {
-                new Parser(channel, null, callback).parse();
+            try (NetworkStreamContent captureChannel = new NetworkStreamContent(channel)) {
+                if (binary) {
+//                    new BinaryParser(new BinarySource(captureChannel), (ParseMonitor)null, rootDocument, callback).parse();
+                    //new ScanningBinaryParser(captureChannel, rootDocument, callback).parse();
+                    BinarySource bs = new BinarySource(captureChannel);
+                    
+                    ModelBuilder mb = new ScanningModelBuilder(
+                            bs, captureChannel, rootDocument, callback,
+                            this::runInAWT, this::readerPool
+                    );
+                    /*
+                    ModelBuilder mb = new ModelBuilder(
+                            rootDocument, this::runInAWT, callback, null);
+                    */
+                    reader = new BinaryReader(bs, new StreamPool());
+                    reader.parse(mb);
+                } else {
+                    new Parser(channel, null, callback).parse();
+                }
             }
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
         } finally {
+            System.err.println("Client terminating, constant pool entries: "+ ConstantPool.totalEntries.get());
             try {
                 socket.close();
             } catch (IOException ex) {

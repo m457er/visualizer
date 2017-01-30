@@ -39,6 +39,7 @@ import java.io.ObjectOutput;
 import java.io.Serializable;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
+import org.graalvm.visualizer.data.Folder;
 import org.openide.ErrorManager;
 import org.openide.actions.GarbageCollectAction;
 import org.openide.awt.Toolbar;
@@ -109,7 +110,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     private void initReceivers() {
 
         final GroupCallback callback = new GroupCallback() {
-
             @Override
             public void started(Group g) {
                 synchronized(OutlineTopComponent.this) {

@@ -24,8 +24,9 @@
 package org.graalvm.visualizer.data;
 
 import java.util.*;
+import java.util.concurrent.Future;
 
-public final class Group extends Properties.Entity implements ChangedEventProvider<Group>, Folder, FolderElement {
+public class Group extends Properties.Entity implements ChangedEventProvider<Group>, Folder, FolderElement {
 
     private final List<FolderElement> elements;
     private final List<InputGraph> graphs;
@@ -44,7 +45,7 @@ public final class Group extends Properties.Entity implements ChangedEventProvid
         getProperties().setProperty("name", "");
         getProperties().setProperty("type", "");
     }
-
+    
     public void fireChangedEvent() {
         changedEvent.fire();
     }
@@ -64,11 +65,11 @@ public final class Group extends Properties.Entity implements ChangedEventProvid
 
     @Override
     public List<FolderElement> getElements() {
-        return Collections.unmodifiableList(elements);
+        return Collections.unmodifiableList(getElementsInternal());
     }
 
     public int getGraphsCount() {
-        return elements.size();
+        return getElementsInternal().size();
     }
 
     @Override
@@ -76,16 +77,29 @@ public final class Group extends Properties.Entity implements ChangedEventProvid
         elements.add(element);
         if (element instanceof InputGraph) {
             graphs.add((InputGraph) element);
-        } else {
-
         }
         element.setParent(this);
         changedEvent.fire();
     }
 
+    public void addElements(List<? extends FolderElement> newElements) {
+        for (FolderElement element : newElements) {
+            elements.add(element);
+            if (element instanceof InputGraph) {
+                graphs.add((InputGraph) element);
+            }
+            element.setParent(this);
+        }
+        changedEvent.fire();
+    }
+    
+    protected List<? extends FolderElement> getElementsInternal() {
+        return elements;
+    }
+
     public Set<Integer> getAllNodes() {
         Set<Integer> result = new HashSet<>();
-        for (FolderElement e : elements) {
+        for (FolderElement e : getElementsInternal()) {
             if (e instanceof InputGraph) {
                 InputGraph g = (InputGraph) e;
                 result.addAll(g.getNodesAsSet());
@@ -98,7 +112,7 @@ public final class Group extends Properties.Entity implements ChangedEventProvid
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Group ").append(getProperties()).append("\n");
-        for (FolderElement g : elements) {
+        for (FolderElement g : getElementsInternal()) {
             sb.append(g.toString());
             sb.append('\n');
         }
@@ -117,7 +131,7 @@ public final class Group extends Properties.Entity implements ChangedEventProvid
 
     InputGraph getPrev(InputGraph graph) {
         InputGraph lastGraph = null;
-        for (FolderElement e : elements) {
+        for (FolderElement e : getElementsInternal()) {
             if (e == graph) {
                 return lastGraph;
             }
@@ -130,7 +144,7 @@ public final class Group extends Properties.Entity implements ChangedEventProvid
 
     InputGraph getNext(InputGraph graph) {
         boolean found = false;
-        for (FolderElement e : elements) {
+        for (FolderElement e : getElementsInternal()) {
             if (e == graph) {
                 found = true;
             } else if (found && e instanceof InputGraph) {
@@ -142,7 +156,7 @@ public final class Group extends Properties.Entity implements ChangedEventProvid
 
     public InputGraph getLastGraph() {
         InputGraph lastGraph = null;
-        for (FolderElement e : elements) {
+        for (FolderElement e : getElementsInternal()) {
             if (e instanceof InputGraph) {
                 lastGraph = (InputGraph) e;
             }
@@ -165,6 +179,15 @@ public final class Group extends Properties.Entity implements ChangedEventProvid
         }
     }
 
+    public void removeAll() {
+        if (elements.isEmpty()) {
+            return;
+        }
+        elements.clear();
+        graphs.clear();
+        changedEvent.fire();
+    }
+
     public List<InputGraph> getGraphs() {
         return graphs;
     }
@@ -172,5 +195,37 @@ public final class Group extends Properties.Entity implements ChangedEventProvid
     @Override
     public void setParent(Folder parent) {
         this.parent = parent;
+    }
+    
+    /**
+     * Special mixin interface, which indicates the Group contents may not be
+     * fetched. The LazyContent object has two states:
+     * <ul>
+     * <li>incomplete, when it serves only partial or no nested data. Properties for the
+     * object should be all available.
+     * <li>complete, when it contains complete set of directly nested data
+     * </ul>
+     * Contents of the LazyContent may be eventually released, reverting the state
+     * into incomplete; an {@link ChangedEvent} must be fired in such case.
+     */
+    public interface LazyContent {
+        /**
+         * Indicates that whether the contents was loaded.
+         * @return if true, the contents was loaded fully
+         */
+        public boolean                      isComplete();
+        
+        /**
+         * Fills the content, and returns the resulting data.
+         * Note that potentially the content may contain another LazyContent
+         * implementations.
+         * <p/>
+         * In addition to returning the contents, the implementation must fire
+         * a {@link ChangedEvent} upon completing the data, <b>after</b> {@link #isComplete} changes
+         * to true. If the implementation supports release of the nested data, the data must not be 
+         * released until after event is delivered to all listeners.
+         * @return handle to contents of the group.
+         */
+        public Future<List<? extends FolderElement>>  completeContents();
     }
 }

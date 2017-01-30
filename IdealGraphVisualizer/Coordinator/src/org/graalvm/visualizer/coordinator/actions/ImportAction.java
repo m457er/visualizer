@@ -42,6 +42,7 @@ import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
+import org.graalvm.visualizer.data.serialization.BinarySource;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
 import org.openide.util.Exceptions;
@@ -125,7 +126,7 @@ public final class ImportAction extends SystemAction {
                     if (file.getName().endsWith(".xml")) {
                         parser = new Parser(channel, monitor, null);
                     } else if (file.getName().endsWith(".bgv")) {
-                        parser = new BinaryParser(channel, monitor, component.getDocument(), null);
+                        parser = new BinaryParser(new BinarySource(channel), monitor, component.getDocument(), null);
                     } else {
                         parser = null;
                     }

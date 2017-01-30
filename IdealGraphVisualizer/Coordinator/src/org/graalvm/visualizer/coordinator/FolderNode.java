@@ -32,25 +32,49 @@ import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.coordinator.actions.RemoveCookie;
 import org.graalvm.visualizer.util.PropertiesSheet;
 import java.awt.Image;
+import java.util.Collections;
 import java.util.List;
 import org.graalvm.visualizer.util.ListenerSupport;
+import java.util.concurrent.Future;
+import org.graalvm.visualizer.data.Group.LazyContent;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.nodes.Sheet;
 import org.openide.util.ImageUtilities;
+import org.openide.util.NbBundle;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 
 public class FolderNode extends AbstractNode {
-
     private InstanceContent content;
-    private FolderChildren children;
+    private final Folder  folder;
 
+    /**
+     * Marker value for "please wait" node
+     */
+    @SuppressWarnings("RedundantStringConstructorCall")
+    private static final FolderElement WAIT_KEY = new FolderElement() {
+        @Override
+        public Folder getParent() {
+            return null;
+        }
+
+        @Override
+        public String getName() {
+            return "(wait)";
+        }
+
+        @Override
+        public void setParent(Folder parent) {
+        }
+    };
+    
     private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener<Folder> {
 
         private final Folder folder;
         private ChangedListener   l;
+        private boolean refreshing;
         
         public FolderChildren(Folder folder) {
             this.folder = folder;
@@ -58,19 +82,26 @@ public class FolderNode extends AbstractNode {
 
         @Override
         protected Node[] createNodes(FolderElement e) {
-             if (e instanceof InputGraph) {
-                return new Node[]{new GraphNode((InputGraph) e)};
+            Node[] ret = new Node[1];
+            Node n;
+                    
+            if (e == WAIT_KEY) {
+                n = new WaitNode();
+            } else if (e instanceof InputGraph) {
+                n = new GraphNode((InputGraph) e);
             } else if (e instanceof Folder) {
-                 return new Node[]{new FolderNode((Folder) e)};
+                n = new FolderNode((Folder) e);
              } else {
                 return null;
             }
+            ret[0] = n;
+            return ret;
         }
 
         @Override
         public void addNotify() {
             this.l = ListenerSupport.addWeakListener(this, folder.getChangedEvent());
-            this.setKeys(folder.getElements());
+            refreshKeys();
         }
 
         @Override
@@ -78,20 +109,36 @@ public class FolderNode extends AbstractNode {
             if (l != null) {
                 folder.getChangedEvent().removeListener(l);
             }
+            setKeys(Collections.<FolderElement>emptyList());
             super.removeNotify();
         }
 
         @Override
         public void changed(Folder source) {
+            refreshKeys();
+        }
+        
+        private synchronized void refreshKeys() {
+            if (folder instanceof Group.LazyContent) {
+                LazyContent lazyFolder = (LazyContent)folder;
+                Future<List<? extends FolderElement>> fContents = lazyFolder.completeContents();
+                if (!fContents.isDone()) {
+                    if (!refreshing) {
+                        setKeys(Collections.singletonList(WAIT_KEY));
+                        refreshing = true;
+                    }
+                    return;
+                }
+            }
             this.setKeys(folder.getElements());
-         }
+        }
     }
 
     @Override
     protected Sheet createSheet() {
         Sheet s = super.createSheet();
-        if (children.folder instanceof Properties.Entity) {
-            Properties.Entity p = (Properties.Entity) children.folder;
+        if (folder instanceof Properties.Entity) {
+            Properties.Entity p = (Properties.Entity) folder;
             PropertiesSheet.initializeSheet(p.getProperties(), s);
         }
         return s;
@@ -108,8 +155,8 @@ public class FolderNode extends AbstractNode {
 
     private FolderNode(final Folder folder, FolderChildren children, InstanceContent content) {
         super(children, new AbstractLookup(content));
+        this.folder = folder;
         this.content = content;
-        this.children = children;
         if (folder instanceof FolderElement) {
             final FolderElement folderElement = (FolderElement) folder;
             this.setDisplayName(folderElement.getName());
@@ -122,17 +169,19 @@ public class FolderNode extends AbstractNode {
         }
     }
 
-    public void init(String name, List<Group> groups) {
-        this.setDisplayName(name);
-        children.addNotify();
-
-        for (Group g : groups) {
-            content.add(g);
-        }
-    }
-
     @Override
     public Image getOpenedIcon(int i) {
         return getIcon(i);
+    }
+    
+    @NbBundle.Messages({
+        "TITLE_PleaseWait=Please wait, loading data..."
+    })
+    static class WaitNode extends AbstractNode {
+        public WaitNode() {
+            super(Children.LEAF);
+            setDisplayName(Bundle.TITLE_PleaseWait());
+            setIconBaseWithExtension("org/graalvm/visualizer/coordinator/images/wait.gif");
+        }
     }
 }

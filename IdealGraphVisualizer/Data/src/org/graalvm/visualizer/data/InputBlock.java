@@ -88,7 +88,7 @@ public final class InputBlock {
         assert node != null;
         // nodes.contains(node) is too expensive for large graphs so
         // just make sure the Graph doesn't know it yet.
-        assert graph.getBlock(id) == null : "duplicate : " + node;
+//        assert graph.getBlock(id) == null : "duplicate : " + node;
         graph.setBlock(node, this);
         nodes.add(node);
     }

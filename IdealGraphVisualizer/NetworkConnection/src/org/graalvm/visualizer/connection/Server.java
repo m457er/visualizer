@@ -93,6 +93,7 @@ public class Server implements PreferenceChangeListener {
                         DialogDisplayer.getDefault().notifyLater(message);
                         return;
                     }
+                    break;
                 }
             }
         };
