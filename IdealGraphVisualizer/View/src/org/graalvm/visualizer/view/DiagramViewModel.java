@@ -38,6 +38,7 @@ import org.graalvm.visualizer.settings.Settings;
 import org.graalvm.visualizer.util.RangeSliderModel;
 import java.awt.Color;
 import java.util.*;
+import org.graalvm.visualizer.util.ListenerSupport;
 
 public class DiagramViewModel extends RangeSliderModel implements ChangedListener<RangeSliderModel> {
 
@@ -189,18 +190,19 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
     }
     private final ChangedListener<DiagramViewModel> groupChangedListener = new ChangedListener<DiagramViewModel>() {
-
         private Group oldGroup;
-
+        private ChangedListener<Group> l;
+        
         @Override
         public void changed(DiagramViewModel source) {
             if (oldGroup != null) {
-                oldGroup.getChangedEvent().removeListener(groupContentChangedListener);
+                oldGroup.getChangedEvent().removeListener(l);
             }
-            group.getChangedEvent().addListener(groupContentChangedListener);
+            l = ListenerSupport.addWeakListener(groupContentChangedListener, group.getChangedEvent());
             oldGroup = group;
         }
     };
+    
     private final ChangedListener<Group> groupContentChangedListener = new ChangedListener<Group>() {
 
         @Override
