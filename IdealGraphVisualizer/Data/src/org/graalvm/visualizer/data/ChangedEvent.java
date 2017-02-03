@@ -23,11 +23,14 @@
  */
 package org.graalvm.visualizer.data;
 
+import javax.swing.SwingUtilities;
+
 /**
  * Class representing a generic changed event.
  */
 public class ChangedEvent<T> extends Event<ChangedListener<T>> {
-
+    private static final boolean DEBUG_THREAD = Boolean.getBoolean("IGV.checkDataModifyThread"); // NO18N
+    
     private final T object;
 
     /**
@@ -39,6 +42,7 @@ public class ChangedEvent<T> extends Event<ChangedListener<T>> {
 
     @Override
     protected void fire(ChangedListener<T> l) {
+        assert !DEBUG_THREAD || SwingUtilities.isEventDispatchThread();
         l.changed(object);
     }
 }
