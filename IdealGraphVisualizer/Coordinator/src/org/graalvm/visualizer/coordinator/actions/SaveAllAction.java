@@ -54,7 +54,7 @@ public final class SaveAllAction extends CallableSystemAction {
     @Override
     public void performAction() {
         final OutlineTopComponent component = OutlineTopComponent.findInstance();
-        SaveAsAction.save(component.getDocument());
+        SaveAsAction.save(component.getDocument(), false);
     }
 
     @Override

@@ -166,6 +166,8 @@ public class FolderNode extends AbstractNode {
                     folderElement.getParent().removeElement(folderElement);
                 }
             });
+            
+            content.add(folder);
         }
     }
 
