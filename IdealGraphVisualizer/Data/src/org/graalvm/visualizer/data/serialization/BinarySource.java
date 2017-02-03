@@ -1,9 +1,26 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
  */
-
 package org.graalvm.visualizer.data.serialization;
 
 import java.io.EOFException;
@@ -12,10 +29,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
 
 /**
- * Performs basic decoding, manages the input buffer.
+ * Performs basic decoding, manages the input buffer. Reports the current position.
  */
 public class BinarySource {
     static final byte[] MAGIC_BYTES = { 'B', 'I', 'G', 'V' };
@@ -26,8 +45,8 @@ public class BinarySource {
     public static final Charset UTF8 = Charset.forName("UTF-8");
     public static final Charset UTF16 = Charset.forName("UTF-16");
 
-    final ByteBuffer buffer;
-    int lastPosition = 0;
+    private final ByteBuffer buffer;
+    private int lastPosition = 0;
     final ReadableByteChannel channel;
     Charset stringCharset;
     long bufferOffset;
@@ -35,12 +54,17 @@ public class BinarySource {
     private int majorVersion;
     private int minorVersion;
     private MessageDigest  digest;
+    private boolean performDigest;
 
     public BinarySource(ReadableByteChannel channel) {
         buffer  = ByteBuffer.allocateDirect(256 * 1024);
         buffer.flip();
         this.channel = channel;
         this.bufferOffset = 0;
+        try {
+            this.digest = MessageDigest.getInstance("SHA-1"); // NOI18N
+        } catch (NoSuchAlgorithmException e) {
+        }
     }
 
     public void useDigest(MessageDigest digest) {
@@ -53,7 +77,7 @@ public class BinarySource {
 
     private void setVersion(int newMajorVersion, int newMinorVersion) throws IOException {
         if (newMajorVersion > CURRENT_MAJOR_VERSION || (newMajorVersion == CURRENT_MAJOR_VERSION && newMinorVersion > CURRENT_MINOR_VERSION)) {
-            throw new BinaryParser.VersionMismatchException("File format version " + versionPair(newMajorVersion, newMinorVersion) + " unsupported.  Current version is " + CURRENT_VERSION);
+            throw new VersionMismatchException("File format version " + versionPair(newMajorVersion, newMinorVersion) + " unsupported.  Current version is " + CURRENT_VERSION);
         }
         majorVersion = newMajorVersion;
         minorVersion = newMinorVersion;
@@ -118,8 +142,24 @@ public class BinarySource {
         ensureAvailable(8);
         return buffer.getDouble();
     }
-
-    private void fill() throws IOException {
+    
+    public byte[] finishDigest() {
+        assert performDigest;
+        digestUpToPosition();
+        performDigest = false;
+        return digest.digest();
+    }
+    
+    public void startDigest() {
+        digest.reset();
+        performDigest = true;
+        lastPosition = buffer.position();
+    }
+    
+    private void digestUpToPosition() {
+        if (!performDigest) {
+            return;
+        }
         // All the data between lastPosition and position has been
         // used so add it to the digest.
         int position = buffer.position();
@@ -128,6 +168,11 @@ public class BinarySource {
         buffer.get(remaining);
         digest.update(remaining);
         assert position == buffer.position();
+    }
+
+    private void fill() throws IOException {
+        int position = buffer.position();
+        digestUpToPosition();
         buffer.compact();
         receiveBytes(buffer);
         buffer.flip();
@@ -183,19 +228,6 @@ public class BinarySource {
         return maybeIntern(sb.toString());
     }
     
-    private static final boolean INTERN = Boolean.getBoolean("IGV.internStrings");
-    
-    private static String maybeIntern(String s) {
-        if (INTERN) {
-            if (s == null) {
-                return null;
-            }
-            return s.intern();
-        } else {
-            return s;
-        }
-    }
-
     // readString is only called from CP reads, CP items are cached, no need to intern
     String readString() throws IOException {
         if (stringCharset == UTF8) {

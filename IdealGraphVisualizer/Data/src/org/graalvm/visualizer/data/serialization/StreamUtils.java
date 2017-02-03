@@ -25,9 +25,26 @@
 
 package org.graalvm.visualizer.data.serialization;
 
-import org.graalvm.visualizer.data.GraphDocument;
-import java.io.IOException;
+/**
+ * Miscellanous utilities.
+ */
+class StreamUtils {
+    
+    private static final boolean INTERN = Boolean.getBoolean("IGV.internStrings"); // NOI18N
+    
+    /**
+     * Possibly interns strings, based on system property. Temporary for testing; String.intern
+     * showed harmful in profiler data, use the property to turn on/off for experiments.
+     */
+    static String maybeIntern(String s) {
+        if (INTERN) {
+            if (s == null) {
+                return null;
+            }
+            return s.intern();
+        } else {
+            return s;
+        }
+    }
 
-public interface GraphParser {
-    public GraphDocument parse() throws IOException;
 }

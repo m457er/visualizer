@@ -42,9 +42,17 @@ import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
+import org.graalvm.visualizer.connection.Server;
+import org.graalvm.visualizer.data.serialization.BinaryReader;
 import org.graalvm.visualizer.data.serialization.BinarySource;
+import org.graalvm.visualizer.data.serialization.FileContent;
+import org.graalvm.visualizer.data.serialization.ModelBuilder;
+import org.graalvm.visualizer.data.serialization.lazy.ScanningModelBuilder;
+import org.graalvm.visualizer.data.serialization.lazy.StreamPool;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
+import org.openide.DialogDisplayer;
+import org.openide.NotifyDescriptor;
 import org.openide.util.Exceptions;
 import org.openide.util.RequestProcessor;
 import org.openide.awt.ActionID;
@@ -68,6 +76,8 @@ import org.openide.util.actions.SystemAction;
     @ActionReference(path = "Shortcuts", name = "C-O")
 })
 public final class ImportAction extends SystemAction {
+    private static final Logger LOG = Logger.getLogger(ImportAction.class.getName());
+    
     private static final int WORKUNITS = 10000;
 
     public static FileFilter getFileFilter() {
@@ -84,7 +94,18 @@ public final class ImportAction extends SystemAction {
             }
         };
     }
+    
+    /**
+     * Request processor used to lazy-load; shared with the network receiver, but could
+     * be also separated.
+     */
+    private static final RequestProcessor LOADER_RP = Server.LOADER_RP;
 
+    @NbBundle.Messages({
+        "# {0} - file name",
+        "# {1} - error message",
+        "ERR_ReadingFile=Error importing from file {0}: {1}"
+    })
     @Override
     public void actionPerformed(ActionEvent e) {
         JFileChooser fc = new JFileChooser();
@@ -126,7 +147,14 @@ public final class ImportAction extends SystemAction {
                     if (file.getName().endsWith(".xml")) {
                         parser = new Parser(channel, monitor, null);
                     } else if (file.getName().endsWith(".bgv")) {
-                        parser = new BinaryParser(new BinarySource(channel), monitor, component.getDocument(), null);
+                        FileContent content = new FileContent(file.toPath(), channel);
+                        BinarySource src = new BinarySource(content);
+                        ModelBuilder bld = new ScanningModelBuilder(
+                                src, 
+                                content, 
+                                new GraphDocument(), null, 
+                            (r) -> r.run(), LOADER_RP);
+                        parser = new BinaryReader(src, bld);
                     } else {
                         parser = null;
                     }
@@ -145,7 +173,19 @@ public final class ImportAction extends SystemAction {
                                             });
                                     }
                                 } catch (IOException ex) {
-                                    Exceptions.printStackTrace(ex);
+                                    LOG.log(Level.FINE, "Error reading file: ", 
+                                            Exceptions.attachSeverity(ex, Level.FINE));
+                                    DialogDisplayer.getDefault().notifyLater(
+                                            new NotifyDescriptor.Message(
+                                                    Bundle.ERR_ReadingFile(file.toPath(), ex.getLocalizedMessage()),
+                                                    NotifyDescriptor.ERROR_MESSAGE
+                                            ));
+                                } finally {
+                                    try {
+                                        channel.close();
+                                    } catch (IOException ex) {
+                                        Exceptions.printStackTrace(ex);
+                                    }
                                 }
                                 handle.finish();
                                 long stop = System.currentTimeMillis();

@@ -2,5 +2,5 @@ Manifest-Version: 1.0
 OpenIDE-Module: org.graalvm.visualizer.connection
 OpenIDE-Module-Layer: org/graalvm/visualizer/connection/layer.xml
 OpenIDE-Module-Localizing-Bundle: org/graalvm/visualizer/connection/Bundle.properties
-OpenIDE-Module-Specification-Version: 1.1
+OpenIDE-Module-Specification-Version: 1.2
 

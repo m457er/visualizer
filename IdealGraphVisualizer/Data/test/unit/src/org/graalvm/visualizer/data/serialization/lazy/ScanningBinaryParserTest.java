@@ -1,11 +1,31 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
-package org.graalvm.visualizer.connection;
+package org.graalvm.visualizer.data.serialization.lazy;
 
+import org.graalvm.visualizer.data.serialization.FileContent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -13,7 +33,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
@@ -24,8 +43,10 @@ import org.graalvm.visualizer.data.FolderElement;
 import org.graalvm.visualizer.data.GraphDocument;
 import org.graalvm.visualizer.data.Group;
 import org.graalvm.visualizer.data.serialization.BinaryParser;
+import org.graalvm.visualizer.data.serialization.BinaryReader;
 import org.graalvm.visualizer.data.serialization.BinarySource;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
+import org.graalvm.visualizer.data.serialization.ModelBuilder;
 import org.graalvm.visualizer.data.services.GroupCallback;
 import org.netbeans.junit.NbTestCase;
 import org.openide.util.Exceptions;
@@ -35,7 +56,7 @@ import org.openide.util.RequestProcessor;
  *
  */
 public class ScanningBinaryParserTest extends NbTestCase {
-    private static final String DIR_NAME = "/space/src/igv/visualizer/data/2";
+    private static final String DATA_LOCATION_PROPERTY = "igv.test.dataLocation"; // NOI18N
     
     public ScanningBinaryParserTest(String name) {
         super(name);
@@ -104,8 +125,6 @@ public class ScanningBinaryParserTest extends NbTestCase {
         public int size() {
             return delegate.size(); 
         }
-        
-        
     }
     
     AtomicInteger groupIndex = new AtomicInteger();
@@ -133,7 +152,6 @@ public class ScanningBinaryParserTest extends NbTestCase {
     
     private MockScanningParser   mockScanning;
     private MockBinaryParser     mockBinary;
-    private NetworkStreamContent netContent;
     
     private Semaphore      waitScanning = new Semaphore(0);
     private Semaphore      waitBinary = new Semaphore(0);
@@ -181,62 +199,6 @@ public class ScanningBinaryParserTest extends NbTestCase {
     }
     
     private volatile Group binaryGroup;
-    
-    private class MockScanningParser extends ScanningBinaryParser implements Runnable {
-        BinarySource dSource;
-        long start;
-        long end;
-        
-        public MockScanningParser(BinarySource source, NetworkStreamContent content, TrackConstantPool pool, GraphDocument rootDocument) {
-            super(source, content, pool, rootDocument, null);
-            dSource = source;
-        }
-        
-        @Override
-        protected void closeGroup(Group g) throws IOException {
-            super.closeGroup(g);
-            if (!(g.getParent() instanceof GraphDocument)) {
-                return;
-            }
-            end = dSource.getMark();
-            try {
-                try {
-                    verifyScanningAndBinary();
-                } catch (AssertionError ex) {
-                    System.err.println("Occurred at group index " + groupIndex);
-                    throw ex;
-                }
-            } finally {
-                ((TrackConstantPool)getConstantPool()).reset();
-                waitScanning.release();
-            }
-        }
-
-        @Override
-        protected void beginGroup(Folder parent) throws IOException {
-            if (!(parent instanceof GraphDocument)) {
-                super.beginGroup(parent);
-                return;
-            }
-            try {
-                waitBinary.acquire();
-            } catch (InterruptedException ex) {
-                Exceptions.printStackTrace(ex);
-            }
-            start = dSource.getMark();
-            super.beginGroup(parent);
-        }
-
-        public void run() {
-            try {
-                parse();
-            } catch (IOException | AssertionError ex) {
-                compareError = ex;
-                ex.printStackTrace();
-            }
-        }
-    }
-    
     private volatile Throwable compareError;
        
     private class MockBinaryParser extends BinaryParser {
@@ -293,89 +255,7 @@ public class ScanningBinaryParserTest extends NbTestCase {
         }
     }
     
-    private class PartialParserRunner implements Runnable {
-        ScanningBinaryParser scanner;
-
-        public PartialParserRunner(ScanningBinaryParser scanner) {
-            this.scanner = scanner;
-        }
-        
-        
-        
-        public void run() {
-            try {
-                doRun();
-            } catch (IOException | AssertionError ex) {
-                compareError = ex;
-                ex.printStackTrace();
-            }
-        }
-        
-        private void doRun() throws IOException {
-            Collection<Group>   toCheck = scanner.groups();
-            for (Group g : toCheck) {
-                try {
-                    waitBinary.acquire();
-                } catch (InterruptedException ex) {
-                    Exceptions.printStackTrace(ex);
-                }
-                GraphDocument root = new GraphDocument();
-                long[] range = scanner.getRange(g);
-                assertNotNull(range);
-                ConstantPool cp = scanner.initialPool(g).clone();
-                TrackConstantPool2 track = new TrackConstantPool2(cp);
-
-                ScanningBinaryParser.PartialParser partial;
-                synchronized (this) {
-                    partial = scanner.new PartialParser(
-                            range[0], range[1],
-                            track,
-                            root, g);
-                }
-                partial.parse();
-                verify(track);
-                track.reset();
-                if (g instanceof LazyGroup) {
-                    g.removeAll();
-                }
-                waitScanning.release();
-            }
-        }
-
-        void verify(TrackConstantPool2 track) {
-            TrackConstantPool tPoolB = (TrackConstantPool)mockBinary.getConstantPool();
-            TrackConstantPool tPoolS = track;
-//            assertEquals(tPoolB.cpReads.size(), tPoolS.cpReads.size());
-
-            int max = tPoolS.cpReads.size();
-            for (int i = 0; i < max; i++) {
-                CPData d1 = tPoolS.cpReads.get(i);
-                CPData d2 = tPoolB.cpReads.get(i);
-
-                assertEquals("inconsistent index, operation " + i + ", index = " + d2.index + " / scanIndex = " + d1.index, d2.index, d1.index);
-                assertEquals("inconsistent read/write, operation " + i + ", index = " + d1.index, d2.read, d1.read);
-                assertEquals("Inconsistent data on operation " + i + ", index " + d1.index, d2.data.toString(), d1.data.toString());
-            }
-        }
-    }
-    
-    private void checkReadFile(File f) throws IOException {
-        Path p = f.toPath();
-        FileContent fc = new FileContent(p);
-        // first scan the whole file using scanning binary parser
-        GraphDocument rootDocument = new GraphDocument();
-        ScanningBinaryParser sbp = new ScanningBinaryParser(fc, rootDocument, null);
-        sbp.parse();
-        
-        PartialParserRunner runner = new PartialParserRunner(sbp);
-        RequestProcessor.getDefault().post(runner);
-        
-        GraphDocument checkDocument = new GraphDocument();
-        FileChannel fch = FileChannel.open(f.toPath(), StandardOpenOption.READ);
-        this.mockBinary = new MockBinaryParser(new BinarySource(fch), new TrackConstantPool(), checkDocument, null);
-        GraphDocument r = mockBinary.parse();
-        assertNotNull(r);
-    }
+    /*
     
     public void xtestScanningParserReadsTheSame() throws Exception {
         Path p = Paths.get(DIR_NAME);
@@ -402,6 +282,109 @@ public class ScanningBinaryParserTest extends NbTestCase {
         for (File f : p.toFile().listFiles()) {
             System.err.println("Chekcing file: " + f);
             checkReadFile(f);
+        }
+    }
+    */
+    class MockScanningParser {
+        long start;
+        long end;
+        
+        ConstantPool getConstantPool() { return null; }
+    }
+    
+    private void run(Runnable r) {
+        r.run();
+    }
+    
+    static final RequestProcessor RP = new RequestProcessor(ScanningBinaryParserTest.class);
+    
+    /**
+     * Checks that the data can be fully read correctly by the new implementation
+     * of full scanner.
+     */
+    public void testReadDataNewImpl() throws IOException {
+        Path p = getTestDataPath("binaryOutput.bgv");
+        File f = p.toFile();
+        System.err.println("Checking file: " + f);
+        FileChannel fch = FileChannel.open(f.toPath(), StandardOpenOption.READ);
+        FileChannel fch2 = FileChannel.open(f.toPath(), StandardOpenOption.READ);
+        GraphDocument checkDocument = new GraphDocument();
+        BinarySource scanSource = new BinarySource(fch2);
+        AtomicInteger count = new AtomicInteger();
+        ModelBuilder mb = new ModelBuilder(checkDocument, this::run, 
+                (g) -> count.incrementAndGet(), null);
+        BinaryReader rdr = new BinaryReader(scanSource, mb);
+        rdr.parse();
+        System.err.println("Read " + count.get());
+    }
+    
+    /**
+     * Checks that the data can be fully read correctly by the new implementation
+     * of full scanner.
+     */
+    public void testReadDataOldImpl() throws IOException {
+        Path p = getTestDataPath("binaryOutput.bgv");
+        File f = p.toFile();
+        System.err.println("Checking file: " + f);
+        FileChannel fch = FileChannel.open(f.toPath(), StandardOpenOption.READ);
+        FileChannel fch2 = FileChannel.open(f.toPath(), StandardOpenOption.READ);
+        GraphDocument checkDocument = new GraphDocument();
+        
+        AtomicInteger count = new AtomicInteger();
+        BinaryParser parser = new BinaryParser(fch2, null, checkDocument, (g) -> count.incrementAndGet());
+        parser.parse();
+        System.err.println("Read " + count.get());
+    }
+
+    BinaryReader reader;
+    
+    ConstantPool getCP() {
+        return reader.getConstantPool();
+    }
+    
+    private Path getTestDataPath(String relPath) {
+        String s = System.getProperty(DATA_LOCATION_PROPERTY);
+        if (s != null) {
+            return Paths.get(s, relPath);
+        }
+        fail("No test data location given");
+        return null; // not reached.
+    }
+
+    /**
+     * Checks that groups whose contents are skipped during initial scan
+     * are read when expanded.
+     * @throws IOException 
+     */
+    public void testReadLazy() throws Exception {
+        Path p = getTestDataPath("binaryOutput.bgv");
+        File f = p.toFile();
+        System.err.println("Checking file: " + f);
+        FileChannel fch = FileChannel.open(f.toPath(), StandardOpenOption.READ);
+        FileChannel fch2 = FileChannel.open(f.toPath(), StandardOpenOption.READ);
+        GraphDocument checkDocument = new GraphDocument();
+        
+        FileContent fc = new FileContent(p, null);
+        BinarySource scanSource = new BinarySource(fc);
+        
+        ModelBuilder mb = new ScanningModelBuilder(scanSource, 
+                fc, checkDocument, 
+                (g) -> checkDocument.addElement(g), 
+                this::run, RP, new StreamPool());
+        reader = new BinaryReader(scanSource, mb);
+        reader.parse();
+        
+        GraphDocument doc = mb.rootDocument();
+        int count = 0;
+        for (FolderElement tl : doc.getElements()) {
+            if (tl instanceof Group) {
+                Group g = (Group)tl;
+                System.err.print(".");
+                if ((++count) % 50 == 0) {
+                    System.err.println("");
+                }
+                assertFalse(g.getElements().isEmpty());
+            }
         }
     }
 }

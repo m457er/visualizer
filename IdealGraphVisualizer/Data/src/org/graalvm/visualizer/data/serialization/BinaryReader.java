@@ -1,10 +1,26 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
-package org.graalvm.visualizer.data.serialization;
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */package org.graalvm.visualizer.data.serialization;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -20,48 +36,31 @@ import org.graalvm.visualizer.data.Folder;
 import org.graalvm.visualizer.data.GraphDocument;
 import org.graalvm.visualizer.data.Group;
 import org.graalvm.visualizer.data.InputGraph;
-import org.graalvm.visualizer.data.serialization.ModelBuilder.EdgeInfo;
 import org.graalvm.visualizer.data.serialization.ModelBuilder.TypedPort;
 import org.graalvm.visualizer.data.serialization.ModelBuilder.Length;
 import org.graalvm.visualizer.data.serialization.ModelBuilder.LengthToString;
 import org.graalvm.visualizer.data.serialization.ModelBuilder.NodeClass;
 import org.graalvm.visualizer.data.serialization.ModelBuilder.Port;
+import static org.graalvm.visualizer.data.serialization.BinaryStreamDefs.*;
+import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
 
 /**
- *
+ * The class reads the Graal binary dump format. All model object creation or 
+ * property value computation / logic is delegated to the {@link ModelBuilder} class.
+ * While the BinaryReader should change seldom, together with Graal runtime, the ModelBuilder
+ * can be adapted or subclassed to provide different ways how to process the binary data.
+ * <p/>
+ * Uses {@link BinarySource} to actually read the underlying stream. The Source can report
+ * positions to the Builder.
+ * <p/>
+ * The Reader obtains initial {@link ConstantPool} from the builder; it also allows
+ * the Builder to replace ConstantPool in the reader (useful for partial reading).
  */
-public final class BinaryReader {
+public final class BinaryReader implements GraphParser {
     private static final Logger LOG = Logger.getLogger(BinaryReader.class.getName());
     
     private BinarySource    dataSource;
     
-    private static final int BEGIN_GROUP = 0x00;
-    private static final int BEGIN_GRAPH = 0x01;
-    private static final int CLOSE_GROUP = 0x02;
-
-    private static final int POOL_NEW = 0x00;
-    private static final int POOL_STRING = 0x01;
-    private static final int POOL_ENUM = 0x02;
-    private static final int POOL_CLASS = 0x03;
-    private static final int POOL_METHOD = 0x04;
-    private static final int POOL_NULL = 0x05;
-    private static final int POOL_NODE_CLASS = 0x06;
-    private static final int POOL_FIELD = 0x07;
-    private static final int POOL_SIGNATURE = 0x08;
-
-    private static final int KLASS = 0x00;
-    private static final int ENUM_KLASS = 0x01;
-
-    private static final int PROPERTY_POOL = 0x00;
-    private static final int PROPERTY_INT = 0x01;
-    private static final int PROPERTY_LONG = 0x02;
-    private static final int PROPERTY_DOUBLE = 0x03;
-    private static final int PROPERTY_FLOAT = 0x04;
-    private static final int PROPERTY_TRUE = 0x05;
-    private static final int PROPERTY_FALSE = 0x06;
-    private static final int PROPERTY_ARRAY = 0x07;
-    private static final int PROPERTY_SUBGRAPH = 0x08;
-
     private final Deque<byte[]> hashStack;
     private int folderLevel;
 
@@ -218,35 +217,15 @@ public final class BinaryReader {
         }
     }
 
-    public BinaryReader(BinarySource dataSource) {
-        this(dataSource, new ConstantPool());
-    }
-    
-    public BinaryReader(BinarySource dataSource, ConstantPool pool) {
-        this.constantPool = pool;
+    public BinaryReader(BinarySource dataSource, ModelBuilder builder) {
         this.dataSource = dataSource;
+        this.builder = builder;
+        this.constantPool = builder.getConstantPool();
+        // allow the builder to reconfigure the reader.
+        this.builder.setPoolTarget(this::replaceConstantPool);
         hashStack = new LinkedList<>();
-        try {
-            this.digest = MessageDigest.getInstance("SHA-1");
-            dataSource.useDigest(digest);
-        } catch (NoSuchAlgorithmException e) {
-        }
-        pool.withReader(this);
     }
     
-    private static final boolean INTERN = Boolean.getBoolean("IGV.internStrings");
-    
-    private static String maybeIntern(String s) {
-        if (INTERN) {
-            if (s == null) {
-                return null;
-            }
-            return s.intern();
-        } else {
-            return s;
-        }
-    }
-
     private String readPoolObjectsToString() throws IOException {
         int len = dataSource.readInt();
         if (len < 0) {
@@ -439,8 +418,7 @@ public final class BinaryReader {
         }
     }
     
-    public GraphDocument parse(ModelBuilder builder) throws IOException {
-        this.builder = builder;
+    public GraphDocument parse() throws IOException {
         hashStack.push(null);
         
         boolean restart = false;
@@ -482,7 +460,6 @@ public final class BinaryReader {
         builder.endGroup();
         hashStack.pop();
     }
-    
 
     protected void parseRoot() throws IOException {
         int type = dataSource.readByte();
@@ -537,6 +514,7 @@ public final class BinaryReader {
     }
     
     private void computeGraphDigest() {
+        /*
         int position = dataSource.buffer.position();
         dataSource.buffer.position(dataSource.lastPosition);
         byte[] remaining = new byte[position - dataSource.buffer.position()];
@@ -546,6 +524,8 @@ public final class BinaryReader {
         dataSource.lastPosition = dataSource.buffer.position();
 
         byte[] d = digest.digest();
+        */
+        byte[] d = dataSource.finishDigest();
         byte[] hash = hashStack.peek();
         if (hash != null && Arrays.equals(hash, d)) {
             builder.markGraphDuplicate();
@@ -554,12 +534,14 @@ public final class BinaryReader {
             hashStack.push(d);
         }
     }
+    
+    private int graphReadCount;
 
     private InputGraph parseGraph(String title, boolean toplevel) throws IOException {
+        graphReadCount++;
         builder.startGraph(title);
         parseProperties();
-        digest.reset();
-        dataSource.lastPosition = dataSource.buffer.position();
+        dataSource.startDigest();
         parseNodes();
         parseBlocks();
         if (toplevel) {
@@ -588,14 +570,12 @@ public final class BinaryReader {
                 builder.addBlockEdge(id, to);
             }
         }
-        builder.createBlockEdges();
+        builder.makeBlockEdges();
     }
     
     protected final void createEdges(int id, int preds, List<? extends Port> portList, 
             boolean dir,
-            EdgeFactory factory,
-            List<EdgeInfo> currentEdges, 
-            List<EdgeInfo> inputEdges) throws IOException {
+            EdgeBuilder factory) throws IOException {
         int portNum = 0;
         for (Port p : portList) { 
             if (p.isList) {
@@ -603,36 +583,26 @@ public final class BinaryReader {
                 for (int j = 0; j < size; j++) {
                     int in = dataSource.readInt();
                     if (in >= 0) {
-                        EdgeInfo e = factory.inputEdge(p, in, id, (char) (preds + portNum), j);
-                        if (e != null) { 
-                            currentEdges.add(e);
-                            inputEdges.add(e);
-                        }
+                        factory.edge(p, in, id, (char) (preds + portNum), j);
                         portNum++;
                     }
                 }
             } else {
                 int in = dataSource.readInt();
                 if (in >= 0) {
-                    EdgeInfo e = factory.inputEdge(p, in, id, (char) (preds + portNum), -1);
-                    if (e != null) {
-                        currentEdges.add(e);
-                        inputEdges.add(e);
-                    }
+                    factory.edge(p, in, id, (char) (preds + portNum), -1);
                     portNum++;
                 }
             }
         }
     }
     
-    interface EdgeFactory {
-        EdgeInfo inputEdge(Port p, int from, int to, char num, int index);
+    interface EdgeBuilder {
+        void edge(Port p, int from, int to, char num, int index);
     }
     
     private void parseNodes() throws IOException {
         int count = dataSource.readInt();
-        List<EdgeInfo> inputEdges = new ArrayList<>(count);
-        List<EdgeInfo> succEdges = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             int id = dataSource.readInt();
             NodeClass nodeClass = readPoolObject(NodeClass.class);
@@ -647,20 +617,24 @@ public final class BinaryReader {
                 Object value = readPropertyObject(key);
                 builder.setNodeProperty(key, value);
             }
-            ArrayList<EdgeInfo> currentEdges = new ArrayList<>();
-            createEdges(id, preds, nodeClass.inputs, true, builder::inputEdge, currentEdges, inputEdges);
-            createEdges(id, 0, nodeClass.sux, true, builder::successorEdge, currentEdges, succEdges);
-            builder.setNodeName(currentEdges, nodeClass);
+            createEdges(id, preds, nodeClass.inputs, true, builder::inputEdge);
+            createEdges(id, 0, nodeClass.sux, true, builder::successorEdge);
+            builder.setNodeName(nodeClass);
             builder.endNode(id);
         }
-        builder.createGraphEdges(inputEdges, succEdges);
+        builder.makeGraphEdges();
     }
 
     public final ConstantPool getConstantPool() {
         return constantPool;
     }
-    
-    final void replacePool(ConstantPool pool) {
-        this.constantPool = pool;
+
+    /**
+     * Used during reading, to compact, reset or change constant pool. Use with great care,
+     * wrong constant pool may damage the rest of reading process.
+     * @param cp 
+     */
+    public final void replaceConstantPool(ConstantPool cp) {
+        this.constantPool = cp;
     }
 }

@@ -13,15 +13,19 @@
                         <code-name-base>org.netbeans.libs.junit4</code-name-base>
                         <compile-dependency/>
                     </test-dependency>
-                    <!--
                     <test-dependency>
                         <code-name-base>org.netbeans.modules.nbjunit</code-name-base>
                         <recursive/>
                         <compile-dependency/>
                     </test-dependency>
-                    -->
                     <test-dependency>
                         <code-name-base>org.openide.util</code-name-base>
+                        <recursive/>
+                        <compile-dependency/>
+                    </test-dependency>
+                    <test-dependency>
+                        <code-name-base>org.openide.util.lookup</code-name-base>
+                        <recursive/>
                         <compile-dependency/>
                     </test-dependency>
                 </test-type>
@@ -29,6 +33,7 @@
             <public-packages>
                 <package>org.graalvm.visualizer.data</package>
                 <package>org.graalvm.visualizer.data.serialization</package>
+                <package>org.graalvm.visualizer.data.serialization.lazy</package>
                 <package>org.graalvm.visualizer.data.services</package>
             </public-packages>
         </data>

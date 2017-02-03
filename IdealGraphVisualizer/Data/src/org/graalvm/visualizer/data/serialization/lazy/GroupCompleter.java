@@ -1,20 +1,39 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
-package org.graalvm.visualizer.connection;
+package org.graalvm.visualizer.data.serialization.lazy;
 
 import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -27,12 +46,16 @@ import org.graalvm.visualizer.data.Group;
 import org.graalvm.visualizer.data.serialization.BinaryReader;
 import org.graalvm.visualizer.data.serialization.BinarySource;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
-import org.openide.util.RequestProcessor;
 
 /**
- *
+ * Loads LazyGroup contents. Loading runs in {@link #fetchExecutor}, after load process completes,
+ * change event is fired in {@link #notifyExecutor}. The Feature implemented as completion callback
+ * hooks onto loaded data, so <b>all</b> the data remain as long as at least one loaded item is
+ * reachable. If the Group to be completed is not yet scanned (end == -1), the Completer postpones
+ * the loading for {@link #RESCHEDULE_DELAY} millis, gives up after {@link #ATTEMPT_COUNT} attempts
+ * providing empty content for the group.
  */
-class GroupCompleter implements LazyGroup.Completer, Callable<List<? extends FolderElement>>, Runnable {
+final class GroupCompleter implements LazyGroup.Completer, Callable<List<? extends FolderElement>>, Runnable {
     /**
      * Delay before the next attempt to read and complete the group. In milliseconds.
      */
@@ -44,23 +67,19 @@ class GroupCompleter implements LazyGroup.Completer, Callable<List<? extends Fol
     public static final int ATTEMPT_COUNT = 10;
 
     private static final Logger LOG = Logger.getLogger(GroupCompleter.class.getName());
-    private static final RequestProcessor  EXPAND_RP = new RequestProcessor(ScanningBinaryParser.class);
+//    private static final RequestProcessor  EXPAND_RP = new RequestProcessor(GroupCompleter.class);
     
     private final long  start;
     private final Executor notifyExecutor;
+    private final ScheduledExecutorService fetchExecutor;
     private final  CachedContent   content;
 
-    // @GuardedBy(this)
     private long    end = -1;
-    // @GuardedBy(this)
     private ConstantPool    initialPool;
-    // @GuardedBy(this)
     private LazyGroup   toComplete;
-    // @GuardedBy(this)
-    
-    // @GuardedBy(this)
     private WrapF   future;
-    
+
+    // diagnostics only
     private int     attemptCount;
     
     /**
@@ -68,10 +87,23 @@ class GroupCompleter implements LazyGroup.Completer, Callable<List<? extends Fol
      */
     private List<? extends FolderElement> keepElements;
 
-    GroupCompleter(CachedContent content, Executor executor, long start) {
+    GroupCompleter(CachedContent content, ConstantPool initialPool, 
+            Executor notifyExecutor, ScheduledExecutorService fetchExecutor,long start) {
         this.start = start;
         this.content = content;
-        this.notifyExecutor = executor;
+        this.notifyExecutor = notifyExecutor;
+        this.fetchExecutor = fetchExecutor;
+        this.initialPool = initialPool;
+    }
+    
+    synchronized void attachGroup(LazyGroup group) {
+        this.toComplete = group;
+        if (LOG.isLoggable(Level.FINEST)) {
+            LOG.log(Level.FINEST, "Created completer for group {0}, pool id {1}, start = {2}, end = {3}",
+                new Object[] {
+                        group.getName(), System.identityHashCode(initialPool), start, end
+            });
+        }
     }
     
     Group getGroup() {
@@ -80,24 +112,19 @@ class GroupCompleter implements LazyGroup.Completer, Callable<List<? extends Fol
 
     synchronized void end(long end) {
         this.end = end;
+        LOG.log(Level.FINEST, "End mark for group {0}", toComplete.getName());
     }
 
     synchronized void attachGroup(LazyGroup g, ConstantPool pool) {
-        if (LOG.isLoggable(Level.FINE)) {
-            LOG.log(Level.FINE, "Created completer for group {0}, pool id {1}, start = {2}, end = {3}",
-                new Object[] {
-                        g.getName(), System.identityHashCode(pool), start, end
-            });
-        }
         this.initialPool = pool;
         this.toComplete = g;
     }
 
     @Override
     public synchronized Future<List<? extends FolderElement>> completeContents() {
-        return future = new WrapF(EXPAND_RP.submit((Callable)this));
+        return future = new WrapF(scheduleFetch());
     }
-
+    
     /**
      * Sends changed event from the completed group.
      * This method runs first in the {@link #EXPAND_RP} - it is posted so that the code
@@ -112,17 +139,29 @@ class GroupCompleter implements LazyGroup.Completer, Callable<List<? extends Fol
             keepElements = null;
         });
     }
+    
+    List<? extends FolderElement> load(GraphDocument root) throws IOException {
+        ReadableByteChannel channel = content.subChannel(start, end);
+        BinarySource bs = new BinarySource(channel);
+        SingleGroupBuilder builder = new SingleGroupBuilder(root, notifyExecutor, toComplete, initialPool.clone());
+        new BinaryReader(bs, builder).parse();
+        return builder.getItems();
+    }
+    
+    Future<List<? extends FolderElement>> scheduleFetch() {
+        LOG.log(Level.FINER, "Scheduling completion for {0}", toComplete.getName());
+        return fetchExecutor.schedule((Callable<List<? extends FolderElement>>)this, 0, TimeUnit.MILLISECONDS);
+    }
 
     @Override
     public List<? extends FolderElement> call() throws Exception {
-        System.err.println("Expanding");
         GraphDocument root = new GraphDocument();
         List<? extends FolderElement> newElements;
         synchronized (this) {
             if (end < 0) {
                 if (attemptCount++ > ATTEMPT_COUNT) {
                     LOG.log(Level.WARNING, "Completion of Group {0} timed out", toComplete.getName());
-                    EXPAND_RP.post(this);
+                    scheduleFetch();
                     future.done = true;
                     future = null;
                     return Collections.emptyList();
@@ -131,7 +170,7 @@ class GroupCompleter implements LazyGroup.Completer, Callable<List<? extends Fol
                     toComplete.getName(), attemptCount
                 });
                 // reschedule, since 
-                Future f = EXPAND_RP.schedule((Callable)this, RESCHEDULE_DELAY, TimeUnit.MILLISECONDS);
+                Future f = fetchExecutor.schedule((Callable)this, RESCHEDULE_DELAY, TimeUnit.MILLISECONDS);
                 this.future.attach(f);
                 return null;
             }
@@ -139,23 +178,19 @@ class GroupCompleter implements LazyGroup.Completer, Callable<List<? extends Fol
         newElements = Collections.emptyList();
         LOG.log(Level.FINER, "Reading group {0}, range {1}-{2}", new Object[] { toComplete.getName(), start, end });
         try {
-            ReadableByteChannel channel = content.subChannel(start, end);
-            BinarySource bs = new BinarySource(channel);
-            SingleGroupBuilder builder = new SingleGroupBuilder(root, notifyExecutor, toComplete);
-            new BinaryReader(bs, initialPool.clone()).parse(builder);
-            newElements = new ArrayList<>(builder.getItems());
+            newElements = load(root);
             for (FolderElement e : newElements) {
                 e.setParent(toComplete);
             }
-            builder.getItems().clear();
-            
-        } catch (IOException | RuntimeException ex) {
+        } catch (ThreadDeath ex) {
+            throw ex;
+        } catch (Throwable ex) {
             LOG.log(Level.WARNING, "Error during completion of group " + toComplete.getName(), ex);
         } finally {
             synchronized (this) {
                 keepElements = newElements;
                 LOG.log(Level.FINER, "Scheduling expansion of group  " + toComplete.getName());
-                EXPAND_RP.post(this);
+                fetchExecutor.schedule((Runnable)this, 0, TimeUnit.MILLISECONDS);
                 future.done = true;
                 future = null;
             }
@@ -172,6 +207,8 @@ class GroupCompleter implements LazyGroup.Completer, Callable<List<? extends Fol
         private volatile Future<List<? extends FolderElement>> delegate;
         private boolean resolved;
         private volatile boolean done;
+        private volatile List<? extends FolderElement>    items;
+        
         public WrapF(Future<List<? extends FolderElement>> delegate) {
             this.delegate = delegate;
         }
@@ -208,6 +245,7 @@ class GroupCompleter implements LazyGroup.Completer, Callable<List<? extends Fol
             } while (!done && last != delegate);
             
             synchronized (this) {
+                items = res;
                 // register just once.
                 if (!resolved) {
                     resolved = true;

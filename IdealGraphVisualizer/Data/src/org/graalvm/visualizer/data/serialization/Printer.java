@@ -38,6 +38,8 @@ import java.io.InputStream;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class Printer {
 
@@ -50,21 +52,31 @@ public class Printer {
     public Printer(InputStream inputStream) {
         this.in = inputStream;
     }
-
+    
     public void export(Writer writer, GraphDocument document) {
+        export(writer, document, null, null);
+    }
+
+    public void export(Writer writer, GraphDocument document, Consumer<FolderElement> progressCallback, AtomicBoolean cancel) {
 
         XMLWriter xmlWriter = new XMLWriter(writer);
 
         try {
-            export(xmlWriter, document);
+            export(xmlWriter, document, progressCallback, cancel);
         } catch (IOException ex) {
         }
     }
 
-    private void export(XMLWriter xmlWriter, GraphDocument document) throws IOException {
+    private void export(XMLWriter xmlWriter, GraphDocument document, Consumer<FolderElement> progressCallback, AtomicBoolean cancel) throws IOException {
         xmlWriter.startTag(Parser.ROOT_ELEMENT);
         xmlWriter.writeProperties(document.getProperties());
         for (FolderElement e : document.getElements()) {
+            if (cancel.get()) {
+                return;
+            }
+            if (progressCallback != null) {
+                progressCallback.accept(e);
+            }
             if (e instanceof Group) {
                 export(xmlWriter, (Group) e);
             } else if (e instanceof InputGraph) {

@@ -161,7 +161,7 @@ public class InputEdge {
         boolean result = conn2.fromIndex == fromIndex && conn2.toIndex == toIndex && conn2.from == from && conn2.to == to;
         if (result && (state == State.IMMUTABLE || conn2.state == State.IMMUTABLE)) {
             // Immutable instances must be exactly the same
-            return conn2.label.equals(label) && conn2.state == state;
+            return conn2.state == state && conn2.label.equals(label);
         }
         return result;
     }

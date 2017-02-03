@@ -1,11 +1,31 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  */
 
 package org.graalvm.visualizer.connection;
 
+import org.graalvm.visualizer.data.serialization.lazy.CachedContent;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
@@ -14,13 +34,12 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.graalvm.visualizer.data.Folder;
-import org.graalvm.visualizer.data.Pair;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.graalvm.visualizer.data.serialization.BinaryParser;
 import org.openide.modules.Places;
 
 /**
@@ -36,17 +55,23 @@ import org.openide.modules.Places;
  * a content is requested. 
  */
 public class NetworkStreamContent implements ReadableByteChannel, CachedContent, AutoCloseable {
-    private static final int RECEIVE_BUFFER_SIZE = 10 * 1024 * 1024;    // 10 MBytes
+    private static final Logger LOG = Logger.getLogger(NetworkStreamContent.class.getName());
     
-    private List<ByteBuffer>    cacheBuffers = new ArrayList<>();
-    private ByteBuffer          receiveBuffer;
-    private ReadableByteChannel ioDelegate;
+    private static final int RECEIVE_BUFFER_SIZE = 10 * 1024 * 1024;    // 10 MBytes
+    private static final String CACHE_FILE_EXT = "bgv"; // NOI18N
+    private static final String CACHE_FILE_TEMPLATE = "igvdata_%d"; // NOI18N
+    private static final String CACHE_DIRECTORY_NAME = "igv"; // NOI18N
+    
+    
+    private final List<ByteBuffer>    cacheBuffers = new ArrayList<>();
+    private final ByteBuffer          receiveBuffer;
+    private final ReadableByteChannel ioDelegate;
+    private final File dumpFile;
+    private final FileChannel dumpChannel;
+
     private boolean eof;
-    private Map<Folder, Pair<Long, Long>> index = new HashMap();
     private int readBytes;
     private static final AtomicInteger contentId = new AtomicInteger();
-    private File dumpFile;
-    private FileChannel dumpChannel;
     private long receiveBufferOffset;
     
     public NetworkStreamContent(ReadableByteChannel ioDelegate) throws IOException {
@@ -62,6 +87,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
                 and the user knows what consumes his hard drive.
         
         */
+        LOG.log(Level.FINE, "Created temp file {0}, ", dumpFile);
         dumpFile.deleteOnExit();
         dumpChannel = FileChannel.open(dumpFile.toPath(), 
                 StandardOpenOption.CREATE, 
@@ -71,10 +97,6 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
                 StandardOpenOption.TRUNCATE_EXISTING);
     }
     
-    private static final String CACHE_FILE_EXT = "dump"; // NOI18N
-    private static final String CACHE_FILE_TEMPLATE = "igvdata_%d"; // NOI18N
-    private static final String CACHE_DIRECTORY_NAME = "igv"; // NOI18N
-    
     private synchronized void flushToDisk() throws IOException {
         ByteBuffer bb = receiveBuffer.duplicate();
         bb.flip();
@@ -82,11 +104,12 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         int len = bb.remaining();
         dumpChannel.write(bb);
         dumpChannel.force(false);
+        receiveBufferOffset += len;
+        LOG.log(Level.FINER, "Flushed {0} bytes to {1}, recbuffer starts at {2}", new Object[] { len, dumpFile, receiveBufferOffset});
         ByteBuffer mappedBB = dumpChannel.map(FileChannel.MapMode.READ_ONLY, startPos, len);
         mappedBB.position(len);
         cacheBuffers.add(mappedBB);
         receiveBuffer.clear();
-        receiveBufferOffset += len;
     }
     
     @Override
@@ -150,6 +173,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         ByteBuffer endBuf;
         List<ByteBuffer> buffers = new ArrayList<>();
         int toBuffer;
+        LOG.log(Level.FINER, "Allocating subchannel from dumpfile {0} range {1}-{2}", new Object[] { dumpFile, start, end});
         try {
 
             if (start >= receiveBufferOffset) {
@@ -158,6 +182,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
                 copyBuffer.put(src);
                 startAt = (int)(start - receiveBufferOffset);
                 startBuf = copyBuffer;
+                LOG.log(Level.FINEST, "start in receiveBuffer, offset {0}", startAt);
             } else {
                 do {
                     fromBuffer++;
@@ -167,6 +192,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
                 } while (pos < start);
                 startAt = (int)(start - prevPos);
                 startBuf = cacheBuffers.get(fromBuffer).asReadOnlyBuffer();
+                LOG.log(Level.FINEST, "start in buffer {0}, offset {1}", new Object[] { fromBuffer, startAt});
             }
             toBuffer = fromBuffer;
             pos = prevPos;
@@ -178,6 +204,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
                 }
                 endAt = (int)(end - receiveBufferOffset);
                 endBuf = copyBuffer;
+                LOG.log(Level.FINEST, "end in receiveBuffer, offset {0}", endAt);
             } else {
                 do {
                     b = cacheBuffers.get(toBuffer);
@@ -193,21 +220,16 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
                     endBuf = (fromBuffer == toBuffer) ? startBuf : cacheBuffers.get(toBuffer).asReadOnlyBuffer();
                     endBuf.flip();
                 }
+                LOG.log(Level.FINEST, "end in buffer {0}, offset {1}", new Object[] { toBuffer, endAt});
             }
 
             startBuf.flip();
             startBuf.position(startAt);
             endBuf.limit(endAt);
         } catch (RuntimeException ex) {
-            ex.printStackTrace();
+            LOG.log(Level.SEVERE, "Error reading from dumpfile " + dumpFile, ex);
             throw ex;
         }
-        
-        byte[] contents = new byte[200];
-        startBuf.mark();
-        startBuf.get(contents);
-        startBuf.reset();
-        
         buffers.add(startBuf);
         for (int i = fromBuffer + 1; i < toBuffer; i++) {
             b = cacheBuffers.get(i).asReadOnlyBuffer();
@@ -215,12 +237,6 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         }
         if (startBuf != endBuf) {
             buffers.add(endBuf);
-        }
-        // sanity check:
-        for (ByteBuffer x : buffers) {
-            if (x.position() == 0) {
-                System.err.println("0 position");
-            }
         }
         return new Subchannel(buffers.iterator());
     }
