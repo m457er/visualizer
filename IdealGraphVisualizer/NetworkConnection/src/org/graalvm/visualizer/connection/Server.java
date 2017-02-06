@@ -39,6 +39,11 @@ import org.openide.util.NbBundle;
 import org.openide.util.RequestProcessor;
 
 public class Server implements PreferenceChangeListener {
+    /**
+     * Maximum parallel network reading threads.
+     */
+    private static final int MAX_PARALLEL_READS = 50;
+    
     private final boolean binary;
     private ServerSocketChannel serverSocket;
     private final GraphDocument rootDocument;
@@ -49,7 +54,7 @@ public class Server implements PreferenceChangeListener {
     /**
      * Request processor which reads network data and stores to disk files.
      */
-    private static final RequestProcessor   NETWORK_RP = new RequestProcessor(Server.class);
+    private static final RequestProcessor   NETWORK_RP = new RequestProcessor(Server.class.getName(), MAX_PARALLEL_READS);
     
     /**
      * Lazy-loading RP.
