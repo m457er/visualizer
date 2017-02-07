@@ -37,7 +37,7 @@ import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
  * Performs basic decoding, manages the input buffer. Reports the current position.
  */
 public class BinarySource {
-    static final byte[] MAGIC_BYTES = { 'B', 'I', 'G', 'V' };
+    static final byte[] MAGIC_BYTES = {'B', 'I', 'G', 'V'};
     static final int CURRENT_MAJOR_VERSION = 1;
     static final int CURRENT_MINOR_VERSION = 0;
     static final String CURRENT_VERSION = versionPair(CURRENT_MAJOR_VERSION, CURRENT_MINOR_VERSION);
@@ -50,14 +50,14 @@ public class BinarySource {
     final ReadableByteChannel channel;
     Charset stringCharset;
     long bufferOffset;
-    
+
     private int majorVersion;
     private int minorVersion;
-    private MessageDigest  digest;
+    private MessageDigest digest;
     private boolean performDigest;
 
     public BinarySource(ReadableByteChannel channel) {
-        buffer  = ByteBuffer.allocateDirect(256 * 1024);
+        buffer = ByteBuffer.allocateDirect(256 * 1024);
         buffer.flip();
         this.channel = channel;
         this.bufferOffset = 0;
@@ -83,13 +83,13 @@ public class BinarySource {
         minorVersion = newMinorVersion;
         stringCharset = UTF8;
     }
-    
+
     public long getMark() {
         return bufferOffset + buffer.position();
     }
-    
+
     public void setMark(long mark) {
-        
+
     }
 
     int readInt() throws IOException {
@@ -142,20 +142,20 @@ public class BinarySource {
         ensureAvailable(8);
         return buffer.getDouble();
     }
-    
+
     public byte[] finishDigest() {
         assert performDigest;
         digestUpToPosition();
         performDigest = false;
         return digest.digest();
     }
-    
+
     public void startDigest() {
         digest.reset();
         performDigest = true;
         lastPosition = buffer.position();
     }
-    
+
     private void digestUpToPosition() {
         if (!performDigest) {
             return;
@@ -179,7 +179,7 @@ public class BinarySource {
         bufferOffset = bufferOffset + position;
         lastPosition = buffer.position();
     }
-    
+
     protected void receiveBytes(ByteBuffer b) throws IOException {
         if (channel.read(b) < 0) {
             throw new EOFException();
@@ -227,7 +227,7 @@ public class BinarySource {
         sb.append(']');
         return maybeIntern(sb.toString());
     }
-    
+
     // readString is only called from CP reads, CP items are cached, no need to intern
     String readString() throws IOException {
         if (stringCharset == UTF8) {
@@ -261,7 +261,7 @@ public class BinarySource {
             fill();
         }
     }
-    
+
     public boolean readHeader() throws IOException {
         // Check for a version specification
         byte[] magic = peekBytes(MAGIC_BYTES.length);

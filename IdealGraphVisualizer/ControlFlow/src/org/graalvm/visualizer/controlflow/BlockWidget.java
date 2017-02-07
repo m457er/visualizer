@@ -66,6 +66,7 @@ public class BlockWidget extends LabelWidget implements Vertex {
             public Point getRelativePosition() {
                 return new Point((int) (getSize().getWidth() / 2), (int) (getSize().getHeight() / 2));
             }
+
             public Vertex getVertex() {
                 return widget;
             }
@@ -74,6 +75,7 @@ public class BlockWidget extends LabelWidget implements Vertex {
             public Point getRelativePosition() {
                 return new Point((int) (getSize().getWidth() / 2), (int) (getSize().getHeight() / 2));
             }
+
             public Vertex getVertex() {
                 return widget;
             }

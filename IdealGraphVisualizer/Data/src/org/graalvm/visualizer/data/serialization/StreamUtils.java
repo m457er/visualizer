@@ -29,9 +29,9 @@ package org.graalvm.visualizer.data.serialization;
  * Miscellanous utilities.
  */
 class StreamUtils {
-    
+
     private static final boolean INTERN = Boolean.getBoolean("IGV.internStrings"); // NOI18N
-    
+
     /**
      * Possibly interns strings, based on system property. Temporary for testing; String.intern
      * showed harmful in profiler data, use the property to turn on/off for experiments.

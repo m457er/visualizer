@@ -29,12 +29,12 @@ import java.util.List;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
 
 /**
- * Stream constant pool. Performs a snapshot before data is overwritten in the pool.
- * Later the pool can be forked, if necessary, leaving original undamaged data in the original instance,
- * and produces a new instance with latest data/content.
+ * Stream constant pool. Performs a snapshot before data is overwritten in the pool. Later the pool
+ * can be forked, if necessary, leaving original undamaged data in the original instance, and
+ * produces a new instance with latest data/content.
  */
 public class StreamPool extends ConstantPool {
-    private List<Object>  originalData;
+    private List<Object> originalData;
     private final BitSet itemRead = new BitSet();
     // for testing
     protected final int generation;
@@ -48,11 +48,11 @@ public class StreamPool extends ConstantPool {
         super(data);
         this.generation = generation;
     }
-    
+
     protected StreamPool create(List<Object> data) {
         return new StreamPool(generation + 1, data);
     }
-    
+
     @Override
     public Object get(int index, long where) {
         itemRead.set(index);
@@ -79,10 +79,10 @@ public class StreamPool extends ConstantPool {
             ConstantPool r = swap(originalData);
             originalData = null;
             itemRead.clear();
-            return (StreamPool)r;
+            return (StreamPool) r;
         } else {
             return this;
         }
     }
-    
+
 }

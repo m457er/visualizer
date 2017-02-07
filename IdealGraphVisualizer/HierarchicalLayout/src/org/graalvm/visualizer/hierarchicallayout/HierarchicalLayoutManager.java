@@ -51,6 +51,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
         SAME_INPUTS,
         SAME_OUTPUTS
     }
+
     // Options
     private Combine combine;
     private int dummyWidth;
@@ -305,7 +306,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                                 points.add(0, null);
                                 points.addAll(0, splitStartPoints.get(e.link));
 
-                                //checkPoints(points);
+                                // checkPoints(points);
                                 if (reversedLinks.contains(e.link)) {
                                     Collections.reverse(points);
                                 }
@@ -387,7 +388,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                                 points.add(null);
                                 points.addAll(splitEndPoints.get(e.link));
 
-                                //checkPoints(points);
+                                // checkPoints(points);
                                 if (reversedLinks.contains(e.link)) {
                                     Collections.reverse(points);
                                 }
@@ -411,7 +412,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                             if (reversedLinks.contains(e.link)) {
                                 Collections.reverse(points);
                             }
-                            //checkPoints(points);
+                            // checkPoints(points);
                             assert !linkPositions.containsKey(e.link);
                             linkPositions.put(e.link, points);
                         }
@@ -482,6 +483,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
         public HashSet<Segment> preds = new HashSet<>();
         public Region region;
     }
+
     private static final Comparator<Segment> segmentComparator = new Comparator<Segment>() {
 
         @Override
@@ -498,6 +500,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
         public HashSet<Region> succs = new HashSet<>(4);
         public HashSet<Region> preds = new HashSet<>(4);
     }
+
     private static final Comparator<Region> REGION_COMPARATOR = new Comparator<Region>() {
 
         @Override
@@ -795,6 +798,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
             treeSet.add(n);
         }
     }
+
     private static Comparator<LayoutNode> crossingNodeComparator = new Comparator<LayoutNode>() {
 
         @Override
@@ -1095,7 +1099,8 @@ public class HierarchicalLayoutManager implements LayoutManager {
                     for (LayoutEdge e : succs) {
                         assert e.from.layer < e.to.layer;
                         if (e.from.layer != e.to.layer - 1) {
-                            if (maxLayerLength != -1 && e.to.layer - e.from.layer > maxLayerLength/* && e.to.preds.size() > 1 && e.from.succs.size() > 1*/) {
+                            if (maxLayerLength != -1 && e.to.layer - e.from.layer > maxLayerLength
+                            /* && e.to.preds.size() > 1 && e.from.succs.size() > 1*/) {
                                 assert maxLayerLength > 2;
                                 e.to.preds.remove(e);
                                 e.from.succs.remove(e);
@@ -1337,7 +1342,8 @@ public class HierarchicalLayoutManager implements LayoutManager {
                             for (LayoutEdge pe : s.preds) {
                                 LayoutNode p = pe.from;
                                 if (p.layer == -1 || p.layer >= z) {
-                                    // This now has an unscheduled successor or a successor that was scheduled only in this round.
+                                    // This now has an unscheduled successor or a successor that was
+                                    // scheduled only in this round.
                                     unassignedPred = true;
                                     break;
                                 }
@@ -1387,7 +1393,8 @@ public class HierarchicalLayoutManager implements LayoutManager {
                                 for (LayoutEdge pe : s.succs) {
                                     LayoutNode p = pe.to;
                                     if (p.layer == -1 || p.layer >= z) {
-                                        // This now has an unscheduled successor or a successor that was scheduled only in this round.
+                                        // This now has an unscheduled successor or a successor that
+                                        // was scheduled only in this round.
                                         unassignedSucc = true;
                                         break;
                                     }
@@ -1691,6 +1698,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
             }
         }
     }
+
     private static final Comparator<Link> LINK_COMPARATOR = new Comparator<Link>() {
 
         @Override
@@ -1739,7 +1747,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
             }
 
             // Set up edges
-            List<?extends Link> links = new ArrayList<>(graph.getLinks());
+            List<? extends Link> links = new ArrayList<>(graph.getLinks());
             Collections.sort(links, LINK_COMPARATOR);
             for (Link l : links) {
                 LayoutEdge edge = new LayoutEdge();
@@ -1753,12 +1761,11 @@ public class HierarchicalLayoutManager implements LayoutManager {
                 edge.vip = l.isVIP();
                 edge.from.succs.add(edge);
                 edge.to.preds.add(edge);
-                //assert edge.from != edge.to; // No self-loops allowed
+                // assert edge.from != edge.to; // No self-loops allowed
             }
 
             for (Link l : importantLinks) {
-                if (!vertexToLayoutNode.containsKey(l.getFrom().getVertex())
-                        || vertexToLayoutNode.containsKey(l.getTo().getVertex())) {
+                if (!vertexToLayoutNode.containsKey(l.getFrom().getVertex()) || vertexToLayoutNode.containsKey(l.getTo().getVertex())) {
                     continue;
                 }
                 LayoutNode from = vertexToLayoutNode.get(l.getFrom().getVertex());

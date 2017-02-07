@@ -22,8 +22,7 @@
  *
  */
 /**
- * This package is used to proxy the SVG export functionality of the BatikSVG library. Reflection is used such that the
- * library is optional and need not be present at build time.
+ * This package is used to proxy the SVG export functionality of the BatikSVG library. Reflection is
+ * used such that the library is optional and need not be present at build time.
  */
 package org.graalvm.visualizer.svg;
-

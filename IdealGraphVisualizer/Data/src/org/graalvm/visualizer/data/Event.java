@@ -46,7 +46,7 @@ public abstract class Event<L> {
     }
 
     public void fire() {
-        if(fireEvents) {
+        if (fireEvents) {
             List<L> tmpList = new ArrayList<>(listener);
             for (L l : tmpList) {
                 fire(l);
@@ -65,7 +65,7 @@ public abstract class Event<L> {
     public void endAtomic() {
         assert !fireEvents : "beginAtomic has to be called first";
         this.fireEvents = true;
-        if(eventWasFired) {
+        if (eventWasFired) {
             fire();
         }
     }

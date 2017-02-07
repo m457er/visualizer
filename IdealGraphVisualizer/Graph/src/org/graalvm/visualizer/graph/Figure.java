@@ -72,8 +72,8 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
     public static <T> List<T> getAllBefore(List<T> inputList, T tIn) {
         List<T> result = new ArrayList<>();
-        for(T t : inputList) {
-            if(t.equals(tIn)) {
+        for (T t : inputList) {
+            if (t.equals(tIn)) {
                 break;
             }
             result.add(t);
@@ -83,7 +83,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
     public static int getSlotsWidth(Collection<? extends Slot> slots) {
         int result = Figure.SLOT_OFFSET;
-        for(Slot s : slots) {
+        for (Slot s : slots) {
             result += s.getWidth() + Figure.SLOT_OFFSET;
         }
         return result;
@@ -327,10 +327,9 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
             int width = Math.max(getWidth(), Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), outputSlots.size()) + 1));
             int height = getHeight() + 2 * Figure.SLOT_WIDTH - 2 * Figure.OVERLAPPING;
 
-
             return new Dimension(width, height);
         } else {
-            int width = getWidth() + 2 * Figure.SLOT_WIDTH - 2*Figure.OVERLAPPING;
+            int width = getWidth() + 2 * Figure.SLOT_WIDTH - 2 * Figure.OVERLAPPING;
             int height = Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), outputSlots.size()) + 1);
             return new Dimension(width, height);
         }

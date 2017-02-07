@@ -3,4 +3,6 @@ nbplatform*
 nbproject/private
 */nbproject/private
 */build
-
+*/.settings
+*/.project
+*/.classpath

@@ -113,7 +113,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
             this.setEdgeTarget(e, e.getTo());
         }
 
-        GraphLayout<InputBlock, InputBlockEdge> layout = new HierarchicalGraphLayout<InputBlock, InputBlockEdge>();//GridGraphLayout();
+        GraphLayout<InputBlock, InputBlockEdge> layout = new HierarchicalGraphLayout<InputBlock, InputBlockEdge>();// GridGraphLayout();
         SceneLayout sceneLayout = LayoutFactory.createSceneGraphLayout(this, layout);
         sceneLayout.invokeLayout();
 
@@ -129,7 +129,7 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
     }
 
     public void selectionChanged() {
-        InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);//)Utilities.actionsGlobalContext().lookup(InputGraphProvider.class);
+        InputGraphProvider p = LookupHistory.getLast(InputGraphProvider.class);// )Utilities.actionsGlobalContext().lookup(InputGraphProvider.class);
         if (p != null) {
             Set<InputNode> inputNodes = new HashSet<InputNode>();
             for (BlockWidget w : selection) {

@@ -57,9 +57,9 @@ public class InputMethod extends Properties.Entity {
             return false;
         }
 
-        final InputMethod im = (InputMethod)o;
+        final InputMethod im = (InputMethod) o;
         return name.equals(im.name) && bci == im.bci && shortName.equals(im.shortName) &&
-               inlined.equals(im.inlined) && bytecodes.equals(im.bytecodes);
+                        inlined.equals(im.inlined) && bytecodes.equals(im.bytecodes);
     }
 
     public InputMethod(Group parent, String name, String shortName, int bci) {

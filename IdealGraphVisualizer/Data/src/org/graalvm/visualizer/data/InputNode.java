@@ -48,13 +48,13 @@ public final class InputNode extends Properties.Entity {
                 int i1 = 0;
                 try {
                     i1 = Integer.parseInt(o1.getProperties().get(propertyName));
-                } catch(NumberFormatException e) {
+                } catch (NumberFormatException e) {
                 }
 
                 int i2 = 0;
                 try {
                     i2 = Integer.parseInt(o2.getProperties().get(propertyName));
-                } catch(NumberFormatException e) {
+                } catch (NumberFormatException e) {
                 }
 
                 return i1 - i2;

@@ -48,13 +48,12 @@ import org.openide.util.lookup.InstanceContent;
 
 public class FolderNode extends AbstractNode {
     private InstanceContent content;
-    private final Folder  folder;
+    private final Folder folder;
 
     /**
      * Marker value for "please wait" node
      */
-    @SuppressWarnings("RedundantStringConstructorCall")
-    private static final FolderElement WAIT_KEY = new FolderElement() {
+    @SuppressWarnings("RedundantStringConstructorCall") private static final FolderElement WAIT_KEY = new FolderElement() {
         @Override
         public Folder getParent() {
             return null;
@@ -69,13 +68,13 @@ public class FolderNode extends AbstractNode {
         public void setParent(Folder parent) {
         }
     };
-    
+
     private static class FolderChildren extends Children.Keys<FolderElement> implements ChangedListener<Folder> {
 
         private final Folder folder;
-        private ChangedListener   l;
+        private ChangedListener l;
         private boolean refreshing;
-        
+
         public FolderChildren(Folder folder) {
             this.folder = folder;
         }
@@ -84,14 +83,14 @@ public class FolderNode extends AbstractNode {
         protected Node[] createNodes(FolderElement e) {
             Node[] ret = new Node[1];
             Node n;
-                    
+
             if (e == WAIT_KEY) {
                 n = new WaitNode();
             } else if (e instanceof InputGraph) {
                 n = new GraphNode((InputGraph) e);
             } else if (e instanceof Folder) {
                 n = new FolderNode((Folder) e);
-             } else {
+            } else {
                 return null;
             }
             ret[0] = n;
@@ -109,7 +108,7 @@ public class FolderNode extends AbstractNode {
             if (l != null) {
                 folder.getChangedEvent().removeListener(l);
             }
-            setKeys(Collections.<FolderElement>emptyList());
+            setKeys(Collections.<FolderElement> emptyList());
             super.removeNotify();
         }
 
@@ -117,10 +116,10 @@ public class FolderNode extends AbstractNode {
         public void changed(Folder source) {
             refreshKeys();
         }
-        
+
         private synchronized void refreshKeys() {
             if (folder instanceof Group.LazyContent) {
-                LazyContent lazyFolder = (LazyContent)folder;
+                LazyContent lazyFolder = (LazyContent) folder;
                 Future<List<? extends FolderElement>> fContents = lazyFolder.completeContents();
                 if (!fContents.isDone()) {
                     if (!refreshing) {
@@ -166,7 +165,7 @@ public class FolderNode extends AbstractNode {
                     folderElement.getParent().removeElement(folderElement);
                 }
             });
-            
+
             content.add(folder);
         }
     }
@@ -175,9 +174,9 @@ public class FolderNode extends AbstractNode {
     public Image getOpenedIcon(int i) {
         return getIcon(i);
     }
-    
+
     @NbBundle.Messages({
-        "TITLE_PleaseWait=Please wait, loading data..."
+                    "TITLE_PleaseWait=Please wait, loading data..."
     })
     static class WaitNode extends AbstractNode {
         public WaitNode() {

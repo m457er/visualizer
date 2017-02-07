@@ -63,12 +63,12 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     public List<InputNode> findRootNodes() {
         List<InputNode> result = new ArrayList<>();
         Set<Integer> nonRoot = new HashSet<>();
-        for(InputEdge curEdges : getEdges()) {
+        for (InputEdge curEdges : getEdges()) {
             nonRoot.add(curEdges.getTo());
         }
 
-        for(InputNode node : getNodes()) {
-            if(!nonRoot.contains(node.getId())) {
+        for (InputNode node : getNodes()) {
+            if (!nonRoot.contains(node.getId())) {
                 result.add(node);
             }
         }
@@ -78,11 +78,11 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     public Map<InputNode, List<InputEdge>> findAllOutgoingEdges() {
         Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
-        for(InputNode n : this.getNodes()) {
+        for (InputNode n : this.getNodes()) {
             result.put(n, new ArrayList<InputEdge>());
         }
 
-        for(InputEdge e : this.edges) {
+        for (InputEdge e : this.edges) {
             int from = e.getFrom();
             InputNode fromNode = this.getNode(from);
             List<InputEdge> fromList = result.get(fromNode);
@@ -90,7 +90,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
             fromList.add(e);
         }
 
-        for(InputNode n : this.getNodes()) {
+        for (InputNode n : this.getNodes()) {
             List<InputEdge> list = result.get(n);
             Collections.sort(list, InputEdge.OUTGOING_COMPARATOR);
         }
@@ -100,11 +100,11 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     public Map<InputNode, List<InputEdge>> findAllIngoingEdges() {
         Map<InputNode, List<InputEdge>> result = new HashMap<>(getNodes().size());
-        for(InputNode n : this.getNodes()) {
+        for (InputNode n : this.getNodes()) {
             result.put(n, new ArrayList<InputEdge>());
         }
 
-        for(InputEdge e : this.edges) {
+        for (InputEdge e : this.edges) {
             int to = e.getTo();
             InputNode toNode = this.getNode(to);
             List<InputEdge> toList = result.get(toNode);
@@ -112,7 +112,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
             toList.add(e);
         }
 
-        for(InputNode n : this.getNodes()) {
+        for (InputNode n : this.getNodes()) {
             List<InputEdge> list = result.get(n);
             Collections.sort(list, InputEdge.INGOING_COMPARATOR);
         }
@@ -123,8 +123,8 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     public List<InputEdge> findOutgoingEdges(InputNode n) {
         List<InputEdge> result = new ArrayList<>();
 
-        for(InputEdge e : this.edges) {
-            if(e.getFrom() == n.getId()) {
+        for (InputEdge e : this.edges) {
+            if (e.getFrom() == n.getId()) {
                 result.add(e);
             }
         }
@@ -140,11 +140,11 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public void setEdge(int fromIndex, int toIndex, int from, int to) {
-        assert fromIndex == ((char)fromIndex) : "Downcast must be safe";
-        assert toIndex == ((char)toIndex) : "Downcast must be safe";
+        assert fromIndex == ((char) fromIndex) : "Downcast must be safe";
+        assert toIndex == ((char) toIndex) : "Downcast must be safe";
 
-        InputEdge edge = new InputEdge((char)fromIndex, (char)toIndex, from, to);
-        if(!this.getEdges().contains(edge)) {
+        InputEdge edge = new InputEdge((char) fromIndex, (char) toIndex, from, to);
+        if (!this.getEdges().contains(edge)) {
             this.addEdge(edge);
         }
     }

@@ -47,7 +47,8 @@ public class ExtendedSelectAction extends WidgetAction.Adapter {
     public State mousePressed(Widget widget, WidgetMouseEvent event) {
         // TODO: Solve this differently?
         if (event.getButton() != MouseEvent.BUTTON2) {
-            return innerAction.mousePressed(widget, new WidgetMouseEvent(event.getEventID(), new MouseEvent(panel, (int) event.getEventID(), event.getWhen(), event.getModifiersEx(), event.getPoint().x, event.getPoint().y, event.getClickCount(), event.isPopupTrigger(), MouseEvent.BUTTON1)));
+            return innerAction.mousePressed(widget, new WidgetMouseEvent(event.getEventID(), new MouseEvent(panel, (int) event.getEventID(), event.getWhen(), event.getModifiersEx(),
+                            event.getPoint().x, event.getPoint().y, event.getClickCount(), event.isPopupTrigger(), MouseEvent.BUTTON1)));
         } else {
             return super.mousePressed(widget, event);
         }

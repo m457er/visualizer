@@ -154,7 +154,6 @@ public class Graph<N, E> {
             tv.visitNode(current, layer);
             current.setActive(false);
 
-
             for (Edge<N, E> e : current.getOutEdges()) {
                 if (!e.getDest().isVisited()) {
 

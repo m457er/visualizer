@@ -27,14 +27,14 @@ import java.io.IOException;
 import java.nio.channels.ReadableByteChannel;
 
 /**
- * I/O interface for {@link #ScanningModelBuilder}, which allows to open
- * supplemental channels for a given byte range. Subchalles can be created although
- * the channel is still reading data.
+ * I/O interface for {@link #ScanningModelBuilder}, which allows to open supplemental channels for a
+ * given byte range. Subchalles can be created although the channel is still reading data.
  */
 public interface CachedContent extends ReadableByteChannel {
     /**
-     * Creates a readable channel for a region of data. Throws IOException if the
-     * underlying channel closes.
+     * Creates a readable channel for a region of data. Throws IOException if the underlying channel
+     * closes.
+     * 
      * @param start offset of data start
      * @param end offset of data end, exclusive
      * @return opened channel.

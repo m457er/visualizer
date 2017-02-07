@@ -43,59 +43,58 @@ import org.graalvm.visualizer.data.serialization.ModelBuilder;
 import org.graalvm.visualizer.data.services.GroupCallback;
 
 /**
- * ModelBuilder which only scans the incoming stream and creates lazy-loaded Groups
- * which implement {@link Group#LazyContent} interface. The groups are initially 
- * empty, but can be asked to load its data.
+ * ModelBuilder which only scans the incoming stream and creates lazy-loaded Groups which implement
+ * {@link Group#LazyContent} interface. The groups are initially empty, but can be asked to load its
+ * data.
  * <p/>
- * Data may load in a separate thread defined by `fetchExecutor', but since 
- * the whole data model is single-threaded, modelExecutor is then used to attach 
- * the loaded data to the LazyContent group.
+ * Data may load in a separate thread defined by `fetchExecutor', but since the whole data model is
+ * single-threaded, modelExecutor is then used to attach the loaded data to the LazyContent group.
  * <p/>
- * The loaded group content may be GCed when no one holds a reference to the
- * loaded items (graphs and groups).
+ * The loaded group content may be GCed when no one holds a reference to the loaded items (graphs
+ * and groups).
  * <p/>
- * This class blocks most of the {@link ModelBuilder} functionality so it
- * creates only a few objects during initial stream reading.
+ * This class blocks most of the {@link ModelBuilder} functionality so it creates only a few objects
+ * during initial stream reading.
  */
 public class ScanningModelBuilder extends ModelBuilder {
     private CachedContent streamContent;
     private BinarySource dataSource;
-    private final Map<Group, GroupCompleter>   completors = new LinkedHashMap<>();
+    private final Map<Group, GroupCompleter> completors = new LinkedHashMap<>();
     private InputGraph graph = new InputGraph(""); // NOI18N
     private InputNode node = new InputNode(1);
-    private final Executor  modelExecutor;
-    private final ScheduledExecutorService  fetchExecutor;
-    private StreamPool   pool;
+    private final Executor modelExecutor;
+    private final ScheduledExecutorService fetchExecutor;
+    private StreamPool pool;
     private final Properties dummyProperties = new Properties() {
         @Override
         protected void setPropertyInternal(String name, String value) {
-            
+
         }
     };
-    
+
     private int groupLevel;
     private int graphLevel;
     private GroupCompleter completer;
 
     public ScanningModelBuilder(
-            BinarySource dataSource, 
-            CachedContent content, 
-            GraphDocument rootDocument, 
-            GroupCallback callback, 
-            Executor modelExecutor, 
-            ScheduledExecutorService fetchExecutor) {
+                    BinarySource dataSource,
+                    CachedContent content,
+                    GraphDocument rootDocument,
+                    GroupCallback callback,
+                    Executor modelExecutor,
+                    ScheduledExecutorService fetchExecutor) {
         this(dataSource, content, rootDocument, callback, modelExecutor, fetchExecutor,
-                new StreamPool());
+                        new StreamPool());
     }
-    
+
     public ScanningModelBuilder(
-            BinarySource dataSource, 
-            CachedContent content, 
-            GraphDocument rootDocument, 
-            GroupCallback callback, 
-            Executor modelExecutor, 
-            ScheduledExecutorService fetchExecutor, 
-            StreamPool initialPool) {
+                    BinarySource dataSource,
+                    CachedContent content,
+                    GraphDocument rootDocument,
+                    GroupCallback callback,
+                    Executor modelExecutor,
+                    ScheduledExecutorService fetchExecutor,
+                    StreamPool initialPool) {
         super(rootDocument, modelExecutor, callback, null);
         this.dataSource = dataSource;
         this.streamContent = content;
@@ -103,14 +102,14 @@ public class ScanningModelBuilder extends ModelBuilder {
         this.pool = initialPool;
         this.fetchExecutor = fetchExecutor;
     }
-    
+
     @Override
     protected void registerToParent(Folder parent, FolderElement graph) {
         if (parent instanceof GraphDocument) {
             super.registerToParent(parent, graph);
         }
     }
-    
+
     @Override
     public void setMethod(String name, String shortName, int bci) {
     }
@@ -187,7 +186,7 @@ public class ScanningModelBuilder extends ModelBuilder {
     @Override
     public void endGroup() {
         if (--groupLevel == 0) {
-            LazyGroup g = (LazyGroup)folder();
+            LazyGroup g = (LazyGroup) folder();
             completer.end(dataSource.getMark());
             super.endGroup();
             replacePool(pool = pool.forkIfNeeded());
@@ -216,12 +215,12 @@ public class ScanningModelBuilder extends ModelBuilder {
         completors.put(g, grc);
         return pushGroup(g);
     }
-    
+
     GroupCompleter createCompleter(long start) {
-        return new GroupCompleter(streamContent, getConstantPool(), 
-                modelExecutor, fetchExecutor, start);
+        return new GroupCompleter(streamContent, getConstantPool(),
+                        modelExecutor, fetchExecutor, start);
     }
-    
+
     @Override
     public InputGraph startGraph(String title) {
         graphLevel++;

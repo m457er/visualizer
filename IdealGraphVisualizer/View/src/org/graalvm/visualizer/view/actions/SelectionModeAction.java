@@ -38,7 +38,7 @@ public final class SelectionModeAction extends AbstractAction {
     }
 
     public boolean isSelected() {
-        return (Boolean)getValue(SELECTED_KEY);
+        return (Boolean) getValue(SELECTED_KEY);
     }
 
     public void setSelected(boolean b) {

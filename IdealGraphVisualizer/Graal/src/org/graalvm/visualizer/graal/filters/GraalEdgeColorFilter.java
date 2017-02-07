@@ -38,7 +38,7 @@ import java.util.List;
  */
 public class GraalEdgeColorFilter extends AbstractFilter {
 
-    private final HashMap<String,Color> usageColor = new HashMap<>();
+    private final HashMap<String, Color> usageColor = new HashMap<>();
     private Color otherUsageColor = Color.BLACK;
 
     public GraalEdgeColorFilter() {

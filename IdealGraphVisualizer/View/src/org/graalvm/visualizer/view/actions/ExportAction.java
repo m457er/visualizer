@@ -72,7 +72,6 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
         });
         fc.setCurrentDirectory(new File(Settings.get().get(Settings.DIRECTORY, Settings.DIRECTORY_DEFAULT)));
 
-
         if (fc.showSaveDialog(null) == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
             if (!file.getName().contains(".")) {

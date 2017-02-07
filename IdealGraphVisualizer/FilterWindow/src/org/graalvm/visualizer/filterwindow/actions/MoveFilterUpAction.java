@@ -58,7 +58,7 @@ public final class MoveFilterUpAction extends CookieAction {
     @Override
     protected Class<?>[] cookieClasses() {
         return new Class<?>[]{
-            Filter.class
+                        Filter.class
         };
     }
 

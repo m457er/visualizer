@@ -35,7 +35,6 @@ import org.openide.util.actions.CallableSystemAction;
 
 public final class RemoveAllAction extends CallableSystemAction {
 
-
     @Override
     public String getName() {
         return NbBundle.getMessage(RemoveAllAction.class, "CTL_RemoveAllAction");

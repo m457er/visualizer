@@ -27,7 +27,10 @@ import java.util.List;
 
 public interface Folder {
     List<? extends FolderElement> getElements();
+
     void removeElement(FolderElement element);
+
     void addElement(FolderElement group);
+
     ChangedEvent<? extends Folder> getChangedEvent();
 }

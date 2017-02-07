@@ -37,33 +37,33 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.graalvm.visualizer.data.serialization.lazy.CachedContent;
 
 /**
- * Implementation of {@link CachedContent} which works with files. Channels are
- * allocated over memory-mapped buffer from the file.
+ * Implementation of {@link CachedContent} which works with files. Channels are allocated over
+ * memory-mapped buffer from the file.
  */
 
 // PENDING: limit number of memory mappings; make one shared mapping up to the current
 // file size, since mappings are freed only when the buffer is GCed, which is unreliable.
-public class FileContent  implements ReadableByteChannel, CachedContent, AutoCloseable {
-    private final Path      filePath;
-    private FileChannel     ioDelegate;
-    private boolean         eof;
+public class FileContent implements ReadableByteChannel, CachedContent, AutoCloseable {
+    private final Path filePath;
+    private FileChannel ioDelegate;
+    private boolean eof;
     /**
      * Self-opened channels will be closed by close().
      */
-    private boolean         selfOpened;
+    private boolean selfOpened;
 
     public FileContent(Path filePath, FileChannel channel) {
         this.filePath = filePath;
         this.ioDelegate = channel;
     }
-    
+
     private synchronized void openDelegate() throws IOException {
         if (ioDelegate == null || !ioDelegate.isOpen()) {
             ioDelegate = FileChannel.open(filePath, StandardOpenOption.READ);
             selfOpened = true;
         }
     }
-    
+
     @Override
     public int read(ByteBuffer dst) throws IOException {
         if (eof) {
@@ -90,9 +90,9 @@ public class FileContent  implements ReadableByteChannel, CachedContent, AutoClo
         }
         ioDelegate = null;
     }
-    
+
     private AtomicInteger subchannelCount = new AtomicInteger();
-    
+
     private void subchannelClosed() throws IOException {
         if (subchannelCount.decrementAndGet() == 0) {
             close();
@@ -107,7 +107,7 @@ public class FileContent  implements ReadableByteChannel, CachedContent, AutoClo
         return new ReadableByteChannel() {
             private boolean closed;
             private boolean eof;
-            
+
             @Override
             public int read(ByteBuffer dst) throws IOException {
                 if (mbb.remaining() == 0) {

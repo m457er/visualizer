@@ -60,15 +60,15 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
      * Delay before the next attempt to read and complete the group. In milliseconds.
      */
     public static final int RESCHEDULE_DELAY = 5000;
-    
+
     /**
      * Maximum attempts to complete the group.
      */
     public static final int ATTEMPT_COUNT = 10;
 
     private static final Logger LOG = Logger.getLogger(GroupCompleter.class.getName());
-    
-    private final long  start;
+
+    private final long start;
     private final Executor notifyExecutor;
     private final ScheduledExecutorService fetchExecutor;
     private final CachedContent content;
@@ -80,31 +80,31 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
 
     // diagnostics only
     private int attemptCount;
-    
+
     /**
      * Will keep the currently resolved elements until the events are delivered by the executor.
      */
     private List<? extends FolderElement> keepElements;
 
-    GroupCompleter(CachedContent content, ConstantPool initialPool, 
-            Executor notifyExecutor, ScheduledExecutorService fetchExecutor,long start) {
+    GroupCompleter(CachedContent content, ConstantPool initialPool,
+                    Executor notifyExecutor, ScheduledExecutorService fetchExecutor, long start) {
         this.start = start;
         this.content = content;
         this.notifyExecutor = notifyExecutor;
         this.fetchExecutor = fetchExecutor;
         this.initialPool = initialPool;
     }
-    
+
     synchronized void attachGroup(LazyGroup group) {
         this.toComplete = group;
         if (LOG.isLoggable(Level.FINEST)) {
             LOG.log(Level.FINEST, "Created completer for group {0}, pool id {1}, start = {2}, end = {3}",
-                new Object[] {
-                        group.getName(), System.identityHashCode(initialPool), start, end
-            });
+                            new Object[]{
+                                            group.getName(), System.identityHashCode(initialPool), start, end
+                            });
         }
     }
-    
+
     Group getGroup() {
         return toComplete;
     }
@@ -123,13 +123,12 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
     public synchronized Future<List<? extends FolderElement>> completeContents() {
         return future = new WrapF(scheduleFetch());
     }
-    
+
     /**
-     * Sends changed event from the completed group.
-     * This method runs first in the {@link #EXPAND_RP} - it is posted so that the code
-     * executes <b>after</b> the computing task finishes, and the {@link Future#isDone} 
-     * turns true. The actual event delivery is replanned into EDT, to maintain
-     * IGV threading model. This way
+     * Sends changed event from the completed group. This method runs first in the
+     * {@link #EXPAND_RP} - it is posted so that the code executes <b>after</b> the computing task
+     * finishes, and the {@link Future#isDone} turns true. The actual event delivery is replanned
+     * into EDT, to maintain IGV threading model. This way
      */
     public void run() {
         notifyExecutor.execute(() -> {
@@ -138,7 +137,7 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
             keepElements = null;
         });
     }
-    
+
     List<? extends FolderElement> load(GraphDocument root) throws IOException {
         ReadableByteChannel channel = content.subChannel(start, end);
         BinarySource bs = new BinarySource(channel);
@@ -146,10 +145,10 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
         new BinaryReader(bs, builder).parse();
         return builder.getItems();
     }
-    
+
     Future<List<? extends FolderElement>> scheduleFetch() {
         LOG.log(Level.FINER, "Scheduling completion for {0}", toComplete.getName());
-        return fetchExecutor.schedule((Callable<List<? extends FolderElement>>)this, 0, TimeUnit.MILLISECONDS);
+        return fetchExecutor.schedule((Callable<List<? extends FolderElement>>) this, 0, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -165,17 +164,17 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
                     future = null;
                     return Collections.emptyList();
                 }
-                LOG.log(Level.FINE, "Group {0} not fully read, rescheduling; attempt #{1}", new Object[] {
-                    toComplete.getName(), attemptCount
+                LOG.log(Level.FINE, "Group {0} not fully read, rescheduling; attempt #{1}", new Object[]{
+                                toComplete.getName(), attemptCount
                 });
-                // reschedule, since 
-                Future f = fetchExecutor.schedule((Callable)this, RESCHEDULE_DELAY, TimeUnit.MILLISECONDS);
+                // reschedule, since
+                Future f = fetchExecutor.schedule((Callable) this, RESCHEDULE_DELAY, TimeUnit.MILLISECONDS);
                 this.future.attach(f);
                 return null;
             }
         }
         newElements = Collections.emptyList();
-        LOG.log(Level.FINER, "Reading group {0}, range {1}-{2}", new Object[] { toComplete.getName(), start, end });
+        LOG.log(Level.FINER, "Reading group {0}, range {1}-{2}", new Object[]{toComplete.getName(), start, end});
         try {
             newElements = load(root);
             for (FolderElement e : newElements) {
@@ -189,25 +188,25 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
             synchronized (this) {
                 keepElements = newElements;
                 LOG.log(Level.FINER, "Scheduling expansion of group  " + toComplete.getName());
-                fetchExecutor.schedule((Runnable)this, 0, TimeUnit.MILLISECONDS);
+                fetchExecutor.schedule((Runnable) this, 0, TimeUnit.MILLISECONDS);
                 future.done = true;
                 future = null;
             }
         }
         return newElements;
     }
-    
+
     /**
-     * Wrapper for the Future, which keeps the whole FolderElement list in memory
-     * as long as at least one FolderElement is alive. Also allows to rebind the
-     * delegate Future, so the completion task can be rescheduled.
+     * Wrapper for the Future, which keeps the whole FolderElement list in memory as long as at
+     * least one FolderElement is alive. Also allows to rebind the delegate Future, so the
+     * completion task can be rescheduled.
      */
-    private static final class WrapF implements Future< List<? extends FolderElement>>, ChangedListener {
+    private static final class WrapF implements Future<List<? extends FolderElement>>, ChangedListener {
         private volatile Future<List<? extends FolderElement>> delegate;
         private boolean resolved;
         private volatile boolean done;
-        private volatile List<? extends FolderElement>    items;
-        
+        private volatile List<? extends FolderElement> items;
+
         public WrapF(Future<List<? extends FolderElement>> delegate) {
             this.delegate = delegate;
         }
@@ -234,15 +233,15 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
         @Override
         public List<? extends FolderElement> get() throws InterruptedException, ExecutionException {
             List<? extends FolderElement> res;
-            
+
             // if the Future completes, but the done flag is still false, loop back as new delegate
             // may be in effect
-            Future<List<? extends FolderElement>>  last;
+            Future<List<? extends FolderElement>> last;
             do {
                 last = delegate;
                 res = last.get();
             } while (!done && last != delegate);
-            
+
             synchronized (this) {
                 items = res;
                 // register just once.
@@ -251,22 +250,22 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
                     for (FolderElement f : res) {
                         if (f instanceof ChangedEventProvider) {
                             // just keep a backreference to the whole list
-                            ((ChangedEventProvider)f).getChangedEvent().addListener(this);
+                            ((ChangedEventProvider) f).getChangedEvent().addListener(this);
                         }
                     }
                 }
             }
             return res;
         }
-        
+
         @Override
         public List<? extends FolderElement> get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             return delegate.get(timeout, unit);
         }
-        
+
         void attach(Future del) {
             this.delegate = del;
         }
     }
-    
+
 }

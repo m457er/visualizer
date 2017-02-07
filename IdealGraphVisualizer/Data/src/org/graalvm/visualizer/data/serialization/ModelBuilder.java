@@ -51,18 +51,19 @@ import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.services.GroupCallback;
 
 /**
- * Builds a model based on SAX-like events.
- * The expected sequence of events is:
+ * Builds a model based on SAX-like events. The expected sequence of events is:
  * <ul>
  * <li><b>startGroup</b>, [properties], <b>startGroupContent</b>, groups|graphs, <b>endGroup</b>
- * <li><b>startGraph</b>, [properties], [nodes], [blocks], [edges], <b>makeGraphEdges</b>, [blocks], <b>makeBlockEdges</b>, <b>endGraph</b>
+ * <li><b>startGraph</b>, [properties], [nodes], [blocks], [edges], <b>makeGraphEdges</b>, [blocks],
+ * <b>makeBlockEdges</b>, <b>endGraph</b>
  * <li><b>startNode</b>, [properties], [edges], <b>endNode</b>
  * </ul>
- * The Builder is overridable to allow customized processing of the incoming stream, i.e. partial loading.
+ * The Builder is overridable to allow customized processing of the incoming stream, i.e. partial
+ * loading.
  * <p/>
- * createXXX methods are used as factories for data objects, so that specialized implementations may be created.
- * pushXXX must be used at the object start if the object should be read and constructed. Otherwise all the events
- * up to the object close must be blocked/ignored.
+ * createXXX methods are used as factories for data objects, so that specialized implementations may
+ * be created. pushXXX must be used at the object start if the object should be read and
+ * constructed. Otherwise all the events up to the object close must be blocked/ignored.
  * <p/>
  * 
  */
@@ -76,7 +77,6 @@ public class ModelBuilder {
     public static final String PROPNAME_CLASS = "class"; // NOI18N
     public static final String PROPNAME_BLOCK = "block"; // NOI18N
 
-    
     public enum Length {
         S,
         M,
@@ -84,7 +84,7 @@ public class ModelBuilder {
     }
 
     private static final boolean INTERN = Boolean.getBoolean("IGV.internStrings"); // NOI18N
-    
+
     private static String maybeIntern(String s) {
         if (INTERN) {
             if (s == null) {
@@ -103,10 +103,11 @@ public class ModelBuilder {
         final String label;
         final String type;
         final boolean input;
-        
+
         EdgeInfo(int from, int to) {
             this(from, to, (char) 0, null, null, false);
         }
+
         EdgeInfo(int from, int to, char num, String label, String type, boolean input) {
             this.from = from;
             this.to = to;
@@ -116,7 +117,7 @@ public class ModelBuilder {
             this.input = input;
         }
     }
-    
+
     public interface LengthToString {
         String toString(Length l);
     }
@@ -124,7 +125,7 @@ public class ModelBuilder {
     public static class Port {
         public final boolean isList;
         public final String name;
-        
+
         Port(boolean isList, String name) {
             this.isList = isList;
             this.name = name;
@@ -133,7 +134,7 @@ public class ModelBuilder {
 
     public static final class TypedPort extends Port {
         public final LengthToString type;
-        
+
         TypedPort(boolean isList, String name, LengthToString type) {
             super(isList, name);
             this.type = type;
@@ -145,42 +146,43 @@ public class ModelBuilder {
         public final String nameTemplate;
         public final List<TypedPort> inputs;
         public final List<Port> sux;
-        
+
         NodeClass(String className, String nameTemplate, List<TypedPort> inputs, List<Port> sux) {
             this.className = className;
             this.nameTemplate = nameTemplate;
             this.inputs = inputs;
             this.sux = sux;
         }
+
         @Override
         public String toString() {
             return className;
         }
     }
-    
+
     private final GroupCallback callback;
     private final GraphDocument rootDocument;
     private final ParseMonitor monitor;
     private final Executor modelExecutor;
-    
-    private Consumer<ConstantPool>  poolTarget;
 
-    private Properties.Entity   entity;
-    private Folder      folder;
+    private Consumer<ConstantPool> poolTarget;
 
-    private InputGraph  currentGraph;
-    private List<EdgeInfo>  inputEdges;
-    private List<EdgeInfo>  successorEdges;
-    private List<EdgeInfo>  nodeEdges;
-    private List<EdgeInfo>  blockEdges;
+    private Properties.Entity entity;
+    private Folder folder;
 
-    private InputNode   currentNode;
+    private InputGraph currentGraph;
+    private List<EdgeInfo> inputEdges;
+    private List<EdgeInfo> successorEdges;
+    private List<EdgeInfo> nodeEdges;
+    private List<EdgeInfo> blockEdges;
+
+    private InputNode currentNode;
     private String propertyObjectKey;
     private Map<String, Object> nodeProperties;
-    private InputBlock  currentBlock;
-    
-    private Deque<Object>   stack = new ArrayDeque<>();
-    
+    private InputBlock currentBlock;
+
+    private Deque<Object> stack = new ArrayDeque<>();
+
     class Level {
         InputNode n = currentNode;
         String pk = propertyObjectKey;
@@ -188,20 +190,20 @@ public class ModelBuilder {
 
         InputGraph g = currentGraph;
         Folder f = folder;
-        
+
         void apply() {
             currentNode = n;
             currentGraph = g;
             folder = f;
             propertyObjectKey = pk;
             nodeProperties = np;
-            
+
             if (currentNode != null) {
                 entity = currentNode;
             } else if (currentGraph != null) {
                 entity = currentGraph;
             } else if (folder instanceof Properties.Entity) {
-                entity = (Properties.Entity)folder;
+                entity = (Properties.Entity) folder;
             }
         }
     }
@@ -213,32 +215,32 @@ public class ModelBuilder {
         this.modelExecutor = modelExecutor;
         this.folder = rootDocument;
     }
-    
+
     public final GraphDocument rootDocument() {
         return rootDocument;
     }
-    
+
     protected final Folder folder() {
         return folder;
     }
-    
+
     protected final InputGraph graph() {
         return currentGraph;
     }
-    
+
     protected final InputNode node() {
         return currentNode;
     }
-    
+
     private Folder getParent() {
         if (currentGraph != null) {
             return folder;
         } else {
             Object o = stack.peek();
-            return o instanceof Folder ? (Folder)o : null;
+            return o instanceof Folder ? (Folder) o : null;
         }
     }
-    
+
     private void popContext() {
         if (currentNode != null) {
             currentNode = null;
@@ -254,28 +256,28 @@ public class ModelBuilder {
         }
         Object o = stack.pop();
         if (o instanceof InputGraph) {
-            currentGraph = (InputGraph)o;
+            currentGraph = (InputGraph) o;
             entity = currentGraph;
         } else if (o instanceof InputNode) {
-            currentNode = (InputNode)o;
+            currentNode = (InputNode) o;
             entity = currentNode;
-            nodeProperties = (Map)stack.pop();
+            nodeProperties = (Map) stack.pop();
 
-            Object[] oo = (Object[])stack.pop();
-            currentGraph = (InputGraph)oo[0];
-            inputEdges = (List)oo[1];
-            successorEdges = (List)oo[2];
+            Object[] oo = (Object[]) stack.pop();
+            currentGraph = (InputGraph) oo[0];
+            inputEdges = (List) oo[1];
+            successorEdges = (List) oo[2];
         } else if (o instanceof Folder) {
-            this.folder = (Folder)o;
+            this.folder = (Folder) o;
             if (o instanceof Properties.Entity) {
-                this.entity = (Properties.Entity)o;
+                this.entity = (Properties.Entity) o;
             }
         }
     }
-    
+
     private void pushContext() {
         if (currentNode != null) {
-            stack.push(new Object[] { currentGraph, inputEdges, successorEdges });
+            stack.push(new Object[]{currentGraph, inputEdges, successorEdges});
             stack.push(nodeProperties);
             stack.push(currentNode);
             currentNode = null;
@@ -288,20 +290,20 @@ public class ModelBuilder {
             stack.push(folder);
         }
     }
-    
+
     public void setProperty(String key, Object value) {
         getProperties().setProperty(key, value != null ? value.toString() : "null");
     }
-    
+
     Properties getProperties() {
         return entity.getProperties();
     }
-    
+
     public void startNestedProperty(String propertyKey) {
         assert propertyObjectKey == null;
         this.propertyObjectKey = propertyKey;
     }
-    
+
     protected final InputGraph pushGraph(InputGraph g) {
         pushContext();
         currentGraph = g;
@@ -310,7 +312,7 @@ public class ModelBuilder {
         successorEdges = new ArrayList<>();
         return g;
     }
-    
+
     protected InputGraph createGraph(String title, String name, Properties.Entity parent) {
         if (parent instanceof Group) {
             return new InputGraph(title);
@@ -329,16 +331,16 @@ public class ModelBuilder {
         }
         InputNode n = currentNode;
         InputGraph g;
-        
+
         if (n != null) {
             g = createGraph("", n.getId() + ":" + propertyObjectKey, n);
             propertyObjectKey = null;
         } else {
-            g = createGraph(title, null, (Group)folder);
+            g = createGraph(title, null, (Group) folder);
         }
         return pushGraph(g);
     }
-    
+
     public InputGraph endGraph() {
         InputGraph g = currentGraph;
         for (InputNode node : g.getNodes()) {
@@ -353,64 +355,63 @@ public class ModelBuilder {
         }
         return g;
     }
-    
+
     public void start() {
         if (monitor != null) {
             monitor.setState("Starting parsing");
         }
     }
-    
+
     public void end() {
         if (monitor != null) {
             monitor.setState("Finished parsing");
         }
     }
-    
+
     protected final Group pushGroup(Group group) {
         pushContext();
         entity = group;
         this.folder = group;
         return group;
     }
-    
+
     protected Group createGroup(Folder parent) {
         return new Group(parent);
     }
-    
+
     public Group startGroup() {
         Group group = createGroup(folder);
         return pushGroup(group);
     }
-    
+
     public void startGroupContent() {
         assert folder instanceof Group;
         Folder parent = getParent();
-        Group g = (Group)folder;
+        Group g = (Group) folder;
         if (callback == null || parent instanceof Group) {
-            registerToParent(parent, (FolderElement)folder);
+            registerToParent(parent, (FolderElement) folder);
         }
         if (callback != null && parent instanceof GraphDocument) {
             modelExecutor.execute(() -> callback.started(g));
         }
     }
-    
+
     public void endGroup() {
         popContext();
     }
-    
+
     public void markGraphDuplicate() {
         getProperties().setProperty("_isDuplicate", "true"); // NOI18N
     }
 
     /**
      * Registers an item to its folder. Operation executes in {@link #modelExecutor}.
+     * 
      * @param parent the folder
      * @param item the item.
      */
     protected void registerToParent(Folder parent, FolderElement item) {
-        modelExecutor.execute(() -> 
-            parent.addElement(item)
-        );
+        modelExecutor.execute(() -> parent.addElement(item));
     }
 
     protected final void pushNode(InputNode node) {
@@ -419,11 +420,11 @@ public class ModelBuilder {
         nodeProperties = new HashMap<>();
         nodeEdges = new ArrayList<>();
     }
-    
+
     protected InputNode createNode(int id) {
         return new InputNode(id);
     }
-    
+
     public void startNode(int nodeId, boolean hasPredecessors) {
         assert currentGraph != null;
         InputNode node = createNode(nodeId);
@@ -435,17 +436,17 @@ public class ModelBuilder {
         pushNode(node);
         currentGraph.addNode(node);
     }
-    
+
     public void endNode(int nodeId) {
         popContext();
     }
-    
-    static final Set<String>    SYSTEM_PROPERTIES = new HashSet<>(Arrays.asList("hasPredecessor",
-        "name",
-        "class",
-        "id",
-        "idx", PROPNAME_BLOCK));
-    
+
+    static final Set<String> SYSTEM_PROPERTIES = new HashSet<>(Arrays.asList("hasPredecessor",
+                    "name",
+                    "class",
+                    "id",
+                    "idx", PROPNAME_BLOCK));
+
     public void setGroupName(String name, String shortName) {
         assert folder instanceof Group;
         setProperty("name", name);
@@ -453,7 +454,7 @@ public class ModelBuilder {
             monitor.setState(shortName);
         }
     }
-    
+
     public void setNodeName(NodeClass nodeClass) {
         assert currentNode != null;
         getProperties().setProperty(PROPNAME_NAME, createName(nodeEdges, nodeClass.nameTemplate));
@@ -467,7 +468,7 @@ public class ModelBuilder {
                 break;
         }
     }
-    
+
     static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{(p|i)#([a-zA-Z0-9$_]+)(/(l|m|s))?\\}");
 
     private String createName(List<EdgeInfo> edges, String template) {
@@ -480,7 +481,7 @@ public class ModelBuilder {
             switch (type) {
                 case "i":
                     StringBuilder inputString = new StringBuilder();
-                    for(EdgeInfo edge : edges) {
+                    for (EdgeInfo edge : edges) {
                         if (edge.label.startsWith(name) && (name.length() == edge.label.length() || edge.label.charAt(name.length()) == '[')) {
                             if (inputString.length() > 0) {
                                 inputString.append(", ");
@@ -497,7 +498,7 @@ public class ModelBuilder {
                         result = "?";
                     } else if (length != null && prop instanceof LengthToString) {
                         LengthToString lengthProp = (LengthToString) prop;
-                        switch(length) {
+                        switch (length) {
                             default:
                             case "l":
                                 result = lengthProp.toString(Length.L);
@@ -517,7 +518,7 @@ public class ModelBuilder {
                     result = "#?#";
                     break;
             }
-            
+
             // Escape '\' and '$' to not interfere with the regular expression.
             StringBuilder newResult = new StringBuilder();
             for (int i = 0; i < result.length(); ++i) {
@@ -536,7 +537,7 @@ public class ModelBuilder {
         m.appendTail(sb);
         return maybeIntern(sb.toString());
     }
-    
+
     public void setNodeProperty(String key, Object value) {
         assert currentNode != null;
         if (SYSTEM_PROPERTIES.contains(key)) {
@@ -545,40 +546,40 @@ public class ModelBuilder {
         nodeProperties.put(key, value);
         setProperty(key, value);
     }
-    
+
     private List<InputEdge> edges = new ArrayList<>();
-    
+
     public InputEdge inputEdge(char fromIndex, char toIndex, int from, int to, String label, String type) {
         InputEdge ie = new InputEdge(fromIndex, toIndex, from, to, label, type);
         edges.add(ie);
         return ie;
     }
-    
+
     public void inputEdge(Port p, int from, int to, char num, int index) {
         assert currentNode != null;
-        String label = (p.isList && index >= 0) ?  p.name + "[" + index + "]" : p.name;
-        EdgeInfo ei = new EdgeInfo(from, to, num, label, ((TypedPort)p).type.toString(Length.S), true);
+        String label = (p.isList && index >= 0) ? p.name + "[" + index + "]" : p.name;
+        EdgeInfo ei = new EdgeInfo(from, to, num, label, ((TypedPort) p).type.toString(Length.S), true);
         inputEdges.add(ei);
         nodeEdges.add(ei);
     }
-    
+
     public void successorEdge(Port p, int from, int to, char num, int index) {
         assert currentNode != null;
-        String label = (p.isList && index >= 0) ?  p.name + "[" + index + "]" : p.name;
+        String label = (p.isList && index >= 0) ? p.name + "[" + index + "]" : p.name;
         EdgeInfo ei = new EdgeInfo(to, from, num, label, "Successor", false);
         successorEdges.add(ei);
         nodeEdges.add(ei);
     }
-    
+
     protected InputEdge immutableEdge(char fromIndex, char toIndex, int from, int to, String label, String type) {
         return InputEdge.createImmutable(fromIndex, toIndex, from, to, label, type);
     }
-    
+
     public void makeGraphEdges() {
         assert currentGraph != null;
         InputGraph graph = currentGraph;
         assert (inputEdges != null && successorEdges != null) || (graph.getNodes().isEmpty());
-        
+
         Set<InputNode> nodesWithSuccessor = new HashSet<>();
         for (EdgeInfo e : successorEdges) {
             assert !e.input;
@@ -594,19 +595,18 @@ public class ModelBuilder {
             graph.addEdge(immutableEdge(fromIndex, toIndex, e.from, e.to, e.label, e.type));
         }
     }
-    
-    
+
     private String blockName(int id) {
         return id >= 0 ? Integer.toString(id) : NO_BLOCK;
     }
-    
+
     public InputBlock startBlock(int id) {
         return startBlock(blockName(id));
     }
 
     public InputBlock startBlock(String name) {
-        assert  currentGraph != null;
-        assert  currentBlock == null;
+        assert currentGraph != null;
+        assert currentBlock == null;
         if (blockEdges == null) {
             // initialized lazily since if initialized in Graph, must be saved when
             // switching from Node to subgraph. Blocks do not nest any other structures.
@@ -614,33 +614,33 @@ public class ModelBuilder {
         }
         return currentBlock = currentGraph.addBlock(name);
     }
-    
+
     public void endBlock(int id) {
         currentBlock = null;
     }
-    
+
     public Properties getNodeProperties(int nodeId) {
         assert currentGraph != null;
         return currentGraph.getNode(nodeId).getProperties();
     }
-    
+
     public void addNodeToBlock(int nodeId) {
         assert currentBlock != null;
         String name = currentBlock.getName();
         final Properties properties = getNodeProperties(nodeId);
         final String oldBlock = properties.get(PROPNAME_BLOCK);
-        if(oldBlock != null) {
+        if (oldBlock != null) {
             properties.setProperty(PROPNAME_BLOCK, oldBlock + ", " + name);
         } else {
             currentBlock.addNode(nodeId);
             properties.setProperty(PROPNAME_BLOCK, name);
         }
     }
-    
+
     public void addBlockEdge(int from, int to) {
         blockEdges.add(new EdgeInfo(from, to));
     }
-    
+
     public void makeBlockEdges() {
         assert currentGraph != null;
         if (blockEdges != null) {
@@ -652,36 +652,36 @@ public class ModelBuilder {
         }
         currentGraph.ensureNodesInBlocks();
     }
-    
+
     public void setMethod(String name, String shortName, int bci) {
         assert currentNode == null;
         assert currentGraph == null;
         assert folder instanceof Group;
-        
-        Group g = (Group)folder;
+
+        Group g = (Group) folder;
 
         InputMethod inMethod = new InputMethod(g, name, shortName, bci);
         inMethod.setBytecodes(""); // NO18N
         g.setMethod(inMethod);
     }
-    
+
     /**
-     * Called during reading when the reader encounters beginning of a new stream.
-     * All pending data should be reset.
+     * Called during reading when the reader encounters beginning of a new stream. All pending data
+     * should be reset.
      */
     public void resetStreamData() {
     }
-    
+
     public ConstantPool getConstantPool() {
         return new ConstantPool();
     }
-    
+
     protected void replacePool(ConstantPool newPool) {
         if (poolTarget != null) {
             poolTarget.accept(newPool);
         }
     }
-    
+
     void setPoolTarget(Consumer<ConstantPool> target) {
         this.poolTarget = target;
     }

@@ -89,16 +89,14 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
     }
 
     /**
-     * Returns the preferred size of the viewport for a view component.
-     * For example, the preferred size of a <code>JList</code> component
-     * is the size required to accommodate all of the cells in its list.
-     * However, the value of <code>preferredScrollableViewportSize</code>
-     * is the size required for <code>JList.getVisibleRowCount</code> rows.
-     * A component without any properties that would affect the viewport
-     * size should just return <code>getPreferredSize</code> here.
+     * Returns the preferred size of the viewport for a view component. For example, the preferred
+     * size of a <code>JList</code> component is the size required to accommodate all of the cells
+     * in its list. However, the value of <code>preferredScrollableViewportSize</code> is the size
+     * required for <code>JList.getVisibleRowCount</code> rows. A component without any properties
+     * that would affect the viewport size should just return <code>getPreferredSize</code> here.
      *
-     * @return the preferredSize of a <code>JViewport</code> whose view
-     *    is this <code>Scrollable</code>
+     * @return the preferredSize of a <code>JViewport</code> whose view is this
+     *         <code>Scrollable</code>
      * @see JViewport#getPreferredSize
      */
     public Dimension getPreferredScrollableViewportSize() {
@@ -110,7 +108,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
             return 1;
         }
 
-        return (int)(BAR_CIRCLE_SIZE + BAR_CIRCLE_CONNECTOR_SIZE);
+        return (int) (BAR_CIRCLE_SIZE + BAR_CIRCLE_CONNECTOR_SIZE);
     }
 
     public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
@@ -129,7 +127,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
     public Dimension getPreferredSize() {
         Dimension d = super.getPreferredSize();
         d.height = HEIGHT;
-        d.width = Math.max(d.width, (int)(2 * BAR_CIRCLE_CONNECTOR_SIZE + getPaintingModel().getPositions().size() * (BAR_CIRCLE_SIZE + BAR_CIRCLE_CONNECTOR_SIZE)));
+        d.width = Math.max(d.width, (int) (2 * BAR_CIRCLE_CONNECTOR_SIZE + getPaintingModel().getPositions().size() * (BAR_CIRCLE_SIZE + BAR_CIRCLE_CONNECTOR_SIZE)));
         return d;
     }
 
@@ -138,9 +136,9 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         revalidate();
 
         float barStartY = getBarStartY();
-        int circleCenterY = (int)(barStartY + BAR_HEIGHT / 2);
-        int startX = (int)getStartXPosition(model.getFirstPosition());
-        int endX = (int)getEndXPosition(model.getSecondPosition());
+        int circleCenterY = (int) (barStartY + BAR_HEIGHT / 2);
+        int startX = (int) getStartXPosition(model.getFirstPosition());
+        int endX = (int) getEndXPosition(model.getSecondPosition());
         Rectangle r = new Rectangle(startX, circleCenterY, endX - startX, 1);
         scrollRectToVisible(r);
         update();
@@ -157,7 +155,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
 
     private float getXOffset() {
         int size = getPaintingModel().getPositions().size();
-        float width = (float)getWidth();
+        float width = (float) getWidth();
         return (width / (size + 1));
     }
 
@@ -174,7 +172,7 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         super.paint(g);
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
+                        RenderingHints.VALUE_ANTIALIAS_ON);
         int width = getWidth();
         int height = getHeight();
 
@@ -212,7 +210,6 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
             g.fill(new Ellipse2D.Float(curX - BAR_CIRCLE_SIZE / 2, circleCenterY - BAR_CIRCLE_SIZE / 2, BAR_CIRCLE_SIZE, BAR_CIRCLE_SIZE));
             g.setColor(Color.black);
             g.draw(new Ellipse2D.Float(curX - BAR_CIRCLE_SIZE / 2, circleCenterY - BAR_CIRCLE_SIZE / 2, BAR_CIRCLE_SIZE, BAR_CIRCLE_SIZE));
-
 
             String curS = list.get(i);
             if (curS != null && curS.length() > 0) {
@@ -341,7 +338,6 @@ public class RangeSlider extends JComponent implements ChangedListener<RangeSlid
         if (model == null) {
             return;
         }
-
 
         Point p = e.getPoint();
         if (isOverFirstPosition(p) || isOverSecondPosition(p)) {

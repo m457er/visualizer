@@ -104,12 +104,11 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
      */
     public static final int BORDER_SIZE = 20;
 
-
     public static final int UNDOREDO_LIMIT = 100;
     public static final int SCROLL_UNIT_INCREMENT = 80;
     public static final int SCROLL_BLOCK_INCREMENT = 400;
     public static final float ZOOM_MAX_FACTOR = 3.0f;
-    public static final float ZOOM_MIN_FACTOR = 0.0f;//0.15f;
+    public static final float ZOOM_MIN_FACTOR = 0.0f;// 0.15f;
     public static final float ZOOM_INCREMENT = 1.5f;
     public static final int SLOT_OFFSET = 8;
     public static final int ANIMATION_LIMIT = 40;
@@ -179,7 +178,6 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         }
     }
 
-
     @Override
     public void centerFigures(List<Figure> list) {
 
@@ -204,6 +202,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         }
         return selectedObjects;
     }
+
     private ControllableChangedListener<SelectionCoordinator> highlightedCoordinatorListener = new ControllableChangedListener<SelectionCoordinator>() {
 
         @Override
@@ -297,6 +296,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         result.getHorizontalScrollBar().setBlockIncrement(SCROLL_BLOCK_INCREMENT);
         return result;
     }
+
     private final ObjectSceneListener selectionChangedListener = new ObjectSceneListener() {
 
         @Override
@@ -336,7 +336,6 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
                     node.setDisplayName(provider.getProperties().get("name"));
                     content.add(node);
                 }
-
 
                 if (o instanceof Figure) {
                     nodeSelection.addAll(((Figure) o).getSource().getSourceNodesAsSet());
@@ -447,7 +446,8 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         this.setUndoRedoEnabled(false);
         this.setNewModel(model);
         this.setUndoRedoEnabled(b);
-        this.addObjectSceneListener(selectionChangedListener, ObjectSceneEventType.OBJECT_SELECTION_CHANGED, ObjectSceneEventType.OBJECT_HIGHLIGHTING_CHANGED, ObjectSceneEventType.OBJECT_HOVER_CHANGED);
+        this.addObjectSceneListener(selectionChangedListener, ObjectSceneEventType.OBJECT_SELECTION_CHANGED, ObjectSceneEventType.OBJECT_HIGHLIGHTING_CHANGED,
+                        ObjectSceneEventType.OBJECT_HOVER_CHANGED);
     }
 
     public DiagramViewModel getModel() {
@@ -614,6 +614,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
         relayoutWithoutLayout(oldVisibleWidgets);
     }
+
     private Set<Pair<Point, Point>> lineCache = new HashSet<>();
 
     private void relayoutWithoutLayout(Set<Widget> oldVisibleWidgets) {
@@ -686,7 +687,6 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
             }
         }
 
-
         Set<Pair<Point, Point>> lastLineCache = lineCache;
         lineCache = new HashSet<>();
         for (Figure f : diagram.getFigures()) {
@@ -732,9 +732,11 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
         this.validate();
     }
+
     private final Point specialNullPoint = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
 
-    private void processOutputSlot(Set<Pair<Point, Point>> lastLineCache, OutputSlot s, List<Connection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor, int offx, int offy, SceneAnimator animator) {
+    private void processOutputSlot(Set<Pair<Point, Point>> lastLineCache, OutputSlot s, List<Connection> connections, int controlPointIndex, Point lastPoint, LineWidget predecessor, int offx,
+                    int offy, SceneAnimator animator) {
         Map<Point, List<Connection>> pointMap = new HashMap<>(connections.size());
 
         for (Connection c : connections) {
@@ -1219,6 +1221,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
             }
         }
     }
+
     private boolean undoRedoEnabled = true;
 
     public void setUndoRedoEnabled(boolean b) {
@@ -1255,7 +1258,6 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
             smallUpdate(false);
         }
     };
-
 
     private void addUndo() {
 

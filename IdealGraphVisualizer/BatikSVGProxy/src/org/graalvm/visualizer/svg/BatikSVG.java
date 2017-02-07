@@ -47,7 +47,9 @@ public class BatikSVG {
     private static Class<?> classSVGGraphics2D;
 
     /**
-     * Creates a graphics object that allows to be exported to SVG data using the {@link #printToStream(Graphics2D, Writer, boolean) printToStream} method.
+     * Creates a graphics object that allows to be exported to SVG data using the
+     * {@link #printToStream(Graphics2D, Writer, boolean) printToStream} method.
+     * 
      * @return the newly created Graphics2D object or null if the library does not exist
      */
     public static Graphics2D createGraphicsObject() {
@@ -57,9 +59,10 @@ public class BatikSVG {
                 if (batikJar == null) {
                     return null;
                 }
-                // Load batik in it's own class loader since some it's support jars interfere with the JDK
+                // Load batik in it's own class loader since some it's support jars interfere with
+                // the JDK
                 URL url = new File(batikJar).toURI().toURL();
-                ClassLoader cl = new URLClassLoader(new URL[] { url });
+                ClassLoader cl = new URLClassLoader(new URL[]{url});
                 Class<?> classGenericDOMImplementation = cl.loadClass("org.apache.batik.dom.GenericDOMImplementation");
                 Class<?> classSVGGeneratorContext = cl.loadClass("org.apache.batik.svggen.SVGGeneratorContext");
                 classSVGGraphics2D = cl.loadClass("org.apache.batik.svggen.SVGGraphics2D");
@@ -82,7 +85,9 @@ public class BatikSVG {
 
     /**
      * Serializes a graphics object to a stream in SVG format.
-     * @param svgGenerator the graphics object. Only graphics objects created by the {@link #createGraphicsObject() createGraphicsObject} method are valid.
+     * 
+     * @param svgGenerator the graphics object. Only graphics objects created by the
+     *            {@link #createGraphicsObject() createGraphicsObject} method are valid.
      * @param stream the stream to which the data is written
      * @param useCSS whether to use CSS styles in the SVG output
      */

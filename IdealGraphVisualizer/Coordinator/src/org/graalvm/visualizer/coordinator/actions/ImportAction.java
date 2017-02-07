@@ -63,21 +63,15 @@ import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.SystemAction;
 
-@ActionID(
-        category = "File",
-        id = "org.graalvm.visualizer.coordinator.actions.ImportAction"
-)
-@ActionRegistration(
-        iconBase = "org/graalvm/visualizer/coordinator/images/import.png",
-        displayName = "#CTL_ImportAction"
-)
+@ActionID(category = "File", id = "org.graalvm.visualizer.coordinator.actions.ImportAction")
+@ActionRegistration(iconBase = "org/graalvm/visualizer/coordinator/images/import.png", displayName = "#CTL_ImportAction")
 @ActionReferences({
-    @ActionReference(path = "Menu/File", position = 0),
-    @ActionReference(path = "Shortcuts", name = "C-O")
+                @ActionReference(path = "Menu/File", position = 0),
+                @ActionReference(path = "Shortcuts", name = "C-O")
 })
 public final class ImportAction extends SystemAction {
     private static final Logger LOG = Logger.getLogger(ImportAction.class.getName());
-    
+
     private static final int WORKUNITS = 10000;
 
     public static FileFilter getFileFilter() {
@@ -94,17 +88,17 @@ public final class ImportAction extends SystemAction {
             }
         };
     }
-    
+
     /**
-     * Request processor used to lazy-load; shared with the network receiver, but could
-     * be also separated.
+     * Request processor used to lazy-load; shared with the network receiver, but could be also
+     * separated.
      */
     private static final RequestProcessor LOADER_RP = Server.LOADER_RP;
 
     @NbBundle.Messages({
-        "# {0} - file name",
-        "# {1} - error message",
-        "ERR_ReadingFile=Error importing from file {0}: {1}"
+                    "# {0} - file name",
+                    "# {1} - error message",
+                    "ERR_ReadingFile=Error importing from file {0}: {1}"
     })
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -128,20 +122,21 @@ public final class ImportAction extends SystemAction {
                     final long startTime = System.currentTimeMillis();
                     final long start = channel.size();
                     ParseMonitor monitor = new ParseMonitor() {
-                            @Override
-                            public void updateProgress() {
-                                try {
-                                    int prog = (int) (WORKUNITS * (double) channel.position() / (double) start);
-                                    handle.progress(prog);
-                                } catch (IOException ex) {
-                                }
+                        @Override
+                        public void updateProgress() {
+                            try {
+                                int prog = (int) (WORKUNITS * (double) channel.position() / (double) start);
+                                handle.progress(prog);
+                            } catch (IOException ex) {
                             }
-                            @Override
-                            public void setState(String state) {
-                                updateProgress();
-                                handle.progress(state);
-                            }
-                        };
+                        }
+
+                        @Override
+                        public void setState(String state) {
+                            updateProgress();
+                            handle.progress(state);
+                        }
+                    };
                     final GraphParser parser;
                     final OutlineTopComponent component = OutlineTopComponent.findInstance();
                     if (file.getName().endsWith(".xml")) {
@@ -150,48 +145,47 @@ public final class ImportAction extends SystemAction {
                         FileContent content = new FileContent(file.toPath(), channel);
                         BinarySource src = new BinarySource(content);
                         ModelBuilder bld = new ScanningModelBuilder(
-                                src, 
-                                content, 
-                                new GraphDocument(), null, 
-                            (r) -> r.run(), LOADER_RP);
+                                        src,
+                                        content,
+                                        new GraphDocument(), null,
+                                        (r) -> r.run(), LOADER_RP);
                         parser = new BinaryReader(src, bld);
                     } else {
                         parser = null;
                     }
                     RequestProcessor.getDefault().post(new Runnable() {
-                            @Override
-                            public void run() {
-                                try {
-                                    final GraphDocument document = parser.parse();
-                                    if (document != null) {
-                                        SwingUtilities.invokeLater(new Runnable(){
-                                                @Override
-                                                public void run() {
-                                                    component.requestActive();
-                                                    component.getDocument().addGraphDocument(document);
-                                                }
-                                            });
-                                    }
-                                } catch (IOException ex) {
-                                    LOG.log(Level.FINE, "Error reading file: ", 
-                                            Exceptions.attachSeverity(ex, Level.FINE));
-                                    DialogDisplayer.getDefault().notifyLater(
-                                            new NotifyDescriptor.Message(
-                                                    Bundle.ERR_ReadingFile(file.toPath(), ex.getLocalizedMessage()),
-                                                    NotifyDescriptor.ERROR_MESSAGE
-                                            ));
-                                } finally {
-                                    try {
-                                        channel.close();
-                                    } catch (IOException ex) {
-                                        Exceptions.printStackTrace(ex);
-                                    }
+                        @Override
+                        public void run() {
+                            try {
+                                final GraphDocument document = parser.parse();
+                                if (document != null) {
+                                    SwingUtilities.invokeLater(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            component.requestActive();
+                                            component.getDocument().addGraphDocument(document);
+                                        }
+                                    });
                                 }
-                                handle.finish();
-                                long stop = System.currentTimeMillis();
-                                Logger.getLogger(getClass().getName()).log(Level.INFO, "Loaded in " + file + " in " + ((stop - startTime) / 1000.0) + " seconds");
+                            } catch (IOException ex) {
+                                LOG.log(Level.FINE, "Error reading file: ",
+                                                Exceptions.attachSeverity(ex, Level.FINE));
+                                DialogDisplayer.getDefault().notifyLater(
+                                                new NotifyDescriptor.Message(
+                                                                Bundle.ERR_ReadingFile(file.toPath(), ex.getLocalizedMessage()),
+                                                                NotifyDescriptor.ERROR_MESSAGE));
+                            } finally {
+                                try {
+                                    channel.close();
+                                } catch (IOException ex) {
+                                    Exceptions.printStackTrace(ex);
+                                }
                             }
-                        });
+                            handle.finish();
+                            long stop = System.currentTimeMillis();
+                            Logger.getLogger(getClass().getName()).log(Level.INFO, "Loaded in " + file + " in " + ((stop - startTime) / 1000.0) + " seconds");
+                        }
+                    });
                 } catch (FileNotFoundException ex) {
                     Exceptions.printStackTrace(ex);
                 } catch (IOException ex) {
@@ -210,7 +204,7 @@ public final class ImportAction extends SystemAction {
     protected String iconResource() {
         return "org/graalvm/visualizer/coordinator/images/import.png";
     }
-    
+
     @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;

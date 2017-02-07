@@ -1,1 +1,8 @@
+*.pyc
+
+/.metadata/
+/eclipseformat*
+/mx.visualizer/eclipse-launches/
+/mxbuild/
 /IdealGraphVisualizer/dist/
+/workingsets.xml

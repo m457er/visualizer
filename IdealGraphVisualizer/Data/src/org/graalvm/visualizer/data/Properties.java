@@ -39,7 +39,7 @@ public class Properties implements Serializable, Iterable<Property> {
     }
 
     private static final boolean INTERN = Boolean.getBoolean("IGV.internStrings");
-    
+
     private static String maybeIntern(String s) {
         if (INTERN) {
             if (s == null) {
@@ -111,11 +111,11 @@ public class Properties implements Serializable, Iterable<Property> {
         map = new String[p.map.length];
         System.arraycopy(p.map, 0, map, 0, p.map.length);
     }
-    
+
     protected Properties(String[] map) {
         this.map = map;
     }
-    
+
     static class SharedProperties extends Properties {
         int hashCode;
 
@@ -123,12 +123,12 @@ public class Properties implements Serializable, Iterable<Property> {
             super(map);
             this.hashCode = Arrays.hashCode(map);
         }
-        
+
         @Override
         protected void setPropertyInternal(String name, String value) {
             throw new UnsupportedOperationException();
         }
-        
+
         @Override
         public boolean equals(Object other) {
             if (this == other) {
@@ -140,13 +140,13 @@ public class Properties implements Serializable, Iterable<Property> {
             SharedProperties props2 = (SharedProperties) other;
             return Arrays.equals(map, props2.map);
         }
-        
+
         @Override
         public int hashCode() {
             return hashCode;
         }
     }
-    
+
     private static class PropertyCache {
         static WeakHashMap<SharedProperties, WeakReference<SharedProperties>> immutableCache = new WeakHashMap<>();
 
@@ -181,7 +181,7 @@ public class Properties implements Serializable, Iterable<Property> {
         public Properties getProperties() {
             return properties;
         }
-        
+
         public void internProperties() {
             properties = PropertyCache.intern(properties);
         }

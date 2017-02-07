@@ -38,16 +38,16 @@ public final class RemoveFilterAction extends CookieAction {
     @Override
     protected void performAction(Node[] activatedNodes) {
         Object[] options = {"Yes",
-            "No",
-            "Cancel"
+                        "No",
+                        "Cancel"
         };
         int n = JOptionPane.showOptionDialog(WindowManager.getDefault().getMainWindow(),
-                "Do you really want to delete " + activatedNodes.length + " filter(s)?", "Delete Filters",
-                JOptionPane.YES_NO_CANCEL_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[2]);
+                        "Do you really want to delete " + activatedNodes.length + " filter(s)?", "Delete Filters",
+                        JOptionPane.YES_NO_CANCEL_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[2]);
 
         if (n == JOptionPane.YES_OPTION) {
             for (int i = 0; i < activatedNodes.length; i++) {
@@ -73,7 +73,7 @@ public final class RemoveFilterAction extends CookieAction {
     @Override
     protected Class<?>[] cookieClasses() {
         return new Class<?>[]{
-            Filter.class
+                        Filter.class
         };
     }
 

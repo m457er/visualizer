@@ -45,7 +45,7 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
         getProperties().setProperty("name", "");
         getProperties().setProperty("type", "");
     }
-    
+
     public void fireChangedEvent() {
         changedEvent.fire();
     }
@@ -92,7 +92,7 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
         }
         changedEvent.fire();
     }
-    
+
     protected List<? extends FolderElement> getElementsInternal() {
         return elements;
     }
@@ -166,7 +166,7 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
 
     @Override
     public Folder getParent() {
-         return parent;
+        return parent;
     }
 
     @Override
@@ -196,36 +196,37 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
     public void setParent(Folder parent) {
         this.parent = parent;
     }
-    
+
     /**
-     * Special mixin interface, which indicates the Group contents may not be
-     * fetched. The LazyContent object has two states:
+     * Special mixin interface, which indicates the Group contents may not be fetched. The
+     * LazyContent object has two states:
      * <ul>
-     * <li>incomplete, when it serves only partial or no nested data. Properties for the
-     * object should be all available.
+     * <li>incomplete, when it serves only partial or no nested data. Properties for the object
+     * should be all available.
      * <li>complete, when it contains complete set of directly nested data
      * </ul>
-     * Contents of the LazyContent may be eventually released, reverting the state
-     * into incomplete; an {@link ChangedEvent} must be fired in such case.
+     * Contents of the LazyContent may be eventually released, reverting the state into incomplete;
+     * an {@link ChangedEvent} must be fired in such case.
      */
     public interface LazyContent {
         /**
          * Indicates that whether the contents was loaded.
+         * 
          * @return if true, the contents was loaded fully
          */
-        public boolean                      isComplete();
-        
+        public boolean isComplete();
+
         /**
-         * Fills the content, and returns the resulting data.
-         * Note that potentially the content may contain another LazyContent
-         * implementations.
+         * Fills the content, and returns the resulting data. Note that potentially the content may
+         * contain another LazyContent implementations.
          * <p/>
-         * In addition to returning the contents, the implementation must fire
-         * a {@link ChangedEvent} upon completing the data, <b>after</b> {@link #isComplete} changes
-         * to true. If the implementation supports release of the nested data, the data must not be 
+         * In addition to returning the contents, the implementation must fire a
+         * {@link ChangedEvent} upon completing the data, <b>after</b> {@link #isComplete} changes
+         * to true. If the implementation supports release of the nested data, the data must not be
          * released until after event is delivered to all listeners.
+         * 
          * @return handle to contents of the group.
          */
-        public Future<List<? extends FolderElement>>  completeContents();
+        public Future<List<? extends FolderElement>> completeContents();
     }
 }

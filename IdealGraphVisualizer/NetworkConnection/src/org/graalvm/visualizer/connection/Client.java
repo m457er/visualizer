@@ -43,49 +43,50 @@ import org.openide.util.Exceptions;
 import org.openide.util.RequestProcessor;
 
 public class Client implements Runnable {
+
     private static final Logger LOG = Logger.getLogger(Client.class.getName());
-    
+
     private final boolean binary;
     private final SocketChannel socket;
     private final GraphDocument rootDocument;
     private final GroupCallback callback;
     private final RequestProcessor loader;
-    
-    public Client(SocketChannel socket, 
-            GraphDocument rootDocument, GroupCallback callback, boolean  binary, RequestProcessor loadProcessor) {
+
+    public Client(SocketChannel socket,
+                    GraphDocument rootDocument, GroupCallback callback, boolean binary, RequestProcessor loadProcessor) {
         this.callback = callback;
         this.socket = socket;
         this.binary = binary;
         this.rootDocument = rootDocument;
         this.loader = loadProcessor;
     }
-    
+
     /**
      * Model operations should happen in a dedicated thread, AWT right now.
-     * @param r 
+     *
+     * @param r
      */
     private void runInAWT(Runnable r) {
         SwingUtilities.invokeLater(r);
     }
-    
+
     private static final AtomicInteger clientId = new AtomicInteger();
-    
+
     @Override
     public void run() {
         int id = clientId.incrementAndGet();
         try {
-            LOG.log(Level.FINE, "Client {0} starting for remote {1}", new Object[] { id, socket.getRemoteAddress() });
+            LOG.log(Level.FINE, "Client {0} starting for remote {1}", new Object[]{id, socket.getRemoteAddress()});
             final SocketChannel channel = socket;
             channel.configureBlocking(true);
             try (NetworkStreamContent captureChannel = new NetworkStreamContent(channel)) {
                 if (binary) {
                     BinarySource bs = new BinarySource(captureChannel);
                     ModelBuilder mb = new ScanningModelBuilder(
-                            bs, captureChannel, rootDocument, callback,
-                            this::runInAWT, 
-                            loader,
-                            new StreamPool()
-                    );
+                                    bs, captureChannel, rootDocument, callback,
+                                    this::runInAWT,
+                                    loader,
+                                    new StreamPool());
                     BinaryReader reader = new BinaryReader(bs, mb);
                     reader.parse();
                 } else {
@@ -95,8 +96,8 @@ public class Client implements Runnable {
         } catch (EOFException ex) {
             LOG.log(Level.INFO, "Client {0} encountered end-of-file", id);
         } catch (IOException | RuntimeException ex) {
-            LOG.log(Level.WARNING, "Error during processing the stream", 
-                    Exceptions.attachSeverity(ex, Level.INFO));
+            LOG.log(Level.WARNING, "Error during processing the stream",
+                            Exceptions.attachSeverity(ex, Level.INFO));
         } finally {
             try {
                 socket.close();

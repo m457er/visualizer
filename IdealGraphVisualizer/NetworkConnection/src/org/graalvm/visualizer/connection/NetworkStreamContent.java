@@ -43,28 +43,27 @@ import org.graalvm.visualizer.data.serialization.BinaryParser;
 import org.openide.modules.Places;
 
 /**
- * Captures data from the network in a temporary file.  This class piggybacks on the main reading {@link BinaryParser}
- * loop - copies data read into the parser's input buffer. The data is received into a temp
- * buffer, then flushed to a file. Chunks from that file (sized as the origial receive buffer)
- * are memory mapped into {@link #cacheBuffers} in a hope that the OS does the memmap effectively
- * and discards pages which are not needed.
+ * Captures data from the network in a temporary file. This class piggybacks on the main reading
+ * {@link BinaryParser} loop - copies data read into the parser's input buffer. The data is received
+ * into a temp buffer, then flushed to a file. Chunks from that file (sized as the origial receive
+ * buffer) are memory mapped into {@link #cacheBuffers} in a hope that the OS does the memmap
+ * effectively and discards pages which are not needed.
  * <p/>
  * {@link Subchannel} can be created for content received from the network and stored in the file.
  * <p/>
- * Note: the chunked mapping is not really needed; instead of that, the file can be re-mapped each time
- * a content is requested. 
+ * Note: the chunked mapping is not really needed; instead of that, the file can be re-mapped each
+ * time a content is requested.
  */
 public class NetworkStreamContent implements ReadableByteChannel, CachedContent, AutoCloseable {
     private static final Logger LOG = Logger.getLogger(NetworkStreamContent.class.getName());
-    
+
     private static final int RECEIVE_BUFFER_SIZE = 10 * 1024 * 1024;    // 10 MBytes
     private static final String CACHE_FILE_EXT = "bgv"; // NOI18N
     private static final String CACHE_FILE_TEMPLATE = "igvdata_%d"; // NOI18N
     private static final String CACHE_DIRECTORY_NAME = "igv"; // NOI18N
-    
-    
-    private final List<ByteBuffer>    cacheBuffers = new ArrayList<>();
-    private final ByteBuffer          receiveBuffer;
+
+    private final List<ByteBuffer> cacheBuffers = new ArrayList<>();
+    private final ByteBuffer receiveBuffer;
     private final ReadableByteChannel ioDelegate;
     private final File dumpFile;
     private final FileChannel dumpChannel;
@@ -73,30 +72,30 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
     private int readBytes;
     private static final AtomicInteger contentId = new AtomicInteger();
     private long receiveBufferOffset;
-    
+
     public NetworkStreamContent(ReadableByteChannel ioDelegate) throws IOException {
         this.ioDelegate = ioDelegate;
         receiveBuffer = ByteBuffer.allocateDirect(RECEIVE_BUFFER_SIZE);
         File cacheDir = Places.getCacheSubdirectory(CACHE_DIRECTORY_NAME);
         dumpFile = File.createTempFile(String.format(CACHE_FILE_TEMPLATE, contentId.incrementAndGet()), CACHE_FILE_EXT, cacheDir);
-        
+
         /*
-                On Linux (MAC ?) when If StandardOpenOption.DELETE_ON_CLOSE is used,
-                the file is removed right after opening, it consumes disk space, but is not visible.
-                I prefer the old behaviour of File.deleteOnExit() when the machine attempts to delete the file,
-                and the user knows what consumes his hard drive.
-        
-        */
+         * On Linux (MAC ?) when If StandardOpenOption.DELETE_ON_CLOSE is used, the file is removed
+         * right after opening, it consumes disk space, but is not visible. I prefer the old
+         * behaviour of File.deleteOnExit() when the machine attempts to delete the file, and the
+         * user knows what consumes his hard drive.
+         * 
+         */
         LOG.log(Level.FINE, "Created temp file {0}, ", dumpFile);
         dumpFile.deleteOnExit();
-        dumpChannel = FileChannel.open(dumpFile.toPath(), 
-                StandardOpenOption.CREATE, 
-                StandardOpenOption.WRITE, 
-                StandardOpenOption.READ, 
-                StandardOpenOption.DSYNC,
-                StandardOpenOption.TRUNCATE_EXISTING);
+        dumpChannel = FileChannel.open(dumpFile.toPath(),
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.WRITE,
+                        StandardOpenOption.READ,
+                        StandardOpenOption.DSYNC,
+                        StandardOpenOption.TRUNCATE_EXISTING);
     }
-    
+
     private synchronized void flushToDisk() throws IOException {
         ByteBuffer bb = receiveBuffer.duplicate();
         bb.flip();
@@ -105,13 +104,13 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         dumpChannel.write(bb);
         dumpChannel.force(false);
         receiveBufferOffset += len;
-        LOG.log(Level.FINER, "Flushed {0} bytes to {1}, recbuffer starts at {2}", new Object[] { len, dumpFile, receiveBufferOffset});
+        LOG.log(Level.FINER, "Flushed {0} bytes to {1}, recbuffer starts at {2}", new Object[]{len, dumpFile, receiveBufferOffset});
         ByteBuffer mappedBB = dumpChannel.map(FileChannel.MapMode.READ_ONLY, startPos, len);
         mappedBB.position(len);
         cacheBuffers.add(mappedBB);
         receiveBuffer.clear();
     }
-    
+
     @Override
     public int read(ByteBuffer dst) throws IOException {
         if (eof) {
@@ -124,7 +123,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
             return count;
         }
         readBytes += count;
-        
+
         synchronized (this) {
             // buffer in our cache:
             ByteBuffer del = dst.asReadOnlyBuffer();
@@ -146,10 +145,10 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         }
         int bufferedCount = (cacheBuffers.size()) * RECEIVE_BUFFER_SIZE + receiveBuffer.position();
         assert bufferedCount == readBytes;
-        
+
         return count;
     }
-        
+
     @Override
     public boolean isOpen() {
         return ioDelegate.isOpen();
@@ -160,7 +159,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         flushToDisk();
         ioDelegate.close();
     }
-    
+
     public synchronized ReadableByteChannel subChannel(long start, long end) {
         int fromBuffer = -1;
         long pos = 0;
@@ -173,14 +172,14 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         ByteBuffer endBuf;
         List<ByteBuffer> buffers = new ArrayList<>();
         int toBuffer;
-        LOG.log(Level.FINER, "Allocating subchannel from dumpfile {0} range {1}-{2}", new Object[] { dumpFile, start, end});
+        LOG.log(Level.FINER, "Allocating subchannel from dumpfile {0} range {1}-{2}", new Object[]{dumpFile, start, end});
         try {
 
             if (start >= receiveBufferOffset) {
                 copyBuffer = ByteBuffer.allocate(receiveBuffer.position());
-                ByteBuffer src = (ByteBuffer)receiveBuffer.duplicate().flip();
+                ByteBuffer src = (ByteBuffer) receiveBuffer.duplicate().flip();
                 copyBuffer.put(src);
-                startAt = (int)(start - receiveBufferOffset);
+                startAt = (int) (start - receiveBufferOffset);
                 startBuf = copyBuffer;
                 LOG.log(Level.FINEST, "start in receiveBuffer, offset {0}", startAt);
             } else {
@@ -190,19 +189,19 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
                     prevPos = pos;
                     pos += b.position();
                 } while (pos < start);
-                startAt = (int)(start - prevPos);
+                startAt = (int) (start - prevPos);
                 startBuf = cacheBuffers.get(fromBuffer).asReadOnlyBuffer();
-                LOG.log(Level.FINEST, "start in buffer {0}, offset {1}", new Object[] { fromBuffer, startAt});
+                LOG.log(Level.FINEST, "start in buffer {0}, offset {1}", new Object[]{fromBuffer, startAt});
             }
             toBuffer = fromBuffer;
             pos = prevPos;
             if (end > receiveBufferOffset) {
                 if (copyBuffer == null) {
                     copyBuffer = ByteBuffer.allocate(receiveBuffer.position());
-                    ByteBuffer src = (ByteBuffer)receiveBuffer.duplicate().flip();
+                    ByteBuffer src = (ByteBuffer) receiveBuffer.duplicate().flip();
                     copyBuffer.put(src);
                 }
-                endAt = (int)(end - receiveBufferOffset);
+                endAt = (int) (end - receiveBufferOffset);
                 endBuf = copyBuffer;
                 LOG.log(Level.FINEST, "end in receiveBuffer, offset {0}", endAt);
             } else {
@@ -213,14 +212,14 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
                     pos += b.position();
                 } while (pos < end);
                 toBuffer--;
-                endAt = (int)(end - prevPos);
+                endAt = (int) (end - prevPos);
                 if (fromBuffer == toBuffer) {
                     endBuf = startBuf;
                 } else {
                     endBuf = (fromBuffer == toBuffer) ? startBuf : cacheBuffers.get(toBuffer).asReadOnlyBuffer();
                     endBuf.flip();
                 }
-                LOG.log(Level.FINEST, "end in buffer {0}, offset {1}", new Object[] { toBuffer, endAt});
+                LOG.log(Level.FINEST, "end in buffer {0}, offset {1}", new Object[]{toBuffer, endAt});
             }
 
             startBuf.flip();
@@ -233,16 +232,16 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         buffers.add(startBuf);
         for (int i = fromBuffer + 1; i < toBuffer; i++) {
             b = cacheBuffers.get(i).asReadOnlyBuffer();
-            buffers.add((ByteBuffer)b.flip());
+            buffers.add((ByteBuffer) b.flip());
         }
         if (startBuf != endBuf) {
             buffers.add(endBuf);
         }
         return new Subchannel(buffers.iterator());
     }
-    
+
     private static class Subchannel implements ReadableByteChannel {
-        private Iterator<ByteBuffer>    buffers;
+        private Iterator<ByteBuffer> buffers;
         private ByteBuffer current;
         private boolean eof;
 
@@ -250,7 +249,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
             this.buffers = buffers;
             this.current = buffers.next();
         }
-        
+
         @Override
         public int read(ByteBuffer dst) throws IOException {
             if (eof) {
@@ -267,7 +266,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
                     }
                     current = buffers.next();
                 }
-            } while (current.position()== 0);
+            } while (current.position() == 0);
             int cnt = 0;
             if (current.remaining() <= dst.remaining()) {
                 cnt = current.remaining();

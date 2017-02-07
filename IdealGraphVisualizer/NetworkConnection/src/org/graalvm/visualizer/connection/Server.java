@@ -43,23 +43,23 @@ public class Server implements PreferenceChangeListener {
      * Maximum parallel network reading threads.
      */
     private static final int MAX_PARALLEL_READS = 50;
-    
+
     private final boolean binary;
     private ServerSocketChannel serverSocket;
     private final GraphDocument rootDocument;
     private final GroupCallback callback;
     private int port;
     private Runnable serverRunnable;
-    
+
     /**
      * Request processor which reads network data and stores to disk files.
      */
-    private static final RequestProcessor   NETWORK_RP = new RequestProcessor(Server.class.getName(), MAX_PARALLEL_READS);
-    
+    private static final RequestProcessor NETWORK_RP = new RequestProcessor(Server.class.getName(), MAX_PARALLEL_READS);
+
     /**
      * Lazy-loading RP.
      */
-    public static final RequestProcessor   LOADER_RP = new RequestProcessor(Client.class);
+    public static final RequestProcessor LOADER_RP = new RequestProcessor(Client.class);
 
     public Server(GraphDocument rootDocument, GroupCallback callback, boolean binary) {
         this.binary = binary;
@@ -79,9 +79,9 @@ public class Server implements PreferenceChangeListener {
     }
 
     @NbBundle.Messages({
-        "ERR_CannotListen=Could not create server. Listening for incoming binary data is disabled.",
-        "# 0 - error description",
-        "ERR_ProcessingAccept=Error listening for connections: {0}"
+                    "ERR_CannotListen=Could not create server. Listening for incoming binary data is disabled.",
+                    "# 0 - error description",
+                    "ERR_ProcessingAccept=Error listening for connections: {0}"
     })
     private void initializeNetwork() {
 
@@ -92,7 +92,7 @@ public class Server implements PreferenceChangeListener {
             serverSocket.bind(new InetSocketAddress(curPort));
         } catch (IOException ex) {
             NotifyDescriptor message = new NotifyDescriptor.Message(
-                    Bundle.ERR_CannotListen(), NotifyDescriptor.ERROR_MESSAGE);
+                            Bundle.ERR_CannotListen(), NotifyDescriptor.ERROR_MESSAGE);
             DialogDisplayer.getDefault().notifyLater(message);
             return;
         }
@@ -112,11 +112,11 @@ public class Server implements PreferenceChangeListener {
                     } catch (IOException ex) {
                         serverSocket = null;
                         NotifyDescriptor message = new NotifyDescriptor.Message(
-                                Bundle.ERR_ProcessingAccept(ex.getLocalizedMessage()), NotifyDescriptor.ERROR_MESSAGE);
+                                        Bundle.ERR_ProcessingAccept(ex.getLocalizedMessage()), NotifyDescriptor.ERROR_MESSAGE);
                         DialogDisplayer.getDefault().notifyLater(message);
                         return;
                     }
-                    //break;
+                    // break;
                 }
             }
         };

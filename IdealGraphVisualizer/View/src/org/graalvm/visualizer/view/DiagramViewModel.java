@@ -189,10 +189,11 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         ListenerSupport.addWeakListener(filterChainChangedListener, filterChain.getChangedEvent());
         ListenerSupport.addWeakListener(filterChainChangedListener, sequenceFilterChain.getChangedEvent());
     }
+
     private final ChangedListener<DiagramViewModel> groupChangedListener = new ChangedListener<DiagramViewModel>() {
         private Group oldGroup;
         private ChangedListener<Group> l;
-        
+
         @Override
         public void changed(DiagramViewModel source) {
             if (oldGroup != null) {
@@ -202,7 +203,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             oldGroup = group;
         }
     };
-    
+
     private final ChangedListener<Group> groupContentChangedListener = new ChangedListener<Group>() {
 
         @Override
@@ -293,7 +294,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
         setHiddenNodes(newHiddenNodes);
     }
-
 
     public Set<Figure> getSelectedFigures() {
         Set<Figure> result = new HashSet<>();
@@ -407,12 +407,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             getFilterChain().apply(diagram, getSequenceFilterChain());
             if (getFirstPosition() != getSecondPosition()) {
                 CustomFilter f = new CustomFilter(
-                        "difference", "colorize('state', 'same', white);"
-                        + "colorize('state', 'changed', orange);"
-                        + "colorize('state', 'new', green);"
-                        + "colorize('state', 'deleted', red);");
+                                "difference",
+                                "colorize('state', 'same', white);" + "colorize('state', 'changed', orange);" + "colorize('state', 'new', green);" + "colorize('state', 'deleted', red);");
                 f.apply(diagram);
-           }
+            }
         }
 
         return diagram;
