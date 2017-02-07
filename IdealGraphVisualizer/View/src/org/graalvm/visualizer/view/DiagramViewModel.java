@@ -145,11 +145,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return hideDuplicates;
     }
 
-    // PENDING: there's a bug in BinaryParser; if the 1st occurrence
-    // introduces a constantpool entry, the subsequent (likely identical) graph
-    // only references that entry. But the digest is counted from the exact content
-    // of the graph serialization, so it will differ. 3rd and subsequent graphs will be detected
-    // as duplicates of 2nd one (since they cannot introduce new constantpool entries).
     public void setHideDuplicates(boolean b) {
         System.err.println("setHideDuplicates: " + b);
         hideDuplicates = b;

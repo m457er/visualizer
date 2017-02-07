@@ -67,20 +67,19 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
     public static final int ATTEMPT_COUNT = 10;
 
     private static final Logger LOG = Logger.getLogger(GroupCompleter.class.getName());
-//    private static final RequestProcessor  EXPAND_RP = new RequestProcessor(GroupCompleter.class);
     
     private final long  start;
     private final Executor notifyExecutor;
     private final ScheduledExecutorService fetchExecutor;
-    private final  CachedContent   content;
+    private final CachedContent content;
 
-    private long    end = -1;
-    private ConstantPool    initialPool;
-    private LazyGroup   toComplete;
-    private WrapF   future;
+    private long end = -1;
+    private ConstantPool initialPool;
+    private LazyGroup toComplete;
+    private WrapF future;
 
     // diagnostics only
-    private int     attemptCount;
+    private int attemptCount;
     
     /**
      * Will keep the currently resolved elements until the events are delivered by the executor.

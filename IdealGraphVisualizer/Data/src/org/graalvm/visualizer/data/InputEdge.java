@@ -108,9 +108,12 @@ public class InputEdge {
         this.state = state;
         this.label = label;
         this.type = type;
+        
+        int hash = (from << 20 | to << 8 | toIndex << 4 | fromIndex);
         if (state == State.IMMUTABLE) {
-            this.hashCode = hashCode() << 5 ^ label.hashCode();
+            hash = hash << 5 ^ label.hashCode();
         }
+        this.hashCode = hash;
     }
 
     public State getState() {
@@ -173,9 +176,6 @@ public class InputEdge {
 
     @Override
     public int hashCode() {
-        if (hashCode != -1) {
-            return hashCode;
-        }
-        return (from << 20 | to << 8 | toIndex << 4 | fromIndex);
+        return hashCode;
     }
 }
