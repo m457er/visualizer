@@ -643,14 +643,12 @@ public class ModelBuilder {
     
     public void makeBlockEdges() {
         assert currentGraph != null;
-        if (blockEdges == null) {
-            return;
-        }
-        
-        for (EdgeInfo e : blockEdges) {
-            String fromName = blockName(e.from);
-            String toName = blockName(e.to);
-            currentGraph.addBlockEdge(currentGraph.getBlock(fromName), currentGraph.getBlock(toName));
+        if (blockEdges != null) {
+            for (EdgeInfo e : blockEdges) {
+                String fromName = blockName(e.from);
+                String toName = blockName(e.to);
+                currentGraph.addBlockEdge(currentGraph.getBlock(fromName), currentGraph.getBlock(toName));
+            }
         }
         currentGraph.ensureNodesInBlocks();
     }
