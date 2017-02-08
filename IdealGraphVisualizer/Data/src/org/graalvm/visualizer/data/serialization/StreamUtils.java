@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.visualizer.data.services;
 
-import org.graalvm.visualizer.data.Group;
+package org.graalvm.visualizer.data.serialization;
 
-public interface GroupCallback {
-    public void     started(Group g);
+/**
+ * Miscellanous utilities.
+ */
+class StreamUtils {
+    
+    private static final boolean INTERN = Boolean.getBoolean("IGV.internStrings"); // NOI18N
+    
+    /**
+     * Possibly interns strings, based on system property. Temporary for testing; String.intern
+     * showed harmful in profiler data, use the property to turn on/off for experiments.
+     */
+    static String maybeIntern(String s) {
+        if (INTERN) {
+            if (s == null) {
+                return null;
+            }
+            return s.intern();
+        } else {
+            return s;
+        }
+    }
+
 }

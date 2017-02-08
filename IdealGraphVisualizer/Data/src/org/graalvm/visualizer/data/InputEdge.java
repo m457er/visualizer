@@ -65,6 +65,7 @@ public class InputEdge {
     private final String label;
     private final String type;
     private State state;
+    private int hashCode = -1;
 
     public InputEdge(char toIndex, int from, int to) {
         this((char) 0, toIndex, from, to, null, null);
@@ -107,6 +108,12 @@ public class InputEdge {
         this.state = state;
         this.label = label;
         this.type = type;
+        
+        int hash = (from << 20 | to << 8 | toIndex << 4 | fromIndex);
+        if (state == State.IMMUTABLE) {
+            hash = hash << 5 ^ label.hashCode();
+        }
+        this.hashCode = hash;
     }
 
     public State getState() {
@@ -157,7 +164,7 @@ public class InputEdge {
         boolean result = conn2.fromIndex == fromIndex && conn2.toIndex == toIndex && conn2.from == from && conn2.to == to;
         if (result && (state == State.IMMUTABLE || conn2.state == State.IMMUTABLE)) {
             // Immutable instances must be exactly the same
-            return conn2.label == label && conn2.state == state;
+            return conn2.state == state && conn2.label.equals(label);
         }
         return result;
     }
@@ -169,6 +176,6 @@ public class InputEdge {
 
     @Override
     public int hashCode() {
-        return (from << 20 | to << 8 | toIndex << 4 | fromIndex);
+        return hashCode;
     }
 }

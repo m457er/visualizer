@@ -36,16 +36,24 @@ import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.services.GroupCallback;
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.SwingUtilities;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import org.graalvm.visualizer.data.FolderElement;
+import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
 
+/**
+ * This parser is deprecated. Use {@link BinaryReader} and {@link ModelBuilder} instead.
+ * @see BinaryReader
+ * @see BinarySource
+ * @see ModelBuilder
+ * @deprecated
+ */
+@Deprecated
 public class BinaryParser implements GraphParser {
     private static final int BEGIN_GROUP = 0x00;
     private static final int BEGIN_GRAPH = 0x01;
@@ -76,13 +84,7 @@ public class BinaryParser implements GraphParser {
 
     private static final String NO_BLOCK = "noBlock";
 
-    private static final Charset UTF8 = Charset.forName("UTF-8");
-    private static final Charset UTF16 = Charset.forName("UTF-16");
-
     private final GroupCallback callback;
-    private final List<Object> constantPool;
-    private final ByteBuffer buffer;
-    private final ReadableByteChannel channel;
     private final GraphDocument rootDocument;
     private final Deque<Folder> folderStack;
     private final Deque<byte[]> hashStack;
@@ -90,35 +92,14 @@ public class BinaryParser implements GraphParser {
 
     private MessageDigest digest;
 
-    private Charset stringCharset;
 
-    private int majorVersion;
-    private int minorVersion;
+    private BinarySource    dataSource;
+    protected ConstantPool    constantPool;
 
-    static final int CURRENT_MAJOR_VERSION = 1;
-    static final int CURRENT_MINOR_VERSION = 0;
-    static final String CURRENT_VERSION = versionPair(CURRENT_MAJOR_VERSION, CURRENT_MINOR_VERSION);
-
-    static class VersionMismatchException extends RuntimeException {
+    static class VersionMismatchException extends IOException {
         VersionMismatchException(String message) {
             super(message);
         }
-    }
-
-    static final byte[] MAGIC_BYTES = { 'B', 'I', 'G', 'V' };
-
-    private static String versionPair(int major, int minor) {
-        return major + "." + minor;
-    }
-
-    private void setVersion(int newMajorVersion, int newMinorVersion) {
-        if (newMajorVersion > CURRENT_MAJOR_VERSION || (newMajorVersion == CURRENT_MAJOR_VERSION && newMinorVersion > CURRENT_MINOR_VERSION)) {
-            throw new VersionMismatchException("File format version " + versionPair(newMajorVersion, newMinorVersion) + " unsupported.  Current version is " + CURRENT_VERSION);
-        }
-
-        majorVersion = newMajorVersion;
-        minorVersion = newMinorVersion;
-        stringCharset = UTF8;
     }
 
     private enum Length {
@@ -183,6 +164,10 @@ public class BinaryParser implements GraphParser {
         public Signature(String returnType, String[] argTypes) {
             this.returnType = returnType;
             this.argTypes = argTypes;
+        }
+        
+        public String toString() {
+            return "Signature(" + returnType + ":" + String.join(":", argTypes) + ")";
         }
     }
 
@@ -305,13 +290,15 @@ public class BinaryParser implements GraphParser {
             }
         }
     }
-
+    
     public BinaryParser(ReadableByteChannel channel, ParseMonitor monitor, GraphDocument rootDocument, GroupCallback callback) {
+        this(new BinarySource(channel), monitor, rootDocument, callback);
+    }
+
+    public BinaryParser(BinarySource dataSource, ParseMonitor monitor, GraphDocument rootDocument, GroupCallback callback) {
         this.callback = callback;
-        constantPool = new ArrayList<>();
-        buffer = ByteBuffer.allocateDirect(256 * 1024);
-        buffer.flip();
-        this.channel = channel;
+        constantPool = new ConstantPool();
+        this.dataSource = dataSource;
         this.rootDocument = rootDocument;
         folderStack = new LinkedList<>();
         hashStack = new LinkedList<>();
@@ -321,153 +308,24 @@ public class BinaryParser implements GraphParser {
         } catch (NoSuchAlgorithmException e) {
         }
     }
-
-    private void fill() throws IOException {
-        // All the data between lastPosition and position has been
-        // used so add it to the digest.
-        int position = buffer.position();
-        buffer.position(lastPosition);
-        byte[] remaining = new byte[position - buffer.position()];
-        buffer.get(remaining);
-        digest.update(remaining);
-        assert position == buffer.position();
-
-        buffer.compact();
-        if (channel.read(buffer) < 0) {
-            throw new EOFException();
+    
+    public BinaryParser(BinarySource dataSource, ConstantPool pool, GraphDocument rootDocument, GroupCallback callback) {
+        this.callback = callback;
+        this.constantPool = pool;
+        this.dataSource = dataSource;
+        this.rootDocument = rootDocument;
+        this.monitor = null;
+        folderStack = new LinkedList<>();
+        hashStack = new LinkedList<>();
+        try {
+            this.digest = MessageDigest.getInstance("SHA-1");
+            dataSource.useDigest(digest);
+        } catch (NoSuchAlgorithmException e) {
         }
-        buffer.flip();
-        lastPosition = buffer.position();
-    }
-
-    private void ensureAvailable(int i) throws IOException {
-        if (i > buffer.capacity()) {
-            throw new IllegalArgumentException(String.format("Can not request %d bytes: buffer capacity is %d", i, buffer.capacity()));
-        }
-        while (buffer.remaining() < i) {
-            fill();
-        }
-    }
-
-    private int readByte() throws IOException {
-        ensureAvailable(1);
-        return ((int)buffer.get()) & 0xff;
-    }
-
-    private int readInt() throws IOException {
-        ensureAvailable(4);
-        return buffer.getInt();
-    }
-
-    private char readShort() throws IOException {
-        ensureAvailable(2);
-        return buffer.getChar();
-    }
-
-    private long readLong() throws IOException {
-        ensureAvailable(8);
-        return buffer.getLong();
-    }
-
-    private double readDouble() throws IOException {
-        ensureAvailable(8);
-        return buffer.getDouble();
-    }
-
-    private float readFloat() throws IOException {
-        ensureAvailable(4);
-        return buffer.getFloat();
-    }
-
-    private String readString() throws IOException {
-        if (stringCharset == UTF8) {
-                return new String(readBytes(), UTF8).intern();
-        } else if (stringCharset == UTF16) {
-                int len = readInt();
-                byte[] b = readBytes(len * 2);
-                return new String(b, UTF16).intern();
-        }
-        int len = readInt();
-        // Backwards compatibility
-        if (len == 0) {
-            return "";
-        }
-        byte[] b = peekBytes(1);
-        if (b[0] == '\0') {
-            // Assume UTF16 encoding
-            stringCharset = UTF16;
-            return new String(readBytes(len * 2), UTF16).intern();
-        } else {
-            setVersion(1, 0);
-            return new String(readBytes(len), UTF8).intern();
-        }
-    }
-
-    private byte[] readBytes() throws IOException {
-        int len = readInt();
-        if (len < 0) {
-            return null;
-        }
-        return readBytes(len);
-    }
-
-    private byte[] readBytes(int len) throws IOException {
-        byte[] b = new byte[len];
-        int bytesRead = 0;
-        while (bytesRead < b.length) {
-            int toRead = Math.min(b.length - bytesRead, buffer.capacity());
-            ensureAvailable(toRead);
-            buffer.get(b, bytesRead, toRead);
-            bytesRead += toRead;
-        }
-        return b;
-    }
-
-    private byte[] peekBytes(int len) throws IOException {
-        ensureAvailable(len);
-        byte[] b = new byte[len];
-        buffer.mark();
-        buffer.get(b);
-        buffer.reset();
-        return b;
-    }
-
-    private String readIntsToString() throws IOException {
-        int len = readInt();
-        if (len < 0) {
-            return "null";
-        }
-        ensureAvailable(len * 4);
-        StringBuilder sb = new StringBuilder().append('[');
-        for (int i = 0; i < len; i++) {
-            sb.append(buffer.getInt());
-            if (i < len - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append(']');
-        return sb.toString().intern();
-    }
-
-    private String readDoublesToString() throws IOException {
-        int len = readInt();
-        if (len < 0) {
-            return "null";
-        }
-        ensureAvailable(len * 8);
-        StringBuilder sb = new StringBuilder().append('[');
-        for (int i = 0; i < len; i++) {
-            sb.append(buffer.getDouble());
-            if (i < len - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append(']');
-        return sb.toString().intern();
     }
 
     private String readPoolObjectsToString() throws IOException {
-        int len = readInt();
+        int len = dataSource.readInt();
         if (len < 0) {
             return "null";
         }
@@ -479,12 +337,12 @@ public class BinaryParser implements GraphParser {
             }
         }
         sb.append(']');
-        return sb.toString().intern();
+        return maybeIntern(sb.toString());
     }
 
     @SuppressWarnings("unchecked")
     private <T> T readPoolObject(Class<T> klass) throws IOException {
-        int type = readByte();
+        int type = dataSource.readByte();
         if (type == POOL_NULL) {
             return null;
         }
@@ -492,12 +350,16 @@ public class BinaryParser implements GraphParser {
             return (T) addPoolEntry(klass);
         }
         assert assertObjectType(klass, type);
-        char index = readShort();
+        char index = dataSource.readShort();
         if (index < 0 || index >= constantPool.size()) {
             throw new IOException("Invalid constant pool index : " + index);
         }
-        Object obj = constantPool.get(index);
+        Object obj = getPoolData(index);
         return (T) obj;
+    }
+    
+    private Object getPoolData(int index) {
+        return constantPool.get(index, dataSource.getMark() - 1);
     }
 
     private boolean assertObjectType(Class<?> klass, int type) {
@@ -524,16 +386,18 @@ public class BinaryParser implements GraphParser {
     }
 
     private Object addPoolEntry(Class<?> klass) throws IOException {
-        char index = readShort();
-        int type = readByte();
+        long where = dataSource.getMark();
+        char index = dataSource.readShort();
+        int type = dataSource.readByte();
+        int size = 0;
         assert assertObjectType(klass, type) : "Wrong object type : " + klass + " != " + type;
         Object obj;
         switch(type) {
             case POOL_CLASS: {
-                String name = readString();
-                int klasstype = readByte();
+                String name = dataSource.readString();
+                int klasstype = dataSource.readByte();
                 if (klasstype == ENUM_KLASS) {
-                    int len = readInt();
+                    int len = dataSource.readInt();
                     String[] values = new String[len];
                     for (int i = 0; i < len; i++) {
                         values[i] = readPoolObject(String.class);
@@ -548,25 +412,25 @@ public class BinaryParser implements GraphParser {
             }
             case POOL_ENUM: {
                 EnumKlass enumClass = readPoolObject(EnumKlass.class);
-                int ordinal = readInt();
+                int ordinal = dataSource.readInt();
                 obj = new EnumValue(enumClass, ordinal);
                 break;
             }
             case POOL_NODE_CLASS: {
-                String className = readString();
-                String nameTemplate = readString();
-                int inputCount = readShort();
+                String className = dataSource.readString();
+                String nameTemplate = dataSource.readString();
+                int inputCount = dataSource.readShort();
                 List<TypedPort> inputs = new ArrayList<>(inputCount);
                 for (int i = 0; i < inputCount; i++) {
-                    boolean isList = readByte() != 0;
+                    boolean isList = dataSource.readByte() != 0;
                     String name = readPoolObject(String.class);
                     EnumValue inputType = readPoolObject(EnumValue.class);
                     inputs.add(new TypedPort(isList, name, inputType));
                 }
-                int suxCount = readShort();
+                int suxCount = dataSource.readShort();
                 List<Port> sux = new ArrayList<>(suxCount);
                 for (int i = 0; i < suxCount; i++) {
-                    boolean isList = readByte() != 0;
+                    boolean isList = dataSource.readByte() != 0;
                     String name = readPoolObject(String.class);
                     sux.add(new Port(isList, name));
                 }
@@ -577,8 +441,8 @@ public class BinaryParser implements GraphParser {
                 Klass holder = readPoolObject(Klass.class);
                 String name = readPoolObject(String.class);
                 Signature sign = readPoolObject(Signature.class);
-                int flags = readInt();
-                byte[] code = readBytes();
+                int flags = dataSource.readInt();
+                byte[] code = dataSource.readBytes();
                 obj = new Method(name, sign, code, holder, flags);
                 break;
             }
@@ -586,12 +450,12 @@ public class BinaryParser implements GraphParser {
                 Klass holder = readPoolObject(Klass.class);
                 String name = readPoolObject(String.class);
                 String fType = readPoolObject(String.class);
-                int flags = readInt();
+                int flags = dataSource.readInt();
                 obj = new Field(fType, holder, name, flags);
                 break;
             }
             case POOL_SIGNATURE: {
-                int argc = readShort();
+                int argc = dataSource.readShort();
                 String[] args = new String[argc];
                 for (int i = 0; i < argc; i++) {
                     args[i] = readPoolObject(String.class);
@@ -601,30 +465,27 @@ public class BinaryParser implements GraphParser {
                 break;
             }
             case POOL_STRING: {
-                obj = readString();
+                obj = dataSource.readString();
+                size = obj.toString().length();
                 break;
             }
             default:
                 throw new IOException("unknown pool type");
         }
-        while (constantPool.size() <= index) {
-            constantPool.add(null);
-        }
-        constantPool.set(index, obj);
-        return obj;
+        return constantPool.addPoolEntry(index, obj, where);
     }
 
     private Object readPropertyObject() throws IOException {
-        int type = readByte();
+        int type = dataSource.readByte();
         switch (type) {
             case PROPERTY_INT:
-                return readInt();
+                return dataSource.readInt();
             case PROPERTY_LONG:
-                return readLong();
+                return dataSource.readLong();
             case PROPERTY_FLOAT:
-                return readFloat();
+                return dataSource.readFloat();
             case PROPERTY_DOUBLE:
-                return readDouble();
+                return dataSource.readDouble();
             case PROPERTY_TRUE:
                 return Boolean.TRUE;
             case PROPERTY_FALSE:
@@ -632,12 +493,12 @@ public class BinaryParser implements GraphParser {
             case PROPERTY_POOL:
                 return readPoolObject(Object.class);
             case PROPERTY_ARRAY:
-                int subType = readByte();
+                int subType = dataSource.readByte();
                 switch(subType) {
                     case PROPERTY_INT:
-                        return readIntsToString();
+                        return dataSource.readIntsToString();
                     case PROPERTY_DOUBLE:
-                        return readDoublesToString();
+                        return dataSource.readDoublesToString();
                     case PROPERTY_POOL:
                         return readPoolObjectsToString();
                     default:
@@ -651,7 +512,7 @@ public class BinaryParser implements GraphParser {
                 throw new IOException("Unknown type");
         }
     }
-
+    
     @Override
     public GraphDocument parse() throws IOException {
         folderStack.push(rootDocument);
@@ -661,12 +522,7 @@ public class BinaryParser implements GraphParser {
         }
         try {
             // Check for a version specification
-            byte[] magic = peekBytes(MAGIC_BYTES.length);
-            if (Arrays.equals(MAGIC_BYTES, magic)) {
-                // Consume the bytes for real
-                readBytes(MAGIC_BYTES.length);
-                setVersion(readByte(), readByte());
-            }
+            dataSource.readHeader();
             while(true) {
                 parseRoot();
             }
@@ -678,45 +534,52 @@ public class BinaryParser implements GraphParser {
         }
         return rootDocument;
     }
+    
+    protected void registerGraph(Folder parent, FolderElement graph) {
+        SwingUtilities.invokeLater(new Runnable(){
+            @Override
+            public void run() {
+                parent.addElement(graph);
+            }
+        });
+    }
+    
+    protected void beginGroup(Folder parent) throws IOException {
+        final Group group = parseGroup(parent);
+        if (callback == null || parent instanceof Group) {
+            registerGraph(parent, group);
+        }
+        folderStack.push(group);
+        hashStack.push(null);
+        if (callback != null && parent instanceof GraphDocument) {
+            callback.started(group);
+        }
+    }
+    
+    protected void closeGroup(Group g) throws IOException {
+    }
 
-    private void parseRoot() throws IOException {
-        int type = readByte();
+    protected void parseRoot() throws IOException {
+        int type = dataSource.readByte();
         switch(type) {
             case BEGIN_GRAPH: {
                 final Folder parent = folderStack.peek();
                 final InputGraph graph = parseGraph();
-                SwingUtilities.invokeLater(new Runnable(){
-                    @Override
-                    public void run() {
-                        parent.addElement(graph);
-                    }
-                });
+                registerGraph(parent, graph);
                 break;
             }
             case BEGIN_GROUP: {
                 final Folder parent = folderStack.peek();
-                final Group group = parseGroup(parent);
-                if (callback == null || parent instanceof Group) {
-                    SwingUtilities.invokeLater(new Runnable(){
-                        @Override
-                        public void run() {
-                            parent.addElement(group);
-                        }
-                    });
-                }
-                folderStack.push(group);
-                hashStack.push(null);
-                if (callback != null && parent instanceof GraphDocument) {
-                    callback.started(group);
-                }
+                beginGroup(parent);
                 break;
             }
             case CLOSE_GROUP: {
                 if (folderStack.isEmpty()) {
                     throw new IOException("Unbalanced groups");
                 }
-                folderStack.pop();
+                Group g = (Group)folderStack.pop();
                 hashStack.pop();
+                closeGroup(g);
                 break;
             }
             default:
@@ -724,15 +587,19 @@ public class BinaryParser implements GraphParser {
         }
     }
 
-    private Group parseGroup(Folder parent) throws IOException {
+    protected Group createGroup(Folder parent) {
+        return new Group(parent);
+    }
+    
+    protected Group parseGroup(Folder parent) throws IOException {
         String name = readPoolObject(String.class);
         String shortName = readPoolObject(String.class);
         if (monitor != null) {
             monitor.setState(shortName);
         }
         Method method = readPoolObject(Method.class);
-        int bci = readInt();
-        Group group = new Group(parent);
+        int bci = dataSource.readInt();
+        Group group = createGroup(parent);
         group.getProperties().setProperty("name", name);
         parseProperties(group.getProperties());
         if (method != null) {
@@ -751,19 +618,9 @@ public class BinaryParser implements GraphParser {
             monitor.updateProgress();
         }
         String title = readPoolObject(String.class);
-        digest.reset();
-        lastPosition = buffer.position();
         InputGraph graph = parseGraph(title);
 
-        int position = buffer.position();
-        buffer.position(lastPosition);
-        byte[] remaining = new byte[position - buffer.position()];
-        buffer.get(remaining);
-        digest.update(remaining);
-        assert position == buffer.position();
-        lastPosition = buffer.position();
-
-        byte[] d = digest.digest();
+        byte[] d = dataSource.finishDigest();
         byte[] hash = hashStack.peek();
         if (hash != null && Arrays.equals(hash, d)) {
             graph.getProperties().setProperty("_isDuplicate", "true");
@@ -775,7 +632,7 @@ public class BinaryParser implements GraphParser {
     }
 
     private void parseProperties(Properties properties) throws IOException {
-        int propCount = readShort();
+        int propCount = dataSource.readShort();
         for (int j = 0; j < propCount; j++) {
             String key = readPoolObject(String.class);
             Object value = readPropertyObject();
@@ -786,6 +643,7 @@ public class BinaryParser implements GraphParser {
     private InputGraph parseGraph(String title) throws IOException {
         InputGraph graph = new InputGraph(title);
         parseProperties(graph.getProperties());
+        dataSource.startDigest();
         parseNodes(graph);
         parseBlocks(graph);
         graph.ensureNodesInBlocks();
@@ -794,17 +652,17 @@ public class BinaryParser implements GraphParser {
         }
         return graph;
     }
-
+    
     private void parseBlocks(InputGraph graph) throws IOException {
-        int blockCount = readInt();
+        int blockCount = dataSource.readInt();
         List<Edge> edges = new LinkedList<>();
         for (int i = 0; i < blockCount; i++) {
-            int id = readInt();
+            int id = dataSource.readInt();
             String name = id >= 0 ? Integer.toString(id) : NO_BLOCK;
             InputBlock block = graph.addBlock(name);
-            int nodeCount = readInt();
+            int nodeCount = dataSource.readInt();
             for (int j = 0; j < nodeCount; j++) {
-                int nodeId = readInt();
+                int nodeId = dataSource.readInt();
                 if (nodeId < 0) {
                     continue;
                 }
@@ -817,11 +675,11 @@ public class BinaryParser implements GraphParser {
                     properties.setProperty("block", name);
                 }
             }
-            int edgeCount = readInt();
+            int edgeCount = dataSource.readInt();
             for (int j = 0; j < edgeCount; j++) {
-                int to = readInt();
+                int to = dataSource.readInt();
                 edges.add(new Edge(id, to));
-            }
+                }
         }
         for (Edge e : edges) {
             String fromName = e.from >= 0 ? Integer.toString(e.from) : NO_BLOCK;
@@ -829,23 +687,23 @@ public class BinaryParser implements GraphParser {
             graph.addBlockEdge(graph.getBlock(fromName), graph.getBlock(toName));
         }
     }
-
+    
     private void parseNodes(InputGraph graph) throws IOException {
-        int count = readInt();
+        int count = dataSource.readInt();
         Map<String, Object> props = new HashMap<>();
         List<Edge> inputEdges = new ArrayList<>(count);
         List<Edge> succEdges = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            int id = readInt();
+            int id = dataSource.readInt();
             InputNode node = new InputNode(id);
             final Properties properties = node.getProperties();
             NodeClass nodeClass = readPoolObject(NodeClass.class);
-            int preds = readByte();
+            int preds = dataSource.readByte();
             if (preds > 0) {
                 properties.setProperty("hasPredecessor", "true");
             }
             properties.setProperty("idx", Integer.toString(id));
-            int propCount = readShort();
+            int propCount = dataSource.readShort();
             for (int j = 0; j < propCount; j++) {
                 String key = readPoolObject(String.class);
                 if (key.equals("hasPredecessor") || key.equals("name") || key.equals("class") || key.equals("id") || key.equals("idx")) {
@@ -865,9 +723,9 @@ public class BinaryParser implements GraphParser {
             int portNum = 0;
             for (TypedPort p : nodeClass.inputs) {
                 if (p.isList) {
-                    int size = readShort();
+                    int size = dataSource.readShort();
                     for (int j = 0; j < size; j++) {
-                        int in = readInt();
+                        int in = dataSource.readInt();
                         if (in >= 0) {
                             Edge e = new Edge(in, id, (char) (preds + portNum), p.name + "[" + j + "]", p.type.toString(Length.S), true);
                             currentEdges.add(e);
@@ -876,7 +734,7 @@ public class BinaryParser implements GraphParser {
                         }
                     }
                 } else {
-                    int in = readInt();
+                    int in = dataSource.readInt();
                     if (in >= 0) {
                         Edge e = new Edge(in, id, (char) (preds + portNum), p.name, p.type.toString(Length.S), true);
                         currentEdges.add(e);
@@ -889,9 +747,9 @@ public class BinaryParser implements GraphParser {
             portNum = 0;
             for (Port p : nodeClass.sux) {
                 if (p.isList) {
-                    int size = readShort();
+                    int size = dataSource.readShort();
                     for (int j = 0; j < size; j++) {
-                        int sux = readInt();
+                        int sux = dataSource.readInt();
                         if (sux >= 0) {
                             Edge e = new Edge(id, sux, (char) portNum, p.name + "[" + j + "]", "Successor", false);
                             currentEdges.add(e);
@@ -900,7 +758,7 @@ public class BinaryParser implements GraphParser {
                         }
                     }
                 } else {
-                    int sux = readInt();
+                    int sux = dataSource.readInt();
                     if (sux >= 0) {
                         Edge e = new Edge(id, sux, (char) portNum, p.name, "Successor", false);
                         currentEdges.add(e);
@@ -998,13 +856,15 @@ public class BinaryParser implements GraphParser {
                     newResult.append("\\\\");
                 } else if (c == '$') {
                     newResult.append("\\$");
+                } else {
+                    newResult.append(c);
                 }
             }
             result = newResult.toString();
             m.appendReplacement(sb, result);
         }
         m.appendTail(sb);
-        return sb.toString().intern();
+        return maybeIntern(sb.toString());
     }
 
     private static class Edge {
@@ -1020,10 +880,14 @@ public class BinaryParser implements GraphParser {
         public Edge(int from, int to, char num, String label, String type, boolean input) {
             this.from = from;
             this.to = to;
-            this.label = label != null ? label.intern() : label;
-            this.type = type != null ? type.intern() : type;
+            this.label = maybeIntern(label);
+            this.type = maybeIntern(type);
             this.num = num;
             this.input = input;
         }
+    }
+    
+    public final ConstantPool getConstantPool() {
+        return constantPool;
     }
 }

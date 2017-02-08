@@ -38,6 +38,19 @@ public class Properties implements Serializable, Iterable<Property> {
     public Properties() {
     }
 
+    private static final boolean INTERN = Boolean.getBoolean("IGV.internStrings");
+    
+    private static String maybeIntern(String s) {
+        if (INTERN) {
+            if (s == null) {
+                return null;
+            }
+            return s.intern();
+        } else {
+            return s;
+        }
+    }
+
     @Override
     public boolean equals(java.lang.Object o) {
         if (!(o instanceof Properties)) {
@@ -374,7 +387,7 @@ public class Properties implements Serializable, Iterable<Property> {
     }
 
     public void setProperty(String name, String value) {
-        setPropertyInternal(name.intern(), value != null ? value.intern() : null);
+        setPropertyInternal(maybeIntern(name), maybeIntern(value));
     }
 
     protected void setPropertyInternal(String name, String value) {

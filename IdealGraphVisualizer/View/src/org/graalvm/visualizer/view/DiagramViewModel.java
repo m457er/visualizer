@@ -186,8 +186,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         groupChangedEvent.addListener(groupChangedListener);
         groupChangedEvent.fire();
 
-        filterChain.getChangedEvent().addListener(filterChainChangedListener);
-        sequenceFilterChain.getChangedEvent().addListener(filterChainChangedListener);
+        ListenerSupport.addWeakListener(filterChainChangedListener, filterChain.getChangedEvent());
+        ListenerSupport.addWeakListener(filterChainChangedListener, sequenceFilterChain.getChangedEvent());
     }
     private final ChangedListener<DiagramViewModel> groupChangedListener = new ChangedListener<DiagramViewModel>() {
         private Group oldGroup;
