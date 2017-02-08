@@ -514,17 +514,6 @@ public final class BinaryReader implements GraphParser {
     }
     
     private void computeGraphDigest() {
-        /*
-        int position = dataSource.buffer.position();
-        dataSource.buffer.position(dataSource.lastPosition);
-        byte[] remaining = new byte[position - dataSource.buffer.position()];
-        dataSource.buffer.get(remaining);
-        digest.update(remaining);
-        assert position == dataSource.buffer.position();
-        dataSource.lastPosition = dataSource.buffer.position();
-
-        byte[] d = digest.digest();
-        */
         byte[] d = dataSource.finishDigest();
         byte[] hash = hashStack.peek();
         if (hash != null && Arrays.equals(hash, d)) {
