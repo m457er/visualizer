@@ -125,9 +125,9 @@ public final class Connection implements Source.Provider, Link {
             builder.append(type).append(" ");
         }
         builder.append("from ");
-        builder.append(getOutputSlot().getFigure().getSource().getSourceNodes().get(0).getId());
+        builder.append(getOutputSlot().getFigure().getSource().firstId());
         builder.append(" to ");
-        builder.append(getInputSlot().getFigure().getSource().getSourceNodes().get(0).getId());
+        builder.append(getInputSlot().getFigure().getSource().firstId());
         return builder.toString();
     }
 

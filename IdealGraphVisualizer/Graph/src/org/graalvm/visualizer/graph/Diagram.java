@@ -29,8 +29,10 @@ import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.data.InputNode;
 import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.Properties.StringPropertyMatcher;
+import org.graalvm.visualizer.data.Source;
 import java.awt.Font;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class Diagram {
 
@@ -42,6 +44,11 @@ public class Diagram {
     private final Font font;
     private final Font slotFont;
     private final Font boldFont;
+
+    /**
+     * Maps IDs to individual Figures and Slots.
+     */
+    private Map<Integer, Collection<Source.Provider>> sourceMap;
 
     public Font getFont() {
         return font;
@@ -183,21 +190,28 @@ public class Diagram {
     }
 
     public void removeAllFigures(Set<Figure> figuresToRemove) {
+        if (!figuresToRemove.isEmpty()) {
+            invalidateSlotMap();
+        }
         for (Figure f : figuresToRemove) {
             freeFigure(f);
         }
 
-        ArrayList<Figure> newFigures = new ArrayList<>();
-        for (Figure f : this.figures) {
-            if (!figuresToRemove.contains(f)) {
-                newFigures.add(f);
-            }
-        }
+        ArrayList<Figure> newFigures = new ArrayList<>(this.figures);
+        newFigures.removeAll(figuresToRemove);
         figures = newFigures;
     }
 
-    private void freeFigure(Figure succ) {
+    private Set<Integer> collectFigureIds(Figure succ) {
+        Set<Integer> representedIds = new HashSet<>();
+        succ.getSource().collectIds(representedIds);
+        succ.getInputSlots().forEach(is -> is.getSource().collectIds(representedIds));
+        succ.getOutputSlots().forEach(is -> is.getSource().collectIds(representedIds));
+        return representedIds;
+    }
 
+    private void freeFigure(Figure succ) {
+        Set<Integer> representedIds = sourceMap == null ? null : collectFigureIds(succ);
         List<InputSlot> inputSlots = new ArrayList<>(succ.getInputSlots());
         for (InputSlot s : inputSlots) {
             succ.removeInputSlot(s);
@@ -213,10 +227,12 @@ public class Diagram {
         assert succ.getPredecessors().isEmpty();
         assert succ.getSuccessors().isEmpty();
 
+        if (representedIds != null) {
+            sourceMap.keySet().removeAll(representedIds);
+        }
     }
 
     public void removeFigure(Figure succ) {
-
         assert this.figures.contains(succ);
         freeFigure(succ);
         this.figures.remove(succ);
@@ -304,5 +320,57 @@ public class Diagram {
             }
         }
         return rootFigures;
+    }
+
+    /**
+     * Returns object that corresponds to the ID. Currently the provided objects can be either a
+     * {@link Figure} or a {@link Slot}.
+     * 
+     * @param id
+     * @return
+     */
+    public Collection<Source.Provider> forSource(int id) {
+        return Collections.unmodifiableCollection(ensureSlotMap().getOrDefault(id, Collections.emptyList()));
+    }
+
+    public Optional<Figure> getFigure(int id) {
+        for (Source.Provider p : forSource(id)) {
+            if (p instanceof Figure) {
+                return Optional.of((Figure) p);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public <T extends Source.Provider> Set<T> forSources(Collection<Integer> ids, Class<T> clazz) {
+        Set<T> r = new HashSet<>(ids.size());
+        Map<Integer, Collection<Source.Provider>> slots = ensureSlotMap();
+        for (int i : ids) {
+            for (Source.Provider s : slots.getOrDefault(i, Collections.emptyList())) {
+                if (s != null && (clazz == null || clazz.isInstance(s))) {
+                    r.add(clazz.cast(s));
+                }
+            }
+        }
+        return r;
+    }
+
+    private Map<Integer, Collection<Source.Provider>> ensureSlotMap() {
+        if (sourceMap != null) {
+            return sourceMap;
+        }
+        Map<Integer, Collection<Source.Provider>> m = new HashMap<>();
+        getFigures().parallelStream().flatMap(f -> Stream.concat(
+                        Stream.of(f),
+                        f.getSlots().stream())).forEach(s -> {
+                            for (InputNode in : s.getSource().getSourceNodes()) {
+                                m.computeIfAbsent(in.getId(), (id) -> new ArrayList<>(2)).add(s);
+                            }
+                        });
+        return sourceMap = m;
+    }
+
+    void invalidateSlotMap() {
+        this.sourceMap = null;
     }
 }

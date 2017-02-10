@@ -70,10 +70,11 @@ public class CombineFilter extends AbstractFilter {
                             for (Connection c : s.getConnections()) {
                                 if (c.getOutputSlot().getFigure() == f) {
                                     slot = s;
+                                    break;
                                 }
                             }
                         }
-
+                        assert slot != null;
                         slot.getSource().addSourceNodes(f.getSource());
                         if (r.getShortProperty() != null) {
                             String s = f.getProperties().get(r.getShortProperty());
@@ -116,6 +117,7 @@ public class CombineFilter extends AbstractFilter {
                                     for (Connection c : s.getConnections()) {
                                         if (c.getInputSlot().getFigure() == succ) {
                                             oldSlot = s;
+                                            break;
                                         }
                                     }
                                 }

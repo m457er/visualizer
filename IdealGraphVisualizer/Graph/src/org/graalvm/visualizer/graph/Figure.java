@@ -44,7 +44,8 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     public static final int SLOT_OFFSET = 8;
     public static final boolean VERTICAL_LAYOUT = true;
     protected List<InputSlot> inputSlots;
-    protected List<OutputSlot> outputSlots;
+    private OutputSlot singleOutput;
+    private List<OutputSlot> outputSlots;
     private final Source source;
     private final Diagram diagram;
     private Point position;
@@ -89,6 +90,14 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
         return result;
     }
 
+    public static int getSlotsWidth(Slot s) {
+        if (s == null) {
+            return Figure.SLOT_OFFSET;
+        } else {
+            return Figure.SLOT_OFFSET + s.getWidth() + Figure.SLOT_OFFSET;
+        }
+    }
+
     public int getWidth() {
         if (widthCash == -1) {
             int max = 0;
@@ -104,16 +113,15 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
             }
             widthCash = max + INSET;
             widthCash = Math.max(widthCash, Figure.getSlotsWidth(inputSlots));
-            widthCash = Math.max(widthCash, Figure.getSlotsWidth(outputSlots));
+            widthCash = Math.max(widthCash, outputSlots == null ? getSlotsWidth(singleOutput) : getSlotsWidth(outputSlots));
         }
         return widthCash;
     }
 
     protected Figure(Diagram diagram, int id) {
         this.diagram = diagram;
-        this.source = new Source();
+        this.source = new FigureSource(this);
         inputSlots = new ArrayList<>(5);
-        outputSlots = new ArrayList<>(1);
         predecessors = new ArrayList<>(6);
         successors = new ArrayList<>(6);
         this.id = id;
@@ -219,7 +227,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
     public void removeSlot(Slot s) {
 
-        assert inputSlots.contains(s) || outputSlots.contains(s);
+        assert inputSlots.contains(s) || (singleOutput == s || (outputSlots != null && outputSlots.contains(s)));
 
         List<Connection> connections = new ArrayList<>(s.getConnections());
         for (Connection c : connections) {
@@ -228,21 +236,59 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
         if (inputSlots.contains(s)) {
             inputSlots.remove(s);
-        } else if (outputSlots.contains(s)) {
-            outputSlots.remove(s);
+        } else if (!doRemoveOutputSlot(s)) {
+            return; // ?
         }
+        sourcesChanged(s.getSource());
+    }
+
+    private boolean doRemoveOutputSlot(Slot s) {
+        if (outputSlots != null) {
+            boolean ret = outputSlots.remove(s);
+            if (outputSlots.isEmpty()) {
+                outputSlots = null;
+                singleOutput = null;
+            }
+            return ret;
+        } else if (singleOutput == s) {
+            singleOutput = null;
+            return true;
+        }
+        return false;
     }
 
     public OutputSlot createOutputSlot() {
         OutputSlot slot = new OutputSlot(this, -1);
-        outputSlots.add(slot);
+        addOutputSlot(slot);
         return slot;
+    }
+
+    private boolean addOutputSlot(OutputSlot slot) {
+        boolean res;
+        if (outputSlots != null) {
+            outputSlots.add(slot);
+            res = true;
+        } else if (singleOutput == null) {
+            singleOutput = slot;
+            res = false;
+        } else {
+            outputSlots = new ArrayList<>(2);
+            outputSlots.add(singleOutput);
+            outputSlots.add(slot);
+            singleOutput = null;
+            res = true;
+        }
+        if (res) {
+            sourcesChanged(slot.getSource());
+        }
+        return res;
     }
 
     public OutputSlot createOutputSlot(int index) {
         OutputSlot slot = new OutputSlot(this, index);
-        outputSlots.add(slot);
-        Collections.sort(outputSlots, Slot.slotIndexComparator);
+        if (addOutputSlot(slot)) {
+            Collections.sort(outputSlots, Slot.slotIndexComparator);
+        }
         return slot;
     }
 
@@ -258,7 +304,13 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     }
 
     public List<OutputSlot> getOutputSlots() {
-        return Collections.unmodifiableList(outputSlots);
+        if (outputSlots != null) {
+            return Collections.unmodifiableList(outputSlots);
+        } else if (singleOutput != null) {
+            return Collections.singletonList(singleOutput);
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     void removeInputSlot(InputSlot s) {
@@ -268,7 +320,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
     void removeOutputSlot(OutputSlot s) {
         s.removeAllConnections();
-        outputSlots.remove(s);
+        doRemoveOutputSlot(s);
     }
 
     public String[] getLines() {
@@ -321,16 +373,21 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
         return sb.toString();
     }
 
+    private int outputSlotCount() {
+        return outputSlots == null ? (singleOutput != null ? 1 : 0) : outputSlots.size();
+    }
+
     @Override
     public Dimension getSize() {
+        int osSize = outputSlotCount();
         if (VERTICAL_LAYOUT) {
-            int width = Math.max(getWidth(), Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), outputSlots.size()) + 1));
+            int width = Math.max(getWidth(), Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), osSize) + 1));
             int height = getHeight() + 2 * Figure.SLOT_WIDTH - 2 * Figure.OVERLAPPING;
 
             return new Dimension(width, height);
         } else {
             int width = getWidth() + 2 * Figure.SLOT_WIDTH - 2 * Figure.OVERLAPPING;
-            int height = Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), outputSlots.size()) + 1);
+            int height = Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), osSize) + 1);
             return new Dimension(width, height);
         }
     }
@@ -345,7 +402,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
             assert false : "Should never reach here, every figure must have at least one source node!";
             return null;
         } else {
-            final InputBlock inputBlock = diagram.getGraph().getBlock(getSource().getSourceNodes().get(0));
+            final InputBlock inputBlock = diagram.getGraph().getBlock(getSource().first());
             assert inputBlock != null;
             Cluster result = diagram.getBlock(inputBlock);
             assert result != null;
@@ -371,5 +428,9 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
     public Rectangle getBounds() {
         return new Rectangle(this.getPosition(), new Dimension(this.getWidth(), this.getHeight()));
+    }
+
+    void sourcesChanged(Source s) {
+        diagram.invalidateSlotMap();
     }
 }

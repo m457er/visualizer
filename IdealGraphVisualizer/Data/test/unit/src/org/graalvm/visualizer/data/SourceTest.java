@@ -24,8 +24,6 @@
 
 package org.graalvm.visualizer.data;
 
-import org.graalvm.visualizer.data.Source;
-import org.graalvm.visualizer.data.InputNode;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import static org.junit.Assert.assertEquals;
@@ -64,14 +62,17 @@ public class SourceTest {
 
         s.addSourceNode(N1);
         assertEquals(s.getSourceNodes(), Arrays.asList(N1));
+        assertEquals(s.getSourceNodeIds(), new LinkedHashSet<>(Arrays.asList(1)));
         assertEquals(s.getSourceNodesAsSet(), new LinkedHashSet<>(Arrays.asList(1)));
 
         s.addSourceNode(N2);
         assertEquals(s.getSourceNodes(), Arrays.asList(N1, N2));
+        assertEquals(s.getSourceNodeIds(), new LinkedHashSet<>(Arrays.asList(1, 2)));
         assertEquals(s.getSourceNodesAsSet(), new LinkedHashSet<>(Arrays.asList(1, 2)));
 
         s.addSourceNode(N1);
         assertEquals(s.getSourceNodes(), Arrays.asList(N1, N2));
+        assertEquals(s.getSourceNodeIds(), new LinkedHashSet<>(Arrays.asList(1, 2)));
         assertEquals(s.getSourceNodesAsSet(), new LinkedHashSet<>(Arrays.asList(1, 2)));
     }
 }

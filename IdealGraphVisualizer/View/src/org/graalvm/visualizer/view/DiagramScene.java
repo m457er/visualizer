@@ -23,25 +23,20 @@
  */
 package org.graalvm.visualizer.view;
 
-import org.graalvm.visualizer.view.widgets.InputSlotWidget;
-import org.graalvm.visualizer.view.widgets.LineWidget;
-import org.graalvm.visualizer.view.widgets.BlockWidget;
-import org.graalvm.visualizer.view.widgets.OutputSlotWidget;
-import org.graalvm.visualizer.view.widgets.SlotWidget;
-import org.graalvm.visualizer.view.widgets.FigureWidget;
-import org.graalvm.visualizer.graph.Connection;
-import org.graalvm.visualizer.graph.OutputSlot;
-import org.graalvm.visualizer.graph.Diagram;
-import org.graalvm.visualizer.graph.Figure;
-import org.graalvm.visualizer.graph.InputSlot;
-import org.graalvm.visualizer.graph.Slot;
-import org.graalvm.visualizer.graph.Block;
 import org.graalvm.visualizer.data.ChangedListener;
 import org.graalvm.visualizer.data.ControllableChangedListener;
 import org.graalvm.visualizer.data.InputBlock;
 import org.graalvm.visualizer.data.InputNode;
 import org.graalvm.visualizer.data.Pair;
 import org.graalvm.visualizer.data.Properties;
+import org.graalvm.visualizer.data.Source;
+import org.graalvm.visualizer.graph.Block;
+import org.graalvm.visualizer.graph.Connection;
+import org.graalvm.visualizer.graph.Diagram;
+import org.graalvm.visualizer.graph.Figure;
+import org.graalvm.visualizer.graph.InputSlot;
+import org.graalvm.visualizer.graph.OutputSlot;
+import org.graalvm.visualizer.graph.Slot;
 import org.graalvm.visualizer.hierarchicallayout.HierarchicalClusterLayoutManager;
 import org.graalvm.visualizer.hierarchicallayout.HierarchicalLayoutManager;
 import org.graalvm.visualizer.layout.LayoutGraph;
@@ -50,19 +45,24 @@ import org.graalvm.visualizer.util.ColorIcon;
 import org.graalvm.visualizer.util.DoubleClickAction;
 import org.graalvm.visualizer.util.PropertiesSheet;
 import org.graalvm.visualizer.view.actions.CustomizablePanAction;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.List;
-import java.util.*;
-import javax.swing.*;
-import javax.swing.event.UndoableEditEvent;
-import javax.swing.undo.AbstractUndoableEdit;
-import javax.swing.undo.CannotRedoException;
-import javax.swing.undo.CannotUndoException;
-import org.netbeans.api.visual.action.*;
+import org.graalvm.visualizer.view.widgets.BlockWidget;
+import org.graalvm.visualizer.view.widgets.FigureWidget;
+import org.graalvm.visualizer.view.widgets.InputSlotWidget;
+import org.graalvm.visualizer.view.widgets.LineWidget;
+import org.graalvm.visualizer.view.widgets.OutputSlotWidget;
+import org.graalvm.visualizer.view.widgets.SlotWidget;
+import org.netbeans.api.visual.action.ActionFactory;
+import org.netbeans.api.visual.action.PopupMenuProvider;
+import org.netbeans.api.visual.action.RectangularSelectDecorator;
+import org.netbeans.api.visual.action.RectangularSelectProvider;
+import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.animator.SceneAnimator;
 import org.netbeans.api.visual.layout.LayoutFactory;
-import org.netbeans.api.visual.model.*;
+import org.netbeans.api.visual.model.ObjectScene;
+import org.netbeans.api.visual.model.ObjectSceneEvent;
+import org.netbeans.api.visual.model.ObjectSceneEventType;
+import org.netbeans.api.visual.model.ObjectSceneListener;
+import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.LayerWidget;
 import org.netbeans.api.visual.widget.Widget;
 import org.openide.awt.UndoRedo;
@@ -72,6 +72,37 @@ import org.openide.nodes.Sheet;
 import org.openide.util.Lookup;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.IntStream;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.BorderFactory;
+import javax.swing.JComponent;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.undo.AbstractUndoableEdit;
+import javax.swing.undo.CannotRedoException;
+import javax.swing.undo.CannotUndoException;
 
 public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
@@ -144,15 +175,6 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         return (T) w;
     }
 
-    private static boolean intersects(Set<? extends Object> s1, Set<? extends Object> s2) {
-        for (Object o : s1) {
-            if (s2.contains(o)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     @Override
     public void zoomOut() {
         double zoom = getZoomFactor();
@@ -187,27 +209,11 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         setUndoRedoEnabled(b);
     }
 
-    private Set<Object> getObjectsFromIdSet(Set<Object> set) {
-        Set<Object> selectedObjects = new HashSet<>();
-        for (Figure f : getModel().getDiagramToView().getFigures()) {
-            if (intersects(f.getSource().getSourceNodesAsSet(), set)) {
-                selectedObjects.add(f);
-            }
-
-            for (Slot s : f.getSlots()) {
-                if (intersects(s.getSource().getSourceNodesAsSet(), set)) {
-                    selectedObjects.add(s);
-                }
-            }
-        }
-        return selectedObjects;
-    }
-
     private ControllableChangedListener<SelectionCoordinator> highlightedCoordinatorListener = new ControllableChangedListener<SelectionCoordinator>() {
 
         @Override
         public void filteredChanged(SelectionCoordinator source) {
-            DiagramScene.this.setHighlightedObjects(getObjectsFromIdSet(source.getHighlightedObjects()));
+            DiagramScene.this.setHighlightedObjects(idSetToObjectSet(source.getHighlightedObjects()));
             DiagramScene.this.validate();
         }
     };
@@ -320,7 +326,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
             content.set(newSet, null);
 
-            Set<Integer> nodeSelection = new HashSet<>();
+            Set<InputNode> nodeSelection = new HashSet<>();
             for (Object o : newSet) {
                 if (o instanceof Properties.Provider) {
                     final Properties.Provider provider = (Properties.Provider) o;
@@ -338,9 +344,9 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
                 }
 
                 if (o instanceof Figure) {
-                    nodeSelection.addAll(((Figure) o).getSource().getSourceNodesAsSet());
+                    nodeSelection.addAll(((Figure) o).getSource().getSourceNodes());
                 } else if (o instanceof Slot) {
-                    nodeSelection.addAll(((Slot) o).getSource().getSourceNodesAsSet());
+                    nodeSelection.addAll(((Slot) o).getSource().getSourceNodes());
                 }
             }
             getModel().setSelectedNodes(nodeSelection);
@@ -356,10 +362,8 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         public void highlightingChanged(ObjectSceneEvent e, Set<Object> oldSet, Set<Object> newSet) {
             Set<Integer> nodeHighlighting = new HashSet<>();
             for (Object o : newSet) {
-                if (o instanceof Figure) {
-                    nodeHighlighting.addAll(((Figure) o).getSource().getSourceNodesAsSet());
-                } else if (o instanceof Slot) {
-                    nodeHighlighting.addAll(((Slot) o).getSource().getSourceNodesAsSet());
+                if (o instanceof Source.Provider) {
+                    ((Source.Provider) o).getSource().collectIds(nodeHighlighting);
                 }
             }
             boolean b = highlightedCoordinatorListener.isEnabled();
@@ -565,7 +569,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     private void smallUpdate(boolean relayout) {
-        this.updateHiddenNodes(model.getHiddenNodes(), relayout);
+        this.updateHiddenNodes(model.getHiddenGraphNodes(), relayout);
         boolean b = this.getUndoRedoEnabled();
         this.setUndoRedoEnabled(false);
         this.setUndoRedoEnabled(b);
@@ -869,20 +873,9 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         }
     }
 
-    private Set<Object> idSetToObjectSet(Set<Object> ids) {
-
-        Set<Object> result = new HashSet<>();
-        for (Figure f : getModel().getDiagramToView().getFigures()) {
-            if (DiagramScene.doesIntersect(f.getSource().getSourceNodesAsSet(), ids)) {
-                result.add(f);
-            }
-
-            for (Slot s : f.getSlots()) {
-                if (DiagramScene.doesIntersect(s.getSource().getSourceNodesAsSet(), ids)) {
-                    result.add(s);
-                }
-            }
-        }
+    private Set<Source.Provider> idSetToObjectSet(Set<Object> ids) {
+        Set<Source.Provider> result = getModel().getDiagramToView().forSources(
+                        (Collection) ids, null);
         return result;
     }
 
@@ -893,8 +886,8 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         hiddenNodes.removeAll(ids);
         this.getModel().showNot(hiddenNodes);
 
-        Set<Object> objects = idSetToObjectSet(ids);
-        for (Object o : objects) {
+        Set<Source.Provider> objects = idSetToObjectSet(ids);
+        for (Source.Provider o : objects) {
 
             Widget w = getWidget(o);
             if (w != null) {
@@ -977,12 +970,22 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     private boolean isVisible(Figure f) {
-        for (Integer n : f.getSource().getSourceNodesAsSet()) {
+        for (InputNode n : f.getSource().getSourceNodes()) {
             if (getModel().getHiddenNodes().contains(n)) {
                 return false;
             }
         }
         return true;
+    }
+
+    public static boolean doesIntersect(Collection<?> s1, Set<?> s2) {
+        for (Object o : s1) {
+            if (s2.contains(o)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static boolean doesIntersect(Set<?> s1, Set<?> s2) {
@@ -991,14 +994,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
             s1 = s2;
             s2 = tmp;
         }
-
-        for (Object o : s1) {
-            if (s2.contains(o)) {
-                return true;
-            }
-        }
-
-        return false;
+        return doesIntersect((Collection) s1, s2);
     }
 
     @Override
@@ -1013,7 +1009,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         SelectionCoordinator.getInstance().getSelectedChangedEvent().addListener(selectedCoordinatorListener);
     }
 
-    private void updateHiddenNodes(Set<Integer> newHiddenNodes, boolean doRelayout) {
+    private void updateHiddenNodes(Set<InputNode> newHiddenNodes, boolean doRelayout) {
 
         Diagram diagram = getModel().getDiagramToView();
         assert diagram != null;
@@ -1038,7 +1034,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         }
 
         for (Figure f : diagram.getFigures()) {
-            boolean hiddenAfter = doesIntersect(f.getSource().getSourceNodesAsSet(), newHiddenNodes);
+            boolean hiddenAfter = doesIntersect(f.getSource().getSourceNodes(), newHiddenNodes);
 
             FigureWidget w = getWidget(f);
             w.setBoundary(false);
@@ -1113,7 +1109,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
     private void showFigure(Figure f) {
         HashSet<Integer> newHiddenNodes = new HashSet<>(getModel().getHiddenNodes());
-        newHiddenNodes.removeAll(f.getSource().getSourceNodesAsSet());
+        newHiddenNodes.removeAll(f.getSource().getSourceNodeIds());
         this.model.setHiddenNodes(newHiddenNodes);
     }
 
