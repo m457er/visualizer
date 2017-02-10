@@ -25,7 +25,6 @@
 import java.io.EOFException;
 import java.io.IOException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
@@ -43,6 +42,11 @@ import org.graalvm.visualizer.data.serialization.ModelBuilder.NodeClass;
 import org.graalvm.visualizer.data.serialization.ModelBuilder.Port;
 import static org.graalvm.visualizer.data.serialization.BinaryStreamDefs.*;
 import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.logging.Level;
 
 /**
  * The class reads the Graal binary dump format. All model object creation or property value
@@ -57,6 +61,7 @@ import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
  * replace ConstantPool in the reader (useful for partial reading).
  */
 public final class BinaryReader implements GraphParser {
+    private static final boolean POOL_STATS = Boolean.getBoolean(BinaryReader.class.getName() + ".poolStats");
     private static final Logger LOG = Logger.getLogger(BinaryReader.class.getName());
 
     private BinarySource dataSource;
@@ -81,6 +86,35 @@ public final class BinaryReader implements GraphParser {
             this.holder = holder;
             this.accessFlags = accessFlags;
             this.name = name;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 29 * hash + Objects.hashCode(this.holder);
+            hash = 29 * hash + Objects.hashCode(this.name);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (!(obj instanceof Member)) {
+                return false;
+            }
+            final Member other = (Member) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            if (!Objects.equals(this.holder, other.holder)) {
+                return false;
+            }
+            return true;
         }
     }
 
@@ -120,19 +154,76 @@ public final class BinaryReader implements GraphParser {
                     return toString();
             }
         }
+
+        @Override
+        public int hashCode() {
+            int hash = super.hashCode();
+            hash = 79 * hash + Objects.hashCode(this.signature);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            if (!super.equals(obj)) {
+                return false;
+            }
+            final Method other = (Method) obj;
+            if (!Objects.equals(this.signature, other.signature)) {
+                return false;
+            }
+            return true;
+        }
+
     }
 
     private static class Signature {
         public final String returnType;
         public final String[] argTypes;
+        private int hash;
 
         public Signature(String returnType, String[] argTypes) {
             this.returnType = returnType;
             this.argTypes = argTypes;
+            this.hash = toString().hashCode();
         }
 
         public String toString() {
             return "Signature(" + returnType + ":" + String.join(":", argTypes) + ")";
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Signature other = (Signature) obj;
+            if (!Objects.equals(this.returnType, other.returnType)) {
+                return false;
+            }
+            if (!Arrays.deepEquals(this.argTypes, other.argTypes)) {
+                return false;
+            }
+            return true;
         }
     }
 
@@ -161,11 +252,13 @@ public final class BinaryReader implements GraphParser {
                     return toString();
             }
         }
+
     }
 
     private static class Klass implements LengthToString {
         public final String name;
         public final String simpleName;
+        private final int hash;
 
         public Klass(String name) {
             this.name = name;
@@ -176,6 +269,7 @@ public final class BinaryReader implements GraphParser {
                 simple = name;
             }
             this.simpleName = simple;
+            this.hash = (simple + "#" + name).hashCode();
         }
 
         @Override
@@ -194,6 +288,33 @@ public final class BinaryReader implements GraphParser {
                     return toString();
             }
         }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Klass other = (Klass) obj;
+            if (!Objects.equals(this.name, other.name)) {
+                return false;
+            }
+            if (!Objects.equals(this.simpleName, other.simpleName)) {
+                return false;
+            }
+            return true;
+        }
+
     }
 
     private static class EnumKlass extends Klass {
@@ -339,6 +460,7 @@ public final class BinaryReader implements GraphParser {
             case POOL_NODE_CLASS: {
                 String className = dataSource.readString();
                 String nameTemplate = dataSource.readString();
+                size = className.length() + nameTemplate.length();
                 int inputCount = dataSource.readShort();
                 List<TypedPort> inputs = new ArrayList<>(inputCount);
                 for (int i = 0; i < inputCount; i++) {
@@ -392,8 +514,54 @@ public final class BinaryReader implements GraphParser {
             default:
                 throw new IOException("unknown pool type");
         }
+        if (POOL_STATS) {
+            recordNewEntry(obj, size);
+        }
         this.constantPoolSize += size;
         return constantPool.addPoolEntry(index, obj, where);
+    }
+
+    /**
+     * Each value holds 2 ints - 0 is the approx size of the data, 1 is the number of addPooLEntry
+     * calls for this value - the number of redundant appearances in the constant pool.
+     */
+    private Map<Object, int[]> poolEntries = new LinkedHashMap<>(100, 0.8f, true);
+
+    private void recordNewEntry(Object data, int size) {
+        // TODO: the stats can be compacted from time to time - e.g. if the number of objects goes
+        // large,
+        // entries with < N usages can be removed in a hope they are rare.
+        poolEntries.compute(data, (o, v) -> {
+            if (v == null) {
+                return new int[]{size, 1};
+            } else {
+                v[1]++;
+                return v;
+            }
+        });
+    }
+
+    public void dumpPoolStats() {
+        if (poolEntries.isEmpty()) {
+            return;
+        }
+        LOG.log(Level.FINE, "Dumping cpool statistics");
+        int oneSize = poolEntries.entrySet().stream().mapToInt((e) -> (e.getValue()[0])).sum();
+        int totalSize = poolEntries.entrySet().stream().mapToInt((e) -> (e.getValue()[1] * e.getValue()[0])).sum();
+        LOG.log(Level.FINE, "Total {0} values, {1} size of useful data, {2} size with redefinitions", new Object[]{poolEntries.size(), oneSize, totalSize});
+
+        List<Map.Entry<Object, int[]>> entries = new ArrayList(poolEntries.entrySet());
+        Collections.sort(entries, (o1, o2) -> {
+            return o1.getValue()[0] * o1.getValue()[1] - o2.getValue()[0] * o2.getValue()[1];
+        });
+
+        LOG.log(Level.FINE, "Dumping the most consuming entries:");
+        int count = 0;
+        for (int i = entries.size() - 1; count < 50 && i >= 0; i--, count++) {
+            Map.Entry<Object, int[]> e = entries.get(i);
+            LOG.log(Level.FINE, "#{0}\t: {1}, size {2}, redefinitions {3}", new Object[]{count, e.getKey(), e.getValue()[0] * e.getValue()[1], e.getValue()[1]});
+        }
+
     }
 
     private Object readPropertyObject(String key) throws IOException {
@@ -433,6 +601,12 @@ public final class BinaryReader implements GraphParser {
         }
     }
 
+    private void closeDanglingGroups() throws IOException {
+        while (folderLevel > 0) {
+            doCloseGroup();
+        }
+    }
+
     public GraphDocument parse() throws IOException {
         hashStack.push(null);
 
@@ -441,22 +615,21 @@ public final class BinaryReader implements GraphParser {
             while (true) {
                 // allows to concatenate BGV files; at the top-level, either BIGV signature,
                 // or 0x00-0x02 should be present.
-                if (folderLevel == 0) {
-                    // Check for a version specification
-                    if (dataSource.readHeader() && restart) {
-                        // if not at the start of the stream, reinitialize the constant pool.
-                        constantPool = constantPool.restart();
-                    }
-                    restart = true;
+                // Check for a version specification
+                if (dataSource.readHeader() && restart) {
+                    // if not at the start of the stream, reinitialize the constant pool.
+                    closeDanglingGroups();
+                    builder.resetStreamData();
+                    constantPool = builder.getConstantPool();
                 }
+                restart = true;
                 parseRoot();
             }
         } catch (EOFException e) {
             // ignore
         }
-        while (folderLevel > 0) {
-            doCloseGroup();
-        }
+        closeDanglingGroups();
+        dumpPoolStats();
         return builder.rootDocument();
     }
 

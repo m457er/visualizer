@@ -49,6 +49,7 @@ import org.graalvm.visualizer.data.InputMethod;
 import org.graalvm.visualizer.data.InputNode;
 import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.services.GroupCallback;
+import java.util.*;
 
 /**
  * Builds a model based on SAX-like events. The expected sequence of events is:
@@ -158,6 +159,32 @@ public class ModelBuilder {
         public String toString() {
             return className;
         }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 37 * hash + Objects.hashCode(this.className);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final NodeClass other = (NodeClass) obj;
+            if (!Objects.equals(this.className, other.className)) {
+                return false;
+            }
+            return true;
+        }
+
     }
 
     private final GroupCallback callback;

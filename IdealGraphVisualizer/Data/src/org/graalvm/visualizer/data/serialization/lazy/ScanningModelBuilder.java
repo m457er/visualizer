@@ -41,6 +41,8 @@ import org.graalvm.visualizer.data.serialization.BinarySource;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
 import org.graalvm.visualizer.data.serialization.ModelBuilder;
 import org.graalvm.visualizer.data.services.GroupCallback;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * ModelBuilder which only scans the incoming stream and creates lazy-loaded Groups which implement
@@ -57,6 +59,8 @@ import org.graalvm.visualizer.data.services.GroupCallback;
  * during initial stream reading.
  */
 public class ScanningModelBuilder extends ModelBuilder {
+    private static final Logger LOG = Logger.getLogger(ScanningModelBuilder.class.getName());
+
     private CachedContent streamContent;
     private BinarySource dataSource;
     private final Map<Group, GroupCompleter> completors = new LinkedHashMap<>();
@@ -164,11 +168,14 @@ public class ScanningModelBuilder extends ModelBuilder {
     public void setNodeName(NodeClass nodeClass) {
     }
 
+    private String currentGroupName;
+
     @Override
     public void setGroupName(String name, String shortName) {
         if (groupLevel == 1) {
             super.setGroupName(name, shortName);
         }
+        currentGroupName = name;
     }
 
     @Override
@@ -177,6 +184,9 @@ public class ScanningModelBuilder extends ModelBuilder {
 
     @Override
     public void startNode(int nodeId, boolean hasPredecessors) {
+        if (graphLevel == 1) {
+            tlNodeCount++;
+        }
     }
 
     @Override
@@ -198,8 +208,11 @@ public class ScanningModelBuilder extends ModelBuilder {
     public void startGroupContent() {
         if (groupLevel == 1) {
             super.startGroupContent();
+            LOG.log(Level.FINER, "Starting group {0}, start = {1}", new Object[]{currentGroupName, gStart});
         }
     }
+
+    private long gStart;
 
     @Override
     public Group startGroup() {
@@ -208,6 +221,7 @@ public class ScanningModelBuilder extends ModelBuilder {
         }
         assert completer == null;
         long start = dataSource.getMark() - 1;
+        gStart = start;
         GroupCompleter grc = createCompleter(start);
         completer = grc;
         LazyGroup g = new LazyGroup(folder(), grc);
@@ -221,9 +235,17 @@ public class ScanningModelBuilder extends ModelBuilder {
                         modelExecutor, fetchExecutor, start);
     }
 
+    private String tlGraphName;
+    private int tlNodeCount;
+
     @Override
     public InputGraph startGraph(String title) {
         graphLevel++;
+        if (graphLevel == 1) {
+            tlGraphName = title;
+            tlNodeCount = 0;
+            LOG.log(Level.FINER, "Starting graph {0} at {1}", new Object[]{title, dataSource.getMark()});
+        }
         return null;
     }
 
@@ -240,6 +262,11 @@ public class ScanningModelBuilder extends ModelBuilder {
     @Override
     public InputGraph endGraph() {
         graphLevel--;
+        if (graphLevel == 0) {
+            LOG.log(Level.FINER, "Graph {0} ends at {1}, contains {2} nodes", new Object[]{
+                            tlGraphName, dataSource.getMark(), tlNodeCount
+            });
+        }
         return null;
     }
 
@@ -252,6 +279,11 @@ public class ScanningModelBuilder extends ModelBuilder {
         if (folder() instanceof LazyGroup && graphLevel == 0) {
             super.setProperty(key, value);
         }
+    }
+
+    @Override
+    public void resetStreamData() {
+        pool = (StreamPool) this.pool.restart();
     }
 
     @Override
