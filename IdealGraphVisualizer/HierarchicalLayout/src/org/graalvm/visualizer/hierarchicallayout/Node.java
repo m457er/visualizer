@@ -103,12 +103,12 @@ public class Node<N, E> {
     }
 
     protected void removeInEdge(Edge<N, E> e) {
-        //assert inEdges.contains(e);
+        // assert inEdges.contains(e);
         inEdges.remove(e);
     }
 
     protected void removeOutEdge(Edge<N, E> e) {
-        //assert outEdges.contains(e);
+        // assert outEdges.contains(e);
         outEdges.remove(e);
     }
 

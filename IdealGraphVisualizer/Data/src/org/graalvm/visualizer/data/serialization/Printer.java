@@ -52,7 +52,7 @@ public class Printer {
     public Printer(InputStream inputStream) {
         this.in = inputStream;
     }
-    
+
     public void export(Writer writer, GraphDocument document) {
         export(writer, document, null, null);
     }
@@ -80,7 +80,7 @@ public class Printer {
             if (e instanceof Group) {
                 export(xmlWriter, (Group) e);
             } else if (e instanceof InputGraph) {
-                export(xmlWriter, (InputGraph)e, null, false);
+                export(xmlWriter, (InputGraph) e, null, false);
             }
         }
 
@@ -202,7 +202,7 @@ public class Printer {
             }
 
             if (b.getNodes().size() > 0) {
-            writer.startTag(Parser.NODES_ELEMENT);
+                writer.startTag(Parser.NODES_ELEMENT);
                 for (InputNode n : b.getNodes()) {
                     writer.simpleTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, n.getId() + ""));
                 }
@@ -218,7 +218,8 @@ public class Printer {
 
     private void export(XMLWriter w, InputMethod method) throws IOException {
 
-        w.startTag(Parser.METHOD_ELEMENT, new Properties(Parser.METHOD_BCI_PROPERTY, method.getBci() + "", Parser.METHOD_NAME_PROPERTY, method.getName(), Parser.METHOD_SHORT_NAME_PROPERTY, method.getShortName()));
+        w.startTag(Parser.METHOD_ELEMENT,
+                        new Properties(Parser.METHOD_BCI_PROPERTY, method.getBci() + "", Parser.METHOD_NAME_PROPERTY, method.getName(), Parser.METHOD_SHORT_NAME_PROPERTY, method.getShortName()));
 
         w.writeProperties(method.getProperties());
 

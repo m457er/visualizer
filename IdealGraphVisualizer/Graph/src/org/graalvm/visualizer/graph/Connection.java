@@ -44,6 +44,7 @@ public final class Connection implements Source.Provider, Link {
         DASHED,
         BOLD
     }
+
     private final InputSlot inputSlot;
     private final OutputSlot outputSlot;
     private final Source source;
@@ -155,4 +156,3 @@ public final class Connection implements Source.Provider, Link {
         controlPoints = list;
     }
 }
-

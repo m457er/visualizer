@@ -78,14 +78,12 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
             }
         }
 
-
         for (Filter f : filters) {
             if (!applied.contains(f)) {
                 f.apply(d);
             }
         }
     }
-
 
     public void addFilter(Filter filter) {
         assert filter != null;

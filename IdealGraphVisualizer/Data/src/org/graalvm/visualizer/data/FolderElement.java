@@ -26,6 +26,8 @@ package org.graalvm.visualizer.data;
 public interface FolderElement {
 
     Folder getParent();
+
     String getName();
+
     void setParent(Folder parent);
 }

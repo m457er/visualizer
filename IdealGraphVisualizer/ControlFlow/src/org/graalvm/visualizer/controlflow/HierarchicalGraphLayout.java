@@ -70,7 +70,7 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
         }
 
         public void setControlPoints(List<Point> list) {
-        // Do nothing for now
+            // Do nothing for now
         }
 
         public boolean isVIP() {

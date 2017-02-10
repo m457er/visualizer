@@ -47,6 +47,7 @@ public final class ClusterInputSlotNode implements Vertex {
     public ClusterIngoingConnection getIngoingConnection() {
         return conn;
     }
+
     private String id;
 
     @Override

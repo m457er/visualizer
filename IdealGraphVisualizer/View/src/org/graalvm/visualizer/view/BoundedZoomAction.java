@@ -165,7 +165,6 @@ public class BoundedZoomAction extends WidgetAction.Adapter {
             scrollPane.getViewport().setViewPosition(viewPosition);
         }
 
-
         return WidgetAction.State.CONSUMED;
     }
 }

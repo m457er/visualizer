@@ -68,7 +68,6 @@ public class Difference {
         for (InputNode n : a.getNodes()) {
             Integer key = n.getId();
 
-
             if (keyMapB.containsKey(key)) {
                 InputNode nB = keyMapB.get(key);
                 pairs.add(new NodePair(n, nB));
@@ -240,7 +239,6 @@ public class Difference {
     }
 
     private static class NodePair extends Pair<InputNode, InputNode> {
-
 
         public NodePair(InputNode n1, InputNode n2) {
             super(n1, n2);

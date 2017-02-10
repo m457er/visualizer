@@ -74,6 +74,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         }
         return p;
     }
+
     public static final Comparator<Slot> slotIndexComparator = new Comparator<Slot>() {
 
         @Override
@@ -124,7 +125,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
 
     public void setShortName(String s) {
         assert s != null;
-//        assert s.length() <= 2;
+        // assert s.length() <= 2;
         this.shortName = s;
 
     }
@@ -189,4 +190,3 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
 
     public abstract void setPosition(int position);
 }
-

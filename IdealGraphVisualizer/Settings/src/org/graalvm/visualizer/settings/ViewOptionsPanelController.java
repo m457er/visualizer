@@ -50,7 +50,7 @@ final class ViewOptionsPanelController extends OptionsPanelController {
 
     @Override
     public void cancel() {
-    // need not do anything special, if no changes have been persisted yet
+        // need not do anything special, if no changes have been persisted yet
     }
 
     @Override

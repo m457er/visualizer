@@ -19,35 +19,36 @@ import org.openide.util.Utilities;
  */
 public class ListenerSupport {
     private static final Logger LOG = Logger.getLogger(ListenerSupport.class.getName());
-    
+
     /**
-     * Creates a listener that only weakly references the delegate.
-     * WeakListeners should be used between UI/data layers, so that UI layer
-     * can be eventually evicted by GC when it is no longer displayed.
+     * Creates a listener that only weakly references the delegate. WeakListeners should be used
+     * between UI/data layers, so that UI layer can be eventually evicted by GC when it is no longer
+     * displayed.
      * <p/>
-     * When the reference to the real listener expires (is queued by GC), the implementation
-     * will call {@link ChangedEvent#removeListener} to clean up obsolete references.
+     * When the reference to the real listener expires (is queued by GC), the implementation will
+     * call {@link ChangedEvent#removeListener} to clean up obsolete references.
      * <p/>
-     * The returned Listener (proxy) may be needed to manually unregister by calling {@link ChangedEvent#removeListener}
-     * as appropriate for the caller.
+     * The returned Listener (proxy) may be needed to manually unregister by calling
+     * {@link ChangedEvent#removeListener} as appropriate for the caller.
      * <p/>
      * <b>Important note:</b> as the real Listener is only weakly reachable from the returned proxy
-     * <b>and</b> from the event source, do keep a reference to it, otherwise it may be collected prematurely.
+     * <b>and</b> from the event source, do keep a reference to it, otherwise it may be collected
+     * prematurely.
      * 
      * @param delegate the real listener to be called
      * @param source event source, will be called to unregister
      * @return listener for explicit listener removal
      */
-    public static <T> ChangedListener<T>  addWeakListener(ChangedListener<T> delegate, ChangedEvent<? extends T> source) {
-        ChangedListener l =  new CHLImpl(delegate, source);
+    public static <T> ChangedListener<T> addWeakListener(ChangedListener<T> delegate, ChangedEvent<? extends T> source) {
+        ChangedListener l = new CHLImpl(delegate, source);
         source.addListener(l);
         return l;
     }
-    
+
     private static class CHLImpl extends WeakReference<ChangedListener> implements Runnable, ChangedListener {
         private final ChangedEvent source;
         private Object sourceData;
-        
+
         public CHLImpl(ChangedListener delegate, ChangedEvent source) {
             super(delegate, Utilities.activeReferenceQueue());
             this.source = source;
@@ -62,13 +63,13 @@ public class ListenerSupport {
                         this.sourceData = eventData;
                     } else if (this.sourceData != eventData) {
                         LOG.log(Level.WARNING, "WeakListener for {0} registered to multiple sources; will not unregister from stale data: {1}",
-                                new Object[] { l, eventData });
+                                        new Object[]{l, eventData});
                     }
                 }
                 l.changed(eventData);
             }
         }
-        
+
         /**
          * Unregisters listener from the source. Must synchronize into EDT
          */

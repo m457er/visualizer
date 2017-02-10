@@ -63,7 +63,7 @@ public final class CloneGraphAction extends CookieAction {
     @Override
     protected Class<?>[] cookieClasses() {
         return new Class<?>[]{
-            GraphCloneCookie.class
+                        GraphCloneCookie.class
         };
     }
 
@@ -82,4 +82,3 @@ public final class CloneGraphAction extends CookieAction {
         return false;
     }
 }
-

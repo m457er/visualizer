@@ -53,7 +53,7 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
     public void doLayout(LayoutGraph graph) {
         doLayout(graph, new HashSet<Vertex>(), new HashSet<Vertex>(), new HashSet<Link>());
     }
-    
+
     @Override
     public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
         doLayout(graph);
@@ -181,7 +181,6 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
                 }
 
                 linkClusterIngoingConnection.put(l, conn);
-
 
                 InterClusterConnection interConn = new InterClusterConnection(outputSlotNode, inputSlotNode);
                 linkInterClusterConnection.put(l, interConn);

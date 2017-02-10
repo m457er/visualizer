@@ -150,7 +150,7 @@ public class Parser implements GraphParser {
 
             final Folder parent = getParentObject();
             if (groupCallback == null || parent instanceof Group) {
-                SwingUtilities.invokeLater(new Runnable(){
+                SwingUtilities.invokeLater(new Runnable() {
                     @Override
                     public void run() {
                         parent.addElement(group);
@@ -177,7 +177,7 @@ public class Parser implements GraphParser {
         }
     };
 
-    private InputMethod parseMethod(XMLParser.ElementHandler<?,?> handler, Group group) throws SAXException {
+    private InputMethod parseMethod(XMLParser.ElementHandler<?, ?> handler, Group group) throws SAXException {
         String s = handler.readRequiredAttribute(METHOD_BCI_PROPERTY);
         int bci = 0;
         try {
@@ -188,6 +188,7 @@ public class Parser implements GraphParser {
         InputMethod method = new InputMethod(group, handler.readRequiredAttribute(METHOD_NAME_PROPERTY), handler.readRequiredAttribute(METHOD_SHORT_NAME_PROPERTY), bci);
         return method;
     }
+
     // <bytecodes>
     private HandoverElementHandler<InputMethod> bytecodesHandler = new XMLParser.HandoverElementHandler<InputMethod>(BYTECODES_ELEMENT, true) {
 
@@ -237,11 +238,11 @@ public class Parser implements GraphParser {
         @Override
         protected void end(String text) throws SAXException {
             // NOTE: Some graphs intentionally don't provide blocks. Instead
-            //       they later generate the blocks from other information such
-            //       as node properties (example: ServerCompilerScheduler).
-            //       Thus, we shouldn't assign nodes that don't belong to any
-            //       block to some artificial block below unless blocks are
-            //       defined and nodes are assigned to them.
+            // they later generate the blocks from other information such
+            // as node properties (example: ServerCompilerScheduler).
+            // Thus, we shouldn't assign nodes that don't belong to any
+            // block to some artificial block below unless blocks are
+            // defined and nodes are assigned to them.
 
             final InputGraph graph = getObject();
             final Group parent = getParentObject();
@@ -259,7 +260,7 @@ public class Parser implements GraphParser {
                     blockConnections.clear();
                 } else {
                     // Blocks and their nodes defined: add other nodes to an
-                    //  artificial "no block" block
+                    // artificial "no block" block
                     InputBlock noBlock = null;
                     for (InputNode n : graph.getNodes()) {
                         if (graph.getBlock(n) == null) {
@@ -285,7 +286,7 @@ public class Parser implements GraphParser {
             }
             blockConnections.clear();
 
-            SwingUtilities.invokeLater(new Runnable(){
+            SwingUtilities.invokeLater(new Runnable() {
 
                 @Override
                 public void run() {
@@ -426,6 +427,7 @@ public class Parser implements GraphParser {
             return conn;
         }
     }
+
     // <edge>
     private EdgeElementHandler edgeHandler = new EdgeElementHandler(EDGE_ELEMENT) {
 
@@ -468,7 +470,7 @@ public class Parser implements GraphParser {
         @Override
         public String start() throws SAXException {
             return readRequiredAttribute(PROPERTY_NAME_PROPERTY);
-         }
+        }
 
         @Override
         public void end(String text) {

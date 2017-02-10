@@ -48,6 +48,7 @@ import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
 
 /**
  * This parser is deprecated. Use {@link BinaryReader} and {@link ModelBuilder} instead.
+ * 
  * @see BinaryReader
  * @see BinarySource
  * @see ModelBuilder
@@ -92,9 +93,8 @@ public class BinaryParser implements GraphParser {
 
     private MessageDigest digest;
 
-
-    private BinarySource    dataSource;
-    protected ConstantPool    constantPool;
+    private BinarySource dataSource;
+    protected ConstantPool constantPool;
 
     static class VersionMismatchException extends IOException {
         VersionMismatchException(String message) {
@@ -116,6 +116,7 @@ public class BinaryParser implements GraphParser {
         public final Klass holder;
         public final int accessFlags;
         public final String name;
+
         public Member(Klass holder, String name, int accessFlags) {
             this.holder = holder;
             this.accessFlags = accessFlags;
@@ -126,11 +127,13 @@ public class BinaryParser implements GraphParser {
     private static class Method extends Member {
         public final Signature signature;
         public final byte[] code;
+
         public Method(String name, Signature signature, byte[] code, Klass holder, int accessFlags) {
             super(holder, name, accessFlags);
             this.signature = signature;
             this.code = code;
         }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -144,9 +147,10 @@ public class BinaryParser implements GraphParser {
             sb.append(')');
             return sb.toString();
         }
+
         @Override
         public String toString(Length l) {
-            switch(l) {
+            switch (l) {
                 case M:
                     return holder.toString(Length.L) + "." + name;
                 case S:
@@ -161,11 +165,12 @@ public class BinaryParser implements GraphParser {
     private static class Signature {
         public final String returnType;
         public final String[] argTypes;
+
         public Signature(String returnType, String[] argTypes) {
             this.returnType = returnType;
             this.argTypes = argTypes;
         }
-        
+
         public String toString() {
             return "Signature(" + returnType + ":" + String.join(":", argTypes) + ")";
         }
@@ -173,17 +178,20 @@ public class BinaryParser implements GraphParser {
 
     private static class Field extends Member {
         public final String type;
+
         public Field(String type, Klass holder, String name, int accessFlags) {
             super(holder, name, accessFlags);
             this.type = type;
         }
+
         @Override
         public String toString() {
             return holder + "." + name;
         }
+
         @Override
         public String toString(Length l) {
-            switch(l) {
+            switch (l) {
                 case M:
                     return holder.toString(Length.L) + "." + name;
                 case S:
@@ -198,6 +206,7 @@ public class BinaryParser implements GraphParser {
     private static class Klass implements LengthToString {
         public final String name;
         public final String simpleName;
+
         public Klass(String name) {
             this.name = name;
             String simple;
@@ -208,13 +217,15 @@ public class BinaryParser implements GraphParser {
             }
             this.simpleName = simple;
         }
+
         @Override
         public String toString() {
             return name;
         }
+
         @Override
         public String toString(Length l) {
-            switch(l) {
+            switch (l) {
                 case S:
                     return simpleName;
                 default:
@@ -227,6 +238,7 @@ public class BinaryParser implements GraphParser {
 
     private static class EnumKlass extends Klass {
         public final String[] values;
+
         public EnumKlass(String name, String[] values) {
             super(name);
             this.values = values;
@@ -236,6 +248,7 @@ public class BinaryParser implements GraphParser {
     private static class Port {
         public final boolean isList;
         public final String name;
+
         private Port(boolean isList, String name) {
             this.isList = isList;
             this.name = name;
@@ -244,6 +257,7 @@ public class BinaryParser implements GraphParser {
 
     private static class TypedPort extends Port {
         public final EnumValue type;
+
         private TypedPort(boolean isList, String name, EnumValue type) {
             super(isList, name);
             this.type = type;
@@ -255,12 +269,14 @@ public class BinaryParser implements GraphParser {
         public final String nameTemplate;
         public final List<TypedPort> inputs;
         public final List<Port> sux;
+
         private NodeClass(String className, String nameTemplate, List<TypedPort> inputs, List<Port> sux) {
             this.className = className;
             this.nameTemplate = nameTemplate;
             this.inputs = inputs;
             this.sux = sux;
         }
+
         @Override
         public String toString() {
             return className;
@@ -270,17 +286,20 @@ public class BinaryParser implements GraphParser {
     private static class EnumValue implements LengthToString {
         public EnumKlass enumKlass;
         public int ordinal;
+
         public EnumValue(EnumKlass enumKlass, int ordinal) {
             this.enumKlass = enumKlass;
             this.ordinal = ordinal;
         }
+
         @Override
         public String toString() {
             return enumKlass.simpleName + "." + enumKlass.values[ordinal];
         }
+
         @Override
         public String toString(Length l) {
-            switch(l) {
+            switch (l) {
                 case S:
                     return enumKlass.values[ordinal];
                 default:
@@ -290,7 +309,7 @@ public class BinaryParser implements GraphParser {
             }
         }
     }
-    
+
     public BinaryParser(ReadableByteChannel channel, ParseMonitor monitor, GraphDocument rootDocument, GroupCallback callback) {
         this(new BinarySource(channel), monitor, rootDocument, callback);
     }
@@ -308,7 +327,7 @@ public class BinaryParser implements GraphParser {
         } catch (NoSuchAlgorithmException e) {
         }
     }
-    
+
     public BinaryParser(BinarySource dataSource, ConstantPool pool, GraphDocument rootDocument, GroupCallback callback) {
         this.callback = callback;
         this.constantPool = pool;
@@ -357,13 +376,13 @@ public class BinaryParser implements GraphParser {
         Object obj = getPoolData(index);
         return (T) obj;
     }
-    
+
     private Object getPoolData(int index) {
         return constantPool.get(index, dataSource.getMark() - 1);
     }
 
     private boolean assertObjectType(Class<?> klass, int type) {
-        switch(type) {
+        switch (type) {
             case POOL_CLASS:
                 return klass.isAssignableFrom(EnumKlass.class);
             case POOL_ENUM:
@@ -392,7 +411,7 @@ public class BinaryParser implements GraphParser {
         int size = 0;
         assert assertObjectType(klass, type) : "Wrong object type : " + klass + " != " + type;
         Object obj;
-        switch(type) {
+        switch (type) {
             case POOL_CLASS: {
                 String name = dataSource.readString();
                 int klasstype = dataSource.readByte();
@@ -494,7 +513,7 @@ public class BinaryParser implements GraphParser {
                 return readPoolObject(Object.class);
             case PROPERTY_ARRAY:
                 int subType = dataSource.readByte();
-                switch(subType) {
+                switch (subType) {
                     case PROPERTY_INT:
                         return dataSource.readIntsToString();
                     case PROPERTY_DOUBLE:
@@ -512,7 +531,7 @@ public class BinaryParser implements GraphParser {
                 throw new IOException("Unknown type");
         }
     }
-    
+
     @Override
     public GraphDocument parse() throws IOException {
         folderStack.push(rootDocument);
@@ -523,7 +542,7 @@ public class BinaryParser implements GraphParser {
         try {
             // Check for a version specification
             dataSource.readHeader();
-            while(true) {
+            while (true) {
                 parseRoot();
             }
         } catch (EOFException e) {
@@ -534,16 +553,16 @@ public class BinaryParser implements GraphParser {
         }
         return rootDocument;
     }
-    
+
     protected void registerGraph(Folder parent, FolderElement graph) {
-        SwingUtilities.invokeLater(new Runnable(){
+        SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 parent.addElement(graph);
             }
         });
     }
-    
+
     protected void beginGroup(Folder parent) throws IOException {
         final Group group = parseGroup(parent);
         if (callback == null || parent instanceof Group) {
@@ -555,13 +574,13 @@ public class BinaryParser implements GraphParser {
             callback.started(group);
         }
     }
-    
+
     protected void closeGroup(Group g) throws IOException {
     }
 
     protected void parseRoot() throws IOException {
         int type = dataSource.readByte();
-        switch(type) {
+        switch (type) {
             case BEGIN_GRAPH: {
                 final Folder parent = folderStack.peek();
                 final InputGraph graph = parseGraph();
@@ -577,7 +596,7 @@ public class BinaryParser implements GraphParser {
                 if (folderStack.isEmpty()) {
                     throw new IOException("Unbalanced groups");
                 }
-                Group g = (Group)folderStack.pop();
+                Group g = (Group) folderStack.pop();
                 hashStack.pop();
                 closeGroup(g);
                 break;
@@ -590,7 +609,7 @@ public class BinaryParser implements GraphParser {
     protected Group createGroup(Folder parent) {
         return new Group(parent);
     }
-    
+
     protected Group parseGroup(Folder parent) throws IOException {
         String name = readPoolObject(String.class);
         String shortName = readPoolObject(String.class);
@@ -652,7 +671,7 @@ public class BinaryParser implements GraphParser {
         }
         return graph;
     }
-    
+
     private void parseBlocks(InputGraph graph) throws IOException {
         int blockCount = dataSource.readInt();
         List<Edge> edges = new LinkedList<>();
@@ -668,7 +687,7 @@ public class BinaryParser implements GraphParser {
                 }
                 final Properties properties = graph.getNode(nodeId).getProperties();
                 final String oldBlock = properties.get("block");
-                if(oldBlock != null) {
+                if (oldBlock != null) {
                     properties.setProperty("block", oldBlock + ", " + name);
                 } else {
                     block.addNode(nodeId);
@@ -679,7 +698,7 @@ public class BinaryParser implements GraphParser {
             for (int j = 0; j < edgeCount; j++) {
                 int to = dataSource.readInt();
                 edges.add(new Edge(id, to));
-                }
+            }
         }
         for (Edge e : edges) {
             String fromName = e.from >= 0 ? Integer.toString(e.from) : NO_BLOCK;
@@ -687,7 +706,7 @@ public class BinaryParser implements GraphParser {
             graph.addBlockEdge(graph.getBlock(fromName), graph.getBlock(toName));
         }
     }
-    
+
     private void parseNodes(InputGraph graph) throws IOException {
         int count = dataSource.readInt();
         Map<String, Object> props = new HashMap<>();
@@ -810,7 +829,7 @@ public class BinaryParser implements GraphParser {
             switch (type) {
                 case "i":
                     StringBuilder inputString = new StringBuilder();
-                    for(Edge edge : edges) {
+                    for (Edge edge : edges) {
                         if (edge.label.startsWith(name) && (name.length() == edge.label.length() || edge.label.charAt(name.length()) == '[')) {
                             if (inputString.length() > 0) {
                                 inputString.append(", ");
@@ -827,7 +846,7 @@ public class BinaryParser implements GraphParser {
                         result = "?";
                     } else if (length != null && prop instanceof LengthToString) {
                         LengthToString lengthProp = (LengthToString) prop;
-                        switch(length) {
+                        switch (length) {
                             default:
                             case "l":
                                 result = lengthProp.toString(Length.L);
@@ -847,7 +866,7 @@ public class BinaryParser implements GraphParser {
                     result = "#?#";
                     break;
             }
-            
+
             // Escape '\' and '$' to not interfere with the regular expression.
             StringBuilder newResult = new StringBuilder();
             for (int i = 0; i < result.length(); ++i) {
@@ -874,9 +893,11 @@ public class BinaryParser implements GraphParser {
         final String label;
         final String type;
         final boolean input;
+
         public Edge(int from, int to) {
             this(from, to, (char) 0, null, null, false);
         }
+
         public Edge(int from, int to, char num, String label, String type, boolean input) {
             this.from = from;
             this.to = to;
@@ -886,7 +907,7 @@ public class BinaryParser implements GraphParser {
             this.input = input;
         }
     }
-    
+
     public final ConstantPool getConstantPool() {
         return constantPool;
     }

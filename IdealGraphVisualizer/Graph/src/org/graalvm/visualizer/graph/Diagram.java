@@ -113,12 +113,12 @@ public class Diagram {
     public Map<InputNode, Set<Figure>> calcSourceToFigureRelation() {
         Map<InputNode, Set<Figure>> map = new HashMap<>();
 
-        for(InputNode node : this.getGraph().getNodes()) {
+        for (InputNode node : this.getGraph().getNodes()) {
             map.put(node, new HashSet<Figure>());
         }
 
-        for(Figure f : this.getFigures()) {
-            for(InputNode node : f.getSource().getSourceNodes()) {
+        for (Figure f : this.getFigures()) {
+            for (InputNode node : f.getSource().getSourceNodes()) {
                 map.get(node).add(f);
             }
         }
@@ -154,7 +154,8 @@ public class Diagram {
             Figure fromFigure = figureHash.get(from);
             Figure toFigure = figureHash.get(to);
 
-            if(fromFigure == null || toFigure == null) continue;
+            if (fromFigure == null || toFigure == null)
+                continue;
             assert fromFigure != null && toFigure != null;
 
             int fromIndex = e.getFromIndex();
@@ -177,7 +178,6 @@ public class Diagram {
                 c.setStyle(Connection.ConnectionStyle.DASHED);
             }
         }
-
 
         return d;
     }

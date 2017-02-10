@@ -64,7 +64,7 @@ public final class DiffGraphAction extends CookieAction {
     @Override
     protected Class<?>[] cookieClasses() {
         return new Class<?>[]{
-            DiffGraphCookie.class
+                        DiffGraphCookie.class
         };
     }
 
@@ -83,4 +83,3 @@ public final class DiffGraphAction extends CookieAction {
         return false;
     }
 }
-

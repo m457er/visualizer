@@ -46,12 +46,12 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     public void setSelectedNodes(Set<InputNode> nodes) {
         editor.setSelectedNodes(nodes);
     }
-    
+
     @Override
     public Iterable<InputGraph> searchBackward() {
         return editor.getDiagramModel().getGraphsBackward();
     }
-    
+
     @Override
     public Iterable<InputGraph> searchForward() {
         return editor.getDiagramModel().getGraphsForward();

@@ -25,12 +25,14 @@ package org.graalvm.visualizer.data;
 
 /**
  * Listens to changed events.
+ * 
  * @param <T> Class for which the changed event fires.
  */
 public interface ChangedListener<T> {
 
     /**
      * This method is called every time a changed event is fired.
+     * 
      * @param source Object that has changed.
      */
     void changed(T source);

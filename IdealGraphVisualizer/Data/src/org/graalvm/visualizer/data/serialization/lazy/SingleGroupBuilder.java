@@ -41,10 +41,10 @@ import org.graalvm.visualizer.data.serialization.ModelBuilder;
  */
 final class SingleGroupBuilder extends ModelBuilder {
     private final List<FolderElement> items = new ArrayList<>();
-    private final Group   toComplete;
+    private final Group toComplete;
     private int nestLevel;
     private final ConstantPool pool;
-    
+
     public SingleGroupBuilder(GraphDocument rootDocument, Executor modelExecutor, Group toComplete, ConstantPool initialPool) {
         super(rootDocument, modelExecutor, null, null);
         this.toComplete = toComplete;
@@ -73,7 +73,7 @@ final class SingleGroupBuilder extends ModelBuilder {
             parent.addElement(item);
         }
     }
-    
+
     @Override
     public InputGraph endGraph() {
         InputGraph gr = super.endGraph();
@@ -103,7 +103,7 @@ final class SingleGroupBuilder extends ModelBuilder {
     public ConstantPool getConstantPool() {
         return pool;
     }
-    
+
     public List<FolderElement> getItems() {
         return items;
     }

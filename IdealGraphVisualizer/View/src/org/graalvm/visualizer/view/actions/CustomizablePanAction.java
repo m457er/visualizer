@@ -85,57 +85,57 @@ public final class CustomizablePanAction extends WidgetAction.LockedAdapter {
     }
 
     @Override
-    public State mousePressed (Widget widget, WidgetMouseEvent event) {
-        if (isLocked ())
-            return State.createLocked (widget, this);
+    public State mousePressed(Widget widget, WidgetMouseEvent event) {
+        if (isLocked())
+            return State.createLocked(widget, this);
         if (enabled && (event.getModifiersEx() & modifiersExMask) == modifiersEx) {
-            scene = widget.getScene ();
-            scrollPane = findScrollPane (scene.getView ());
+            scene = widget.getScene();
+            scrollPane = findScrollPane(scene.getView());
             if (scrollPane != null) {
-                lastLocation = scene.convertSceneToView (widget.convertLocalToScene (event.getPoint ()));
-                SwingUtilities.convertPointToScreen (lastLocation, scene.getView ());
-                return State.createLocked (widget, this);
+                lastLocation = scene.convertSceneToView(widget.convertLocalToScene(event.getPoint()));
+                SwingUtilities.convertPointToScreen(lastLocation, scene.getView());
+                return State.createLocked(widget, this);
             }
         }
         return State.REJECTED;
     }
 
-    private JScrollPane findScrollPane (JComponent component) {
+    private JScrollPane findScrollPane(JComponent component) {
         for (;;) {
             if (component == null)
                 return null;
             if (component instanceof JScrollPane)
                 return ((JScrollPane) component);
-            Container parent = component.getParent ();
-            if (! (parent instanceof JComponent))
+            Container parent = component.getParent();
+            if (!(parent instanceof JComponent))
                 return null;
             component = (JComponent) parent;
         }
     }
 
     @Override
-    public State mouseReleased (Widget widget, WidgetMouseEvent event) {
-        boolean state = pan (widget, event.getPoint ());
+    public State mouseReleased(Widget widget, WidgetMouseEvent event) {
+        boolean state = pan(widget, event.getPoint());
         if (state)
             scrollPane = null;
-        return state ? State.createLocked (widget, this) : State.REJECTED;
+        return state ? State.createLocked(widget, this) : State.REJECTED;
     }
 
     @Override
-    public State mouseDragged (Widget widget, WidgetMouseEvent event) {
-        return pan (widget, event.getPoint ()) ? State.createLocked (widget, this) : State.REJECTED;
+    public State mouseDragged(Widget widget, WidgetMouseEvent event) {
+        return pan(widget, event.getPoint()) ? State.createLocked(widget, this) : State.REJECTED;
     }
 
-    private boolean pan (Widget widget, Point newLocation) {
-        if (scrollPane == null  ||  scene != widget.getScene ())
+    private boolean pan(Widget widget, Point newLocation) {
+        if (scrollPane == null || scene != widget.getScene())
             return false;
-        newLocation = scene.convertSceneToView (widget.convertLocalToScene (newLocation));
-        SwingUtilities.convertPointToScreen (newLocation, scene.getView ());
-        JComponent view = scene.getView ();
-        Rectangle rectangle = view.getVisibleRect ();
+        newLocation = scene.convertSceneToView(widget.convertLocalToScene(newLocation));
+        SwingUtilities.convertPointToScreen(newLocation, scene.getView());
+        JComponent view = scene.getView();
+        Rectangle rectangle = view.getVisibleRect();
         rectangle.x += lastLocation.x - newLocation.x;
         rectangle.y += lastLocation.y - newLocation.y;
-        view.scrollRectToVisible (rectangle);
+        view.scrollRectToVisible(rectangle);
         lastLocation = newLocation;
         return true;
     }

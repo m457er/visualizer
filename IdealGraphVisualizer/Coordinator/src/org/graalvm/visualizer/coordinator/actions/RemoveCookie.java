@@ -28,5 +28,5 @@ package org.graalvm.visualizer.coordinator.actions;
 import org.openide.nodes.Node;
 
 public interface RemoveCookie extends Node.Cookie {
-        void remove();
+    void remove();
 }

@@ -107,7 +107,8 @@ public class GraphNode extends AbstractNode {
 
     @Override
     public Action[] getActions(boolean b) {
-        return new Action[]{(Action) DiffGraphAction.findObject(DiffGraphAction.class, true), (Action) CloneGraphAction.findObject(CloneGraphAction.class, true), (Action) OpenAction.findObject(OpenAction.class, true)};
+        return new Action[]{(Action) DiffGraphAction.findObject(DiffGraphAction.class, true), (Action) CloneGraphAction.findObject(CloneGraphAction.class, true),
+                        (Action) OpenAction.findObject(OpenAction.class, true)};
     }
 
     @Override

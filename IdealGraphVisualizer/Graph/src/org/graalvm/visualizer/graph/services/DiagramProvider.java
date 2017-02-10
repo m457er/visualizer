@@ -29,6 +29,7 @@ import org.graalvm.visualizer.graph.Diagram;
 
 public interface DiagramProvider {
     Diagram getDiagram();
+
     ChangedEvent<DiagramProvider> getChangedEvent();
 
 }

@@ -94,12 +94,9 @@ public final class CustomFilter extends AbstractFilter {
 
     private static String getJsHelperText() {
         InputStream is = null;
-        StringBuilder sb = new StringBuilder("if (typeof importPackage === 'undefined') { try { load('nashorn:mozilla_compat.js'); } catch (e) {} }"
-                + "importPackage(Packages.org.graalvm.visualizer.filter);"
-                + "importPackage(Packages.org.graalvm.visualizer.graph);"
-                + "importPackage(Packages.org.graalvm.visualizer.data);"
-                + "importPackage(Packages.org.graalvm.visualizer.util);"
-                + "importPackage(java.awt);");
+        StringBuilder sb = new StringBuilder("if (typeof importPackage === 'undefined') { try { load('nashorn:mozilla_compat.js'); } catch (e) {} }" +
+                        "importPackage(Packages.org.graalvm.visualizer.filter);" + "importPackage(Packages.org.graalvm.visualizer.graph);" + "importPackage(Packages.org.graalvm.visualizer.data);" +
+                        "importPackage(Packages.org.graalvm.visualizer.util);" + "importPackage(java.awt);");
         try {
             FileObject fo = FileUtil.getConfigRoot().getFileObject(JAVASCRIPT_HELPER_ID);
             is = fo.getInputStream();

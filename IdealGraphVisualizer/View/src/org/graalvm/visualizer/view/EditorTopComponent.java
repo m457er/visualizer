@@ -154,7 +154,6 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
     private ChangedEvent<DiagramProvider> diagramChangedEvent = new ChangedEvent<>(diagramProvider);
 
-
     private void updateDisplayName() {
         setDisplayName(getDiagram().getName());
         setToolTipText(getDiagram().getGraph().getGroup().getName());
@@ -180,31 +179,30 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         setToolTipText(NbBundle.getMessage(EditorTopComponent.class, "HINT_EditorTopComponent"));
 
         Action[] actions = new Action[]{
-            PrevDiagramAction.get(PrevDiagramAction.class),
-            NextDiagramAction.get(NextDiagramAction.class),
-            null,
-            ExtractAction.get(ExtractAction.class),
-            ShowAllAction.get(HideAction.class),
-            ShowAllAction.get(ShowAllAction.class),
-            null,
-            ZoomInAction.get(ZoomInAction.class),
-            ZoomOutAction.get(ZoomOutAction.class),
+                        PrevDiagramAction.get(PrevDiagramAction.class),
+                        NextDiagramAction.get(NextDiagramAction.class),
+                        null,
+                        ExtractAction.get(ExtractAction.class),
+                        ShowAllAction.get(HideAction.class),
+                        ShowAllAction.get(ShowAllAction.class),
+                        null,
+                        ZoomInAction.get(ZoomInAction.class),
+                        ZoomOutAction.get(ZoomOutAction.class),
         };
 
-
         Action[] actionsWithSelection = new Action[]{
-            ExtractAction.get(ExtractAction.class),
-            ShowAllAction.get(HideAction.class),
-            null,
-            ExpandPredecessorsAction.get(ExpandPredecessorsAction.class),
-            ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
+                        ExtractAction.get(ExtractAction.class),
+                        ShowAllAction.get(HideAction.class),
+                        null,
+                        ExpandPredecessorsAction.get(ExpandPredecessorsAction.class),
+                        ExpandSuccessorsAction.get(ExpandSuccessorsAction.class)
         };
 
         initComponents();
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
         Toolbar toolBar = new Toolbar();
-        Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); //NOI18N
+        Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); // NOI18N
         toolBar.setBorder(b);
         JPanel container = new JPanel();
         this.add(container, BorderLayout.NORTH);
@@ -228,13 +226,12 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         rangeSliderModel.getDiagramChangedEvent().addListener(diagramChangedListener);
         rangeSliderModel.selectGraph(diagram.getGraph());
         rangeSliderModel.getViewPropertiesChangedEvent().addListener(new ChangedListener<DiagramViewModel>() {
-                @Override
-                public void changed(DiagramViewModel source) {
-                    hideDuplicatesButton.setSelected(getModel().getHideDuplicates());
-                    hideDuplicatesAction.setState(getModel().getHideDuplicates());
-                }
-            });
-
+            @Override
+            public void changed(DiagramViewModel source) {
+                hideDuplicatesButton.setSelected(getModel().getHideDuplicates());
+                hideDuplicatesAction.setState(getModel().getHideDuplicates());
+            }
+        });
 
         toolBar.add(NextDiagramAction.get(NextDiagramAction.class));
         toolBar.add(PrevDiagramAction.get(PrevDiagramAction.class));
@@ -295,7 +292,8 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         Action action = Utilities.actionsForPath("QuickSearchShadow").get(0);
         Component quicksearch = ((Presenter.Toolbar) action).getToolbarPresenter();
         try {
-            // (aw) workaround for disappearing search bar due to reparenting one shared component instance.
+            // (aw) workaround for disappearing search bar due to reparenting one shared component
+            // instance.
             quicksearch = (Component) quicksearch.getClass().getConstructor(KeyStroke.class).newInstance(new Object[]{null});
         } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException e) {
         }
@@ -345,6 +343,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
         updateDisplayName();
     }
+
     private KeyListener keyListener = new KeyListener() {
 
         @Override
@@ -420,10 +419,9 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         return null;
     }
 
-    /** This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
+    /**
+     * This method is called from within the constructor to initialize the form. WARNING: Do NOT
+     * modify this code. The content of this method is always regenerated by the Form Editor.
      */
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -436,7 +434,8 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
         setLayout(new java.awt.BorderLayout());
     }// </editor-fold>//GEN-END:initComponents
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+     // Variables declaration - do not modify//GEN-BEGIN:variables
+
     private javax.swing.JCheckBox jCheckBox1;
     // End of variables declaration//GEN-END:variables
 
@@ -633,5 +632,5 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     @Override
     protected Object writeReplace() throws ObjectStreamException {
         throw new NotSerializableException();
-}
+    }
 }

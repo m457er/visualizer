@@ -37,17 +37,11 @@ import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.CallableSystemAction;
 
-@ActionID(
-        category = "File",
-        id = "org.graalvm.visualizer.coordinator.actions.SaveAllAction"
-)
-@ActionRegistration(
-        displayName = "#CTL_SaveAllAction",
-        lazy = true
-)
+@ActionID(category = "File", id = "org.graalvm.visualizer.coordinator.actions.SaveAllAction")
+@ActionRegistration(displayName = "#CTL_SaveAllAction", lazy = true)
 @ActionReferences({
-    @ActionReference(path = "Menu/File", position = 0),
-    @ActionReference(path = "Shortcuts", name = "C-S")
+                @ActionReference(path = "Menu/File", position = 0),
+                @ActionReference(path = "Shortcuts", name = "C-S")
 })
 public final class SaveAllAction extends CallableSystemAction {
 

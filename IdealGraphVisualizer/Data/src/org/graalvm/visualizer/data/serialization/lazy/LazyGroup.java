@@ -49,31 +49,31 @@ import org.graalvm.visualizer.data.InputGraph;
  */
 final class LazyGroup extends Group implements Group.LazyContent {
     private static final Logger LOG = Logger.getLogger(LazyGroup.class.getName());
-    
+
     /**
      * If true, then incomplete groups wait for completion in {@link #getElementsInternal}.
      */
     private static final boolean incompleteWaits = true;
-    
+
     private static final Reference EMPTY = new WeakReference(null);
-    
+
     /**
      * Completer responsible to load group's contents on demand.
      */
-    private final Completer   completer;
-    
+    private final Completer completer;
+
     private volatile Reference<Future<List<? extends FolderElement>>> processing = EMPTY;
-    
+
     /**
      * Filtered list of completed elements
      */
     private volatile Reference<List<InputGraph>> graphs = EMPTY;
-    
+
     public LazyGroup(Folder parent, Completer completer) {
         super(parent);
         this.completer = completer;
     }
-    
+
     @Override
     public boolean isComplete() {
         if (completer == null) {
@@ -99,15 +99,14 @@ final class LazyGroup extends Group implements Group.LazyContent {
 
     @Override
     public List<InputGraph> getGraphs() {
-         Reference<List<InputGraph>> rg = graphs;
-         List<InputGraph> l = rg.get();
-         if (l != null) {
-             return l;
-         }
+        Reference<List<InputGraph>> rg = graphs;
+        List<InputGraph> l = rg.get();
+        if (l != null) {
+            return l;
+        }
         boolean c = isComplete();
-        List<FolderElement> fl = (List<FolderElement>)getElementsInternal();
-        l = Collections.unmodifiableList((List)
-                fl.stream().filter((e) -> e instanceof InputGraph).collect(
+        List<FolderElement> fl = (List<FolderElement>) getElementsInternal();
+        l = Collections.unmodifiableList((List) fl.stream().filter((e) -> e instanceof InputGraph).collect(
                         Collectors.toList()));
         if (incompleteWaits || c) {
             graphs = new WeakReference(l);
@@ -141,14 +140,14 @@ final class LazyGroup extends Group implements Group.LazyContent {
     @Override
     public void addElement(FolderElement element) {
     }
-    
+
     public void addElements(List<? extends FolderElement> newElements) {
     }
-    
+
     /**
-     * Speicalized version, which just allows hooking of the list of graphs and folders.
-     * The hook ensures that a single graph keeps all its siblings in memory - LazyGroup
-     * content is discarded as a whole.
+     * Speicalized version, which just allows hooking of the list of graphs and folders. The hook
+     * ensures that a single graph keeps all its siblings in memory - LazyGroup content is discarded
+     * as a whole.
      */
     static class LoadedGraph extends InputGraph implements ChangedEventProvider<Object> {
         private ChangedEvent ev = new ChangedEvent(this);
@@ -156,14 +155,14 @@ final class LazyGroup extends Group implements Group.LazyContent {
         public LoadedGraph(String name) {
             super(name);
         }
-        
+
         @Override
         public ChangedEvent<Object> getChangedEvent() {
             return ev;
         }
     }
-    
+
     public interface Completer {
-        public Future<List<? extends FolderElement>>  completeContents();
+        public Future<List<? extends FolderElement>> completeContents();
     }
 }

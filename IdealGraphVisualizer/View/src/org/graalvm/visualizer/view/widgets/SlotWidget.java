@@ -43,7 +43,7 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
 
     private static final double TEXT_ZOOM_FACTOR = 0.9;
     private static final double ZOOM_FACTOR = 0.6;
-    
+
     private final Slot slot;
     private final FigureWidget figureWidget;
     private final DiagramScene diagramScene;
@@ -113,7 +113,8 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
 
             if (getSlot().getShortName() != null && getSlot().getShortName().length() > 0 && getScene().getZoomFactor() >= TEXT_ZOOM_FACTOR) {
                 Rectangle2D r1 = g.getFontMetrics().getStringBounds(getSlot().getShortName(), g);
-                g.drawString(getSlot().getShortName(), (int) (w - r1.getWidth()) / 2, g.getFontMetrics().getAscent() - 1);//(int) (r1.getHeight()));
+                g.drawString(getSlot().getShortName(), (int) (w - r1.getWidth()) / 2, g.getFontMetrics().getAscent() - 1);// (int)
+                                                                                                                          // (r1.getHeight()));
             }
 
         } else {

@@ -63,7 +63,6 @@ public class SplitFilter extends AbstractFilter {
                         os.setColor(f.getColor());
                     }
 
-
                     String s = Figure.resolveString(propertyName, f.getProperties());
                     if (s != null) {
                         os.setShortName(s);

@@ -45,12 +45,13 @@ public class NodeQuickSearch implements SearchProvider {
     private static final String DEFAULT_PROPERTY = "name";
 
     /**
-     * Method is called by infrastructure when search operation was requested.
-     * Implementors should evaluate given request and fill response object with
-     * apropriate results
+     * Method is called by infrastructure when search operation was requested. Implementors should
+     * evaluate given request and fill response object with apropriate results
      *
      * @param request Search request object that contains information what to search for
-     * @param response Search response object that stores search results. Note that it's important to react to return value of SearchResponse.addResult(...) method and stop computation if false value is returned.
+     * @param response Search response object that stores search results. Note that it's important
+     *            to react to return value of SearchResponse.addResult(...) method and stop
+     *            computation if false value is returned.
      */
     @Override
     public void evaluate(SearchRequest request, SearchResponse response) {
@@ -118,8 +119,7 @@ public class NodeQuickSearch implements SearchProvider {
                         }
                     }
                 },
-                        "All " + matches.size() + " matching nodes (" + name + "=" + value + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
-                );
+                                "All " + matches.size() + " matching nodes (" + name + "=" + value + ")" + (theGraph != null ? " in " + theGraph.getName() : ""));
 
                 // Single matches
                 for (final InputNode n : matches) {
@@ -138,8 +138,7 @@ public class NodeQuickSearch implements SearchProvider {
                             }
                         }
                     },
-                            n.getProperties().get(name) + " (" + n.getId() + " " + n.getProperties().get("name") + ")" + (theGraph != null ? " in " + theGraph.getName() : "")
-                    );
+                                    n.getProperties().get(name) + " (" + n.getId() + " " + n.getProperties().get("name") + ")" + (theGraph != null ? " in " + theGraph.getName() : ""));
                 }
             }
         } else {
@@ -158,14 +157,12 @@ public class NodeQuickSearch implements SearchProvider {
             response.addResult(new Runnable() {
                 @Override
                 public void run() {
-                    Message desc = new NotifyDescriptor.Message("An exception occurred during the search, "
-                            + "perhaps due to a malformed query string:\n" + msg,
-                            NotifyDescriptor.WARNING_MESSAGE);
+                    Message desc = new NotifyDescriptor.Message("An exception occurred during the search, " + "perhaps due to a malformed query string:\n" + msg,
+                                    NotifyDescriptor.WARNING_MESSAGE);
                     DialogDisplayer.getDefault().notify(desc);
                 }
             },
-                    "(Error during search)"
-            );
+                            "(Error during search)");
         }
         return null;
     }

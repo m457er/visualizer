@@ -87,7 +87,6 @@ public final class ExtendedSatelliteComponent extends JComponent implements Mous
         int vx = (size.width - vw) / 2;
         int vy = (size.height - vh) / 2;
 
-
         if (image == null || vw != imageWidth || vh != imageHeight) {
             imageWidth = vw;
             imageHeight = vh;
@@ -107,10 +106,10 @@ public final class ExtendedSatelliteComponent extends JComponent implements Mous
         Rectangle viewRectangle = component != null ? component.getVisibleRect() : null;
         if (viewRectangle != null) {
             Rectangle window = new Rectangle(
-                    (int) ((double) viewRectangle.x * scale / zoomFactor),
-                    (int) ((double) viewRectangle.y * scale / zoomFactor),
-                    (int) ((double) viewRectangle.width * scale / zoomFactor),
-                    (int) ((double) viewRectangle.height * scale / zoomFactor));
+                            (int) ((double) viewRectangle.x * scale / zoomFactor),
+                            (int) ((double) viewRectangle.y * scale / zoomFactor),
+                            (int) ((double) viewRectangle.width * scale / zoomFactor),
+                            (int) ((double) viewRectangle.height * scale / zoomFactor));
             window.translate(vx, vy);
             gr.setColor(new Color(200, 200, 200, 128));
             gr.fill(window);
@@ -181,7 +180,7 @@ public final class ExtendedSatelliteComponent extends JComponent implements Mous
 
     @Override
     public void sceneRepaint() {
-    //repaint ();
+        // repaint ();
     }
 
     @Override

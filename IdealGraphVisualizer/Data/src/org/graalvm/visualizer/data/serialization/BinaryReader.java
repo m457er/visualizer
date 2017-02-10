@@ -45,37 +45,38 @@ import static org.graalvm.visualizer.data.serialization.BinaryStreamDefs.*;
 import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
 
 /**
- * The class reads the Graal binary dump format. All model object creation or 
- * property value computation / logic is delegated to the {@link ModelBuilder} class.
- * While the BinaryReader should change seldom, together with Graal runtime, the ModelBuilder
- * can be adapted or subclassed to provide different ways how to process the binary data.
+ * The class reads the Graal binary dump format. All model object creation or property value
+ * computation / logic is delegated to the {@link ModelBuilder} class. While the BinaryReader should
+ * change seldom, together with Graal runtime, the ModelBuilder can be adapted or subclassed to
+ * provide different ways how to process the binary data.
  * <p/>
- * Uses {@link BinarySource} to actually read the underlying stream. The Source can report
- * positions to the Builder.
+ * Uses {@link BinarySource} to actually read the underlying stream. The Source can report positions
+ * to the Builder.
  * <p/>
- * The Reader obtains initial {@link ConstantPool} from the builder; it also allows
- * the Builder to replace ConstantPool in the reader (useful for partial reading).
+ * The Reader obtains initial {@link ConstantPool} from the builder; it also allows the Builder to
+ * replace ConstantPool in the reader (useful for partial reading).
  */
 public final class BinaryReader implements GraphParser {
     private static final Logger LOG = Logger.getLogger(BinaryReader.class.getName());
-    
-    private BinarySource    dataSource;
-    
+
+    private BinarySource dataSource;
+
     private final Deque<byte[]> hashStack;
     private int folderLevel;
 
     private MessageDigest digest;
 
     private int constantPoolSize;
-    
-    private ConstantPool    constantPool;
-    
-    private ModelBuilder    builder;
+
+    private ConstantPool constantPool;
+
+    private ModelBuilder builder;
 
     private static abstract class Member implements LengthToString {
         public final Klass holder;
         public final int accessFlags;
         public final String name;
+
         public Member(Klass holder, String name, int accessFlags) {
             this.holder = holder;
             this.accessFlags = accessFlags;
@@ -86,11 +87,13 @@ public final class BinaryReader implements GraphParser {
     private static class Method extends Member {
         public final Signature signature;
         public final byte[] code;
+
         public Method(String name, Signature signature, byte[] code, Klass holder, int accessFlags) {
             super(holder, name, accessFlags);
             this.signature = signature;
             this.code = code;
         }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
@@ -104,9 +107,10 @@ public final class BinaryReader implements GraphParser {
             sb.append(')');
             return sb.toString();
         }
+
         @Override
         public String toString(Length l) {
-            switch(l) {
+            switch (l) {
                 case M:
                     return holder.toString(Length.L) + "." + name;
                 case S:
@@ -121,11 +125,12 @@ public final class BinaryReader implements GraphParser {
     private static class Signature {
         public final String returnType;
         public final String[] argTypes;
+
         public Signature(String returnType, String[] argTypes) {
             this.returnType = returnType;
             this.argTypes = argTypes;
         }
-        
+
         public String toString() {
             return "Signature(" + returnType + ":" + String.join(":", argTypes) + ")";
         }
@@ -133,17 +138,20 @@ public final class BinaryReader implements GraphParser {
 
     private static class Field extends Member {
         public final String type;
+
         public Field(String type, Klass holder, String name, int accessFlags) {
             super(holder, name, accessFlags);
             this.type = type;
         }
+
         @Override
         public String toString() {
             return holder + "." + name;
         }
+
         @Override
         public String toString(Length l) {
-            switch(l) {
+            switch (l) {
                 case M:
                     return holder.toString(Length.L) + "." + name;
                 case S:
@@ -158,6 +166,7 @@ public final class BinaryReader implements GraphParser {
     private static class Klass implements LengthToString {
         public final String name;
         public final String simpleName;
+
         public Klass(String name) {
             this.name = name;
             String simple;
@@ -168,13 +177,15 @@ public final class BinaryReader implements GraphParser {
             }
             this.simpleName = simple;
         }
+
         @Override
         public String toString() {
             return name;
         }
+
         @Override
         public String toString(Length l) {
-            switch(l) {
+            switch (l) {
                 case S:
                     return simpleName;
                 default:
@@ -187,6 +198,7 @@ public final class BinaryReader implements GraphParser {
 
     private static class EnumKlass extends Klass {
         public final String[] values;
+
         public EnumKlass(String name, String[] values) {
             super(name);
             this.values = values;
@@ -196,17 +208,20 @@ public final class BinaryReader implements GraphParser {
     private static class EnumValue implements LengthToString {
         public EnumKlass enumKlass;
         public int ordinal;
+
         public EnumValue(EnumKlass enumKlass, int ordinal) {
             this.enumKlass = enumKlass;
             this.ordinal = ordinal;
         }
+
         @Override
         public String toString() {
             return enumKlass.simpleName + "." + enumKlass.values[ordinal];
         }
+
         @Override
         public String toString(Length l) {
-            switch(l) {
+            switch (l) {
                 case S:
                     return enumKlass.values[ordinal];
                 default:
@@ -225,7 +240,7 @@ public final class BinaryReader implements GraphParser {
         this.builder.setPoolTarget(this::replaceConstantPool);
         hashStack = new LinkedList<>();
     }
-    
+
     private String readPoolObjectsToString() throws IOException {
         int len = dataSource.readInt();
         if (len < 0) {
@@ -259,13 +274,13 @@ public final class BinaryReader implements GraphParser {
         Object obj = getPoolData(index);
         return (T) obj;
     }
-    
+
     private Object getPoolData(int index) {
         return constantPool.get(index, dataSource.getMark() - 1);
     }
 
     private boolean assertObjectType(Class<?> klass, int type) {
-        switch(type) {
+        switch (type) {
             case POOL_CLASS:
                 return klass.isAssignableFrom(EnumKlass.class);
             case POOL_ENUM:
@@ -294,7 +309,7 @@ public final class BinaryReader implements GraphParser {
         int size = 0;
         assert assertObjectType(klass, type) : "Wrong object type : " + klass + " != " + type;
         Object obj;
-        switch(type) {
+        switch (type) {
             case POOL_CLASS: {
                 String name = dataSource.readString();
                 int klasstype = dataSource.readByte();
@@ -400,7 +415,7 @@ public final class BinaryReader implements GraphParser {
                 return readPoolObject(Object.class);
             case PROPERTY_ARRAY:
                 int subType = dataSource.readByte();
-                switch(subType) {
+                switch (subType) {
                     case PROPERTY_INT:
                         return dataSource.readIntsToString();
                     case PROPERTY_DOUBLE:
@@ -417,13 +432,13 @@ public final class BinaryReader implements GraphParser {
                 throw new IOException("Unknown type");
         }
     }
-    
+
     public GraphDocument parse() throws IOException {
         hashStack.push(null);
-        
+
         boolean restart = false;
         try {
-            while(true) {
+            while (true) {
                 // allows to concatenate BGV files; at the top-level, either BIGV signature,
                 // or 0x00-0x02 should be present.
                 if (folderLevel == 0) {
@@ -444,15 +459,14 @@ public final class BinaryReader implements GraphParser {
         }
         return builder.rootDocument();
     }
-    
-    
+
     protected void beginGroup() throws IOException {
         parseGroup();
         builder.startGroupContent();
         folderLevel++;
         hashStack.push(null);
     }
-    
+
     private void doCloseGroup() throws IOException {
         if (folderLevel-- == 0) {
             throw new IOException("Unbalanced groups");
@@ -463,7 +477,7 @@ public final class BinaryReader implements GraphParser {
 
     protected void parseRoot() throws IOException {
         int type = dataSource.readByte();
-        switch(type) {
+        switch (type) {
             case BEGIN_GRAPH: {
                 parseGraph();
                 break;
@@ -484,7 +498,7 @@ public final class BinaryReader implements GraphParser {
     protected Group createGroup(Folder parent) {
         return new Group(parent);
     }
-    
+
     protected Group parseGroup() throws IOException {
         Group group = builder.startGroup();
         String name = readPoolObject(String.class);
@@ -512,7 +526,7 @@ public final class BinaryReader implements GraphParser {
             builder.setProperty(key, value);
         }
     }
-    
+
     private void computeGraphDigest() {
         byte[] d = dataSource.finishDigest();
         byte[] hash = hashStack.peek();
@@ -523,7 +537,7 @@ public final class BinaryReader implements GraphParser {
             hashStack.push(d);
         }
     }
-    
+
     private int graphReadCount;
 
     private InputGraph parseGraph(String title, boolean toplevel) throws IOException {
@@ -538,7 +552,7 @@ public final class BinaryReader implements GraphParser {
         }
         return builder.endGraph();
     }
-    
+
     private void parseBlocks() throws IOException {
         int blockCount = dataSource.readInt();
         for (int i = 0; i < blockCount; i++) {
@@ -561,12 +575,12 @@ public final class BinaryReader implements GraphParser {
         }
         builder.makeBlockEdges();
     }
-    
-    protected final void createEdges(int id, int preds, List<? extends Port> portList, 
-            boolean dir,
-            EdgeBuilder factory) throws IOException {
+
+    protected final void createEdges(int id, int preds, List<? extends Port> portList,
+                    boolean dir,
+                    EdgeBuilder factory) throws IOException {
         int portNum = 0;
-        for (Port p : portList) { 
+        for (Port p : portList) {
             if (p.isList) {
                 int size = dataSource.readShort();
                 for (int j = 0; j < size; j++) {
@@ -585,11 +599,11 @@ public final class BinaryReader implements GraphParser {
             }
         }
     }
-    
+
     interface EdgeBuilder {
         void edge(Port p, int from, int to, char num, int index);
     }
-    
+
     private void parseNodes() throws IOException {
         int count = dataSource.readInt();
         for (int i = 0; i < count; i++) {
@@ -598,7 +612,7 @@ public final class BinaryReader implements GraphParser {
             int preds = dataSource.readByte();
             builder.startNode(id, preds > 0);
             if (preds > 0) {
-                
+
             }
             int propCount = dataSource.readShort();
             for (int j = 0; j < propCount; j++) {
@@ -619,9 +633,10 @@ public final class BinaryReader implements GraphParser {
     }
 
     /**
-     * Used during reading, to compact, reset or change constant pool. Use with great care,
-     * wrong constant pool may damage the rest of reading process.
-     * @param cp 
+     * Used during reading, to compact, reset or change constant pool. Use with great care, wrong
+     * constant pool may damage the rest of reading process.
+     * 
+     * @param cp
      */
     public final void replaceConstantPool(ConstantPool cp) {
         this.constantPool = cp;

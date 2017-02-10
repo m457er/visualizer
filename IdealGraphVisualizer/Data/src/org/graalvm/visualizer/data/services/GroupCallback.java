@@ -27,5 +27,5 @@ package org.graalvm.visualizer.data.services;
 import org.graalvm.visualizer.data.Group;
 
 public interface GroupCallback {
-    public void     started(Group g);
+    public void started(Group g);
 }

@@ -31,7 +31,7 @@ class BinaryStreamDefs {
     static final int BEGIN_GROUP = 0;
     static final int BEGIN_GRAPH = 1;
     static final int CLOSE_GROUP = 2;
-    
+
     static final int POOL_NEW = 0;
     static final int POOL_STRING = 1;
     static final int POOL_ENUM = 2;

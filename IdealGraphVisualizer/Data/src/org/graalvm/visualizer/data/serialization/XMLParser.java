@@ -175,6 +175,7 @@ public class XMLParser implements ContentHandler {
             currentText.append(c, start, length);
         }
     }
+
     private ArrayList<ElementHandler<?, ?>> stack;
     private ParseMonitor monitor;
 
@@ -210,7 +211,7 @@ public class XMLParser implements ContentHandler {
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         assert !stack.isEmpty();
 
-        ElementHandler<?,?> parent = stack.get(stack.size() - 1);
+        ElementHandler<?, ?> parent = stack.get(stack.size() - 1);
         if (parent != null) {
             ElementHandler child = parent.getChild(qName);
             if (child != null) {
@@ -235,7 +236,6 @@ public class XMLParser implements ContentHandler {
     public void characters(char[] ch, int start, int length) throws SAXException {
 
         assert !stack.isEmpty();
-
 
         ElementHandler top = stack.get(stack.size() - 1);
         if (top != null && top.needsText()) {

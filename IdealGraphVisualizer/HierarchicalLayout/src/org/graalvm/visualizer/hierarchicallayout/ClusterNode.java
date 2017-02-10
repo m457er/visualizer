@@ -70,7 +70,6 @@ public class ClusterNode implements Vertex {
 
     public void updateSize() {
 
-
         calculateSize();
 
         final ClusterNode widget = this;
@@ -111,7 +110,6 @@ public class ClusterNode implements Vertex {
         int maxX = Integer.MIN_VALUE;
         int minY = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE;
-
 
         for (Vertex n : subNodes) {
             Point p = n.getPosition();

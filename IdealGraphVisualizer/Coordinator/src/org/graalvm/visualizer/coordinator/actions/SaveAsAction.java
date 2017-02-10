@@ -51,11 +51,11 @@ import org.openide.util.actions.CookieAction;
 import org.openide.util.actions.NodeAction;
 
 public final class SaveAsAction extends NodeAction {
-    
+
     public SaveAsAction() {
         this(null);
     }
-    
+
     private SaveAsAction(Lookup actionContext) {
         putValue(Action.SHORT_DESCRIPTION, "Save selected groups to XML file...");
     }
@@ -71,14 +71,14 @@ public final class SaveAsAction extends NodeAction {
     }
 
     @NbBundle.Messages({
-        "# 0 - compilation name",
-        "MSG_SaveSingle=Saving compilation {0}",
-        "# 0 - number of compilations",
-        "MSG_SaveSelected=Saving {0} compilations",
-        "# 0 - number of compilations",
-        "MSG_SaveAll=Saving all compilations ({0} items)",
-        "# 0 - error description",
-        "ERR_Save=Error during save: {0}"
+                    "# 0 - compilation name",
+                    "MSG_SaveSingle=Saving compilation {0}",
+                    "# 0 - number of compilations",
+                    "MSG_SaveSelected=Saving {0} compilations",
+                    "# 0 - number of compilations",
+                    "MSG_SaveAll=Saving all compilations ({0} items)",
+                    "# 0 - error description",
+                    "ERR_Save=Error during save: {0}"
     })
     public static void save(GraphDocument doc, boolean selected) {
         JFileChooser fc = new JFileChooser();
@@ -96,16 +96,16 @@ public final class SaveAsAction extends NodeAction {
                 dir = dir.getParentFile();
             }
             Settings.get().put(Settings.DIRECTORY, dir.getAbsolutePath());
-            
+
             final File f = file;
-            
+
             int num = doc.getElements().size();
             AtomicBoolean cHandle = new AtomicBoolean();
             String msg = selected ? Bundle.MSG_SaveSelected(num) : Bundle.MSG_SaveAll(num);
             ProgressBridge bridge = new ProgressBridge(doc.getElements(), cHandle);
             ProgressHandle handle = ProgressHandle.createHandle(
-                    msg,
-                    bridge);
+                            msg,
+                            bridge);
             Runnable r = new Runnable() {
                 public void run() {
                     try {
@@ -115,41 +115,43 @@ public final class SaveAsAction extends NodeAction {
                         }
                     } catch (IOException e) {
                         DialogDisplayer.getDefault().notifyLater(new NotifyDescriptor.Message(
-                                Bundle.ERR_Save(e.getLocalizedMessage()), 
-                                NotifyDescriptor.ERROR_MESSAGE)
-                        );
+                                        Bundle.ERR_Save(e.getLocalizedMessage()),
+                                        NotifyDescriptor.ERROR_MESSAGE));
                     }
                 }
             };
             if (num == 1) {
-                BaseProgressUtils.runOffEventDispatchThread(r, 
-                        Bundle.MSG_SaveSingle(doc.getElements().iterator().next().getName()), 
-                        cHandle, true);
+                BaseProgressUtils.runOffEventDispatchThread(r,
+                                Bundle.MSG_SaveSingle(doc.getElements().iterator().next().getName()),
+                                cHandle, true);
             } else {
                 BaseProgressUtils.runOffEventThreadWithProgressDialog(
-                        () -> { bridge.setHandle(handle); r.run(); },
-                        msg, handle, true, num, num);
+                                () -> {
+                                    bridge.setHandle(handle);
+                                    r.run();
+                                },
+                                msg, handle, true, num, num);
             }
         }
     }
-    
+
     @NbBundle.Messages({
-        "# 0 - item number",
-        "# 1 - total items",
-        "# 2 - item name",
-        "PROGRESS_SaveElement=Saving item {0} of {1}: {2}"
+                    "# 0 - item number",
+                    "# 1 - total items",
+                    "# 2 - item name",
+                    "PROGRESS_SaveElement=Saving item {0} of {1}: {2}"
     })
     private static class ProgressBridge implements Consumer<FolderElement>, Cancellable {
         private ProgressHandle handle;
         private final Collection<? extends FolderElement> allItems;
         private final AtomicBoolean cancelHandle;
         private int counter;
-        
+
         public ProgressBridge(Collection<? extends FolderElement> allItems, AtomicBoolean cancelHandle) {
             this.allItems = allItems;
             this.cancelHandle = cancelHandle;
         }
-        
+
         void setHandle(ProgressHandle handle) {
             this.handle = handle;
             handle.start(allItems.size());
@@ -169,13 +171,12 @@ public final class SaveAsAction extends NodeAction {
             cancelHandle.set(true);
             return true;
         }
-        
+
         public AtomicBoolean getCancelHandle() {
             return cancelHandle;
         }
     }
-    
-    
+
     protected int mode() {
         return CookieAction.MODE_SOME;
     }

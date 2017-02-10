@@ -30,7 +30,7 @@ import javax.swing.SwingUtilities;
  */
 public class ChangedEvent<T> extends Event<ChangedListener<T>> {
     private static final boolean DEBUG_THREAD = Boolean.getBoolean("IGV.checkDataModifyThread"); // NO18N
-    
+
     private final T object;
 
     /**

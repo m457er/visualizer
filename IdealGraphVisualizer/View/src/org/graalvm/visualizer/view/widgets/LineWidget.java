@@ -190,8 +190,8 @@ public final class LineWidget extends Widget implements PopupMenuProvider {
         if (isDashed) {
             float[] dashPattern = {5, 5, 5, 5};
             g.setStroke(new BasicStroke(width, BasicStroke.CAP_BUTT,
-                    BasicStroke.JOIN_MITER, 10,
-                    dashPattern, 0));
+                            BasicStroke.JOIN_MITER, 10,
+                            dashPattern, 0));
         } else {
             g.setStroke(new BasicStroke(width));
         }
@@ -210,7 +210,6 @@ public final class LineWidget extends Widget implements PopupMenuProvider {
             sameFrom = true;
         }
 
-
         int size = ARROW_SIZE;
         if (isBold) {
             size = BOLD_ARROW_SIZE;
@@ -220,15 +219,15 @@ public final class LineWidget extends Widget implements PopupMenuProvider {
         }
         if (!sameFrom) {
             g.fillPolygon(
-                    new int[]{from.x - size / 2, from.x + size / 2, from.x},
-                    new int[]{from.y - size / 2, from.y - size / 2, from.y + size / 2},
-                    3);
+                            new int[]{from.x - size / 2, from.x + size / 2, from.x},
+                            new int[]{from.y - size / 2, from.y - size / 2, from.y + size / 2},
+                            3);
         }
         if (!sameTo) {
             g.fillPolygon(
-                    new int[]{to.x - size / 2, to.x + size / 2, to.x},
-                    new int[]{to.y - size / 2, to.y - size / 2, to.y + size / 2},
-                    3);
+                            new int[]{to.x - size / 2, to.x + size / 2, to.x},
+                            new int[]{to.y - size / 2, to.y - size / 2, to.y + size / 2},
+                            3);
         }
         g.setStroke(oldStroke);
     }
@@ -243,7 +242,7 @@ public final class LineWidget extends Widget implements PopupMenuProvider {
             highlightedObjectsChange.add(c.getOutputSlot().getFigure());
             highlightedObjectsChange.add(c.getOutputSlot());
         }
-        if(b) {
+        if (b) {
             highlightedObjects.addAll(highlightedObjectsChange);
         } else {
             highlightedObjects.removeAll(highlightedObjectsChange);
