@@ -23,6 +23,8 @@
  */
 package org.graalvm.visualizer.view.widgets;
 
+import org.graalvm.visualizer.data.InputNode;
+import org.graalvm.visualizer.graph.Diagram;
 import org.graalvm.visualizer.graph.Figure;
 import org.graalvm.visualizer.graph.OutputSlot;
 import org.graalvm.visualizer.graph.Slot;
@@ -38,6 +40,7 @@ import java.util.Set;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
+import java.util.stream.Collectors;
 
 public abstract class SlotWidget extends Widget implements DoubleClickHandler {
 
@@ -152,20 +155,14 @@ public abstract class SlotWidget extends Widget implements DoubleClickHandler {
     public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
         Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
         if (diagramScene.isAllVisible()) {
-            hiddenNodes = new HashSet<>(diagramScene.getModel().getGraphToView().getGroup().getAllNodes());
+            hiddenNodes = new HashSet<>(diagramScene.getModel().getGraphToView().getGroup().getChildNodeIds());
         }
 
-        boolean progress = false;
-        for (Figure f : diagramScene.getModel().getDiagramToView().getFigures()) {
-            for (Slot s : f.getSlots()) {
-                if (DiagramScene.doesIntersect(s.getSource().getSourceNodesAsSet(), slot.getSource().getSourceNodesAsSet())) {
-                    progress = true;
-                    hiddenNodes.removeAll(f.getSource().getSourceNodesAsSet());
-                }
-            }
-        }
-
-        if (progress) {
+        Set<Integer> clickedIds = slot.getSource().getSourceNodeIds();
+        Diagram d = diagramScene.getModel().getDiagramToView();
+        Set<Slot> slots = d.forSources(clickedIds, Slot.class);
+        if (!slots.isEmpty()) {
+            hiddenNodes.removeAll(slots.stream().map(s -> s.getFigure().getId()).collect(Collectors.toList()));
             this.diagramScene.getModel().showNot(hiddenNodes);
         }
     }

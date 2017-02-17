@@ -39,15 +39,24 @@ import org.graalvm.visualizer.util.RangeSliderModel;
 import java.awt.Color;
 import java.util.*;
 import org.graalvm.visualizer.util.ListenerSupport;
+import java.util.stream.Collectors;
 
 public class DiagramViewModel extends RangeSliderModel implements ChangedListener<RangeSliderModel> {
 
     // Warning: Update setData method if fields are added
     private Group group;
     private ArrayList<InputGraph> graphs;
+
+    /**
+     * Ids of nodes, nodes are hidden/shown across all displayed graphs
+     */
     private Set<Integer> hiddenNodes;
-    private Set<Integer> onScreenNodes;
-    private Set<Integer> selectedNodes;
+
+    /**
+     * Currently selected nodes; nodes from the current graph are selected, but the selection is
+     * remembered using node IDs, so it can be adapted when the graph display changes.
+     */
+    private Set<InputNode> selectedNodes;
     private FilterChain filterChain;
     private FilterChain sequenceFilterChain;
     private Diagram diagram;
@@ -99,8 +108,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.diagram = newModel.diagram;
         viewChanged |= (hiddenNodes != newModel.hiddenNodes);
         this.hiddenNodes = newModel.hiddenNodes;
-        viewChanged |= (onScreenNodes != newModel.onScreenNodes);
-        this.onScreenNodes = newModel.onScreenNodes;
         viewChanged |= (selectedNodes != newModel.selectedNodes);
         this.selectedNodes = newModel.selectedNodes;
         viewPropertiesChanged |= (showBlocks != newModel.showBlocks);
@@ -174,7 +181,6 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         assert sequenceFilterChain != null;
         this.sequenceFilterChain = sequenceFilterChain;
         hiddenNodes = new HashSet<>();
-        onScreenNodes = new HashSet<>();
         selectedNodes = new HashSet<>();
         super.getChangedEvent().addListener(this);
         diagramChangedEvent = new ChangedEvent<>(this);
@@ -230,26 +236,32 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         return viewPropertiesChangedEvent;
     }
 
-    public Set<Integer> getSelectedNodes() {
+    public Set<InputNode> getSelectedNodes() {
         return selectedNodes;
     }
 
     public Set<Integer> getHiddenNodes() {
-        return hiddenNodes;
+        return Collections.unmodifiableSet(hiddenNodes);
     }
 
-    public Set<Integer> getOnScreenNodes() {
-        return onScreenNodes;
+    private Set<InputNode> hiddenCurrentGraphNodes;
+
+    public Set<InputNode> getHiddenGraphNodes() {
+        if (hiddenCurrentGraphNodes != null) {
+            return hiddenCurrentGraphNodes;
+        }
+        return hiddenCurrentGraphNodes = getHiddenNodes().stream().map((id) -> getGraphToView().getNode(id)).collect(Collectors.toSet());
     }
 
-    public void setSelectedNodes(Set<Integer> nodes) {
+    public void setSelectedNodes(Set<InputNode> nodes) {
         this.selectedNodes = nodes;
         List<Color> colors = new ArrayList<>();
         for (String s : getPositions()) {
             colors.add(Color.black);
         }
         if (nodes.size() >= 1) {
-            for (Integer id : nodes) {
+            for (InputNode node : nodes) {
+                int id = node.getId();
                 if (id < 0) {
                     id = -id;
                 }
@@ -289,9 +301,11 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void showFigures(Collection<Figure> f) {
         HashSet<Integer> newHiddenNodes = new HashSet<>(getHiddenNodes());
+        HashSet<Integer> existingNodes = new HashSet<>(f.size());
         for (Figure fig : f) {
-            newHiddenNodes.removeAll(fig.getSource().getSourceNodesAsSet());
+            fig.getSource().collectIds(existingNodes);
         }
+        newHiddenNodes.removeAll(existingNodes);
         setHiddenNodes(newHiddenNodes);
     }
 
@@ -299,7 +313,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         Set<Figure> result = new HashSet<>();
         for (Figure f : diagram.getFigures()) {
             for (InputNode node : f.getSource().getSourceNodes()) {
-                if (getSelectedNodes().contains(node.getId())) {
+                if (getSelectedNodes().contains(node)) {
                     result.add(f);
                 }
             }
@@ -311,20 +325,16 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         showFigures(f);
     }
 
-    public void showOnly(final Set<Integer> nodes) {
-        final HashSet<Integer> allNodes = new HashSet<>(getGraphToView().getGroup().getAllNodes());
-        allNodes.removeAll(nodes);
+    public void showOnly(final Set<InputNode> nodes) {
+        final HashSet<Integer> allNodes = new HashSet<>(getGraphToView().getGroup().getChildNodeIds());
+        allNodes.removeAll(nodes.stream().map(n -> n.getId()).collect(Collectors.toList()));
         setHiddenNodes(allNodes);
     }
 
     public void setHiddenNodes(Set<Integer> nodes) {
         this.hiddenNodes = nodes;
+        this.hiddenCurrentGraphNodes = null;
         hiddenNodesChangedEvent.fire();
-    }
-
-    public void setOnScreenNodes(Set<Integer> onScreenNodes) {
-        this.onScreenNodes = onScreenNodes;
-        viewChangedEvent.fire();
     }
 
     public FilterChain getSequenceFilterChain() {
@@ -431,13 +441,14 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     @Override
     public void changed(RangeSliderModel source) {
         inputGraph = null;
+        hiddenCurrentGraphNodes = null;
         diagramChanged();
     }
 
     void setSelectedFigures(List<Figure> list) {
-        Set<Integer> newSelectedNodes = new HashSet<>();
+        Set<InputNode> newSelectedNodes = new HashSet<>();
         for (Figure f : list) {
-            newSelectedNodes.addAll(f.getSource().getSourceNodesAsSet());
+            newSelectedNodes.addAll(f.getSource().getSourceNodes());
         }
         this.setSelectedNodes(newSelectedNodes);
     }

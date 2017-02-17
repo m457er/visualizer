@@ -25,27 +25,167 @@ package org.graalvm.visualizer.data;
 
 import java.util.*;
 
+/**
+ * Holds a collection of represented {@link InputNodes}. The holder is optimized for 0-1 InputNodes,
+ * but can hold any number.
+ * 
+ */
 public class Source {
+    /**
+     * If number of nodes is larger, Set for their IDs is allocated and managed to make duplicate
+     * handling in {@link #addSourceNode} faster.
+     */
+    private static final int SET_THRESHOLD = 20;
 
-    private final List<InputNode> sourceNodes;
-    private final Set<Integer> set;
+    /**
+     * Holds either a single {@link InputNode}, or a {@code List&lt;InputNode>} in case there are
+     * multiple nodes for this source. Flag {@link #many} determines the value type.
+     */
+    private Object sources;
+
+    /**
+     * If true, {@link #sources} holds a List rather than the node itself.
+     */
+    private boolean many;
+
+    /**
+     * Set of IDs already added. The set is not allocated until the number of source nodes exceeds
+     * {@link #SET_THRESHOLD}.
+     */
+    private Set<Integer> set;
 
     public Source() {
-        sourceNodes = new ArrayList<>(1);
-        set = new LinkedHashSet<>(1);
     }
 
+    private boolean hasMany() {
+        return many;
+    }
+
+    public boolean isEmpty() {
+        return sources == null;
+    }
+
+    private List<InputNode> list() {
+        assert hasMany();
+        return ((List<InputNode>) sources);
+    }
+
+    /**
+     * Returns the first InputNode or {@code null} if no sources.
+     * 
+     * @return
+     */
+    public InputNode first() {
+        if (hasMany()) {
+            return list().get(0);
+        } else {
+            return (InputNode) sources;
+        }
+    }
+
+    private Set<Integer> createIdSet() {
+        if (set == null) {
+            set = new HashSet<>();
+            for (InputNode n : list()) {
+                set.add(n.getId());
+            }
+        }
+        return set;
+    }
+
+    public int firstId() {
+        return sources == null ? -1 : first().getId();
+    }
+
+    /**
+     * Returns source InputNode instances.
+     * 
+     * @return unmodifiable collection.
+     */
     public List<InputNode> getSourceNodes() {
-        return Collections.unmodifiableList(sourceNodes);
+        if (hasMany()) {
+            return Collections.unmodifiableList((List) sources);
+        } else if (isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return Collections.singletonList((InputNode) sources);
+        }
     }
 
+    /**
+     * Retrieves source node IDs.
+     * 
+     * @return set of node IDs.
+     */
+    public final Set<Integer> getSourceNodeIds() {
+        return collectIds(new HashSet<>());
+    }
+
+    /**
+     * Collects source node IDs into the collection {@code col}. Duplicate handling is determined by
+     * the passed collection.
+     * 
+     * @param <T> collection type
+     * @param col node IDs will be added to this collection
+     * @return the value of {@code col}.
+     */
+    public <T extends Collection<Integer>> T collectIds(T col) {
+        assert col != null;
+        if (hasMany()) {
+            for (InputNode n : list()) {
+                col.add(n.getId());
+            }
+        } else if (!isEmpty()) {
+            col.add(((InputNode) sources).getId());
+        }
+        return col;
+    }
+
+    /**
+     * Returns IDs of source's nodes.
+     * 
+     * @return node IDs, as a Set.
+     * @deprecated this was implemented to be fast and cache the data internally which resulted in
+     *             large amount of retained memory for large graphs. Depending on the use-case, use
+     *             other ways how to obtain node IDs, or use {@link #getSourceNodeIds} but be aware
+     *             that the method always creates a new set.
+     */
+    @Deprecated
     public Set<Integer> getSourceNodesAsSet() {
-        return Collections.unmodifiableSet(set);
+        if (hasMany()) {
+            return Collections.unmodifiableSet(createIdSet());
+        } else if (isEmpty()) {
+            return Collections.emptySet();
+        } else {
+            return Collections.singleton(((InputNode) sources).getId());
+        }
     }
 
     public void addSourceNode(InputNode n) {
-        if (!set.contains(n.getId())) {
-            sourceNodes.add(n);
+        List<InputNode> nodes;
+        if (isEmpty()) {
+            sources = n;
+            return;
+        } else if (!hasMany()) {
+            if (sources == n) {
+                return;
+            }
+            InputNode existing = (InputNode) sources;
+            sources = nodes = new ArrayList<>(2);
+            nodes.add(existing);
+        } else {
+            List<InputNode> l = list();
+            if (l.size() < SET_THRESHOLD) {
+                if (l.contains(n)) {
+                    return;
+                }
+            } else if (createIdSet().contains(n)) {
+                return;
+            }
+        }
+        nodes = (List<InputNode>) sources;
+        nodes.add(n);
+        if (set != null) {
             set.add(n.getId());
         }
     }

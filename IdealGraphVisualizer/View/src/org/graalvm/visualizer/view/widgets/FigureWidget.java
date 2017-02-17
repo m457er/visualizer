@@ -24,6 +24,7 @@
 package org.graalvm.visualizer.view.widgets;
 
 import org.graalvm.visualizer.data.InputGraph;
+import org.graalvm.visualizer.data.InputNode;
 import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.services.GraphViewer;
 import org.graalvm.visualizer.graph.Figure;
@@ -344,20 +345,18 @@ public final class FigureWidget extends Widget implements Properties.Provider, P
 
     @Override
     public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
-
+        final Set<Integer> hiddenIds;
+        Set<Integer> selectedIds = this.getFigure().getSource().getSourceNodeIds();
         if (diagramScene.isAllVisible()) {
-            final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getGraphToView().getGroup().getAllNodes());
-            hiddenNodes.removeAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            hiddenIds = new HashSet<>(diagramScene.getModel().getGraphToView().getGroup().getChildNodeIds());
+            hiddenIds.removeAll(selectedIds);
         } else if (isBoundary()) {
-
-            final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
-            hiddenNodes.removeAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            hiddenIds = new HashSet<>(diagramScene.getModel().getHiddenNodes());
+            hiddenIds.removeAll(selectedIds);
         } else {
-            final Set<Integer> hiddenNodes = new HashSet<>(diagramScene.getModel().getHiddenNodes());
-            hiddenNodes.addAll(this.getFigure().getSource().getSourceNodesAsSet());
-            this.diagramScene.getModel().showNot(hiddenNodes);
+            hiddenIds = new HashSet<>(diagramScene.getModel().getHiddenNodes());
+            hiddenIds.addAll(selectedIds);
         }
+        this.diagramScene.getModel().showNot(hiddenIds);
     }
 }

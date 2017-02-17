@@ -25,6 +25,7 @@ package org.graalvm.visualizer.data;
 
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 public class Group extends Properties.Entity implements ChangedEventProvider<Group>, Folder, FolderElement {
 
@@ -97,15 +98,35 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
         return elements;
     }
 
-    public Set<Integer> getAllNodes() {
-        Set<Integer> result = new HashSet<>();
+    /**
+     * Returns IDs of all nodes in all contained graphs. May return a value without loading all the
+     * graph data.
+     * 
+     * @return set of node IDs.
+     */
+    public Set<Integer> getChildNodeIds() {
+        return getGraphs().parallelStream().flatMap((e) -> ((InputGraph) e).getNodeIds().stream()).collect(Collectors.toSet());
+    }
+
+    /**
+     * Returns nodes of all child graphs. Loads full graph data, if necessary; use with care.
+     * 
+     * @return set of all nodes.
+     */
+    public Set<InputNode> getChildNodes() {
+        Set result = new LinkedHashSet<>();
         for (FolderElement e : getElementsInternal()) {
             if (e instanceof InputGraph) {
                 InputGraph g = (InputGraph) e;
-                result.addAll(g.getNodesAsSet());
+                result.addAll(g.getNodes());
             }
         }
         return result;
+    }
+
+    @Deprecated
+    public Set<Integer> getAllNodes() {
+        return getChildNodeIds();
     }
 
     @Override

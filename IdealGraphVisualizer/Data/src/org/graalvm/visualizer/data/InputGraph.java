@@ -34,6 +34,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     private final Map<String, InputBlock> blocks;
     private final List<InputBlockEdge> blockEdges;
     private final Map<Integer, InputBlock> nodeToBlock;
+    private Set<Integer> nodeIds;
 
     public InputGraph(String name) {
         setName(name);
@@ -58,6 +59,13 @@ public class InputGraph extends Properties.Entity implements FolderElement {
         blockEdges.add(edge);
         left.addSuccessor(right);
         return edge;
+    }
+
+    public Set<Integer> getNodeIds() {
+        if (nodeIds != null) {
+            return nodeIds;
+        }
+        return nodeIds = Collections.unmodifiableSet(new HashSet<>(nodes.keySet()));
     }
 
     public List<InputNode> findRootNodes() {
@@ -208,6 +216,7 @@ public class InputGraph extends Properties.Entity implements FolderElement {
 
     public void addNode(InputNode node) {
         nodes.put(node.getId(), node);
+        nodeIds = null;
     }
 
     public InputNode getNode(int id) {
@@ -215,7 +224,11 @@ public class InputGraph extends Properties.Entity implements FolderElement {
     }
 
     public InputNode removeNode(int id) {
-        return nodes.remove(id);
+        InputNode n = nodes.remove(id);
+        if (n != null) {
+            nodeIds = null;
+        }
+        return n;
     }
 
     public Collection<InputEdge> getEdges() {

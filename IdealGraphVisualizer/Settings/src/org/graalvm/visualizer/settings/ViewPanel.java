@@ -61,10 +61,11 @@ final class ViewPanel extends javax.swing.JPanel {
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
-                        jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGroup(javax.swing.GroupLayout.Alignment.TRAILING,
-                                        jPanel1Layout.createSequentialGroup().addContainerGap().addGroup(
-                                                        jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(jLabel1).addComponent(jLabel3).addComponent(
-                                                                        jLabel2)).addGap(39,
+                        jPanel1Layout.createParallelGroup(
+                                        javax.swing.GroupLayout.Alignment.LEADING).addGroup(
+                                                        javax.swing.GroupLayout.Alignment.TRAILING,
+                                                        jPanel1Layout.createSequentialGroup().addContainerGap().addGroup(jPanel1Layout.createParallelGroup(
+                                                                        javax.swing.GroupLayout.Alignment.LEADING).addComponent(jLabel1).addComponent(jLabel3).addComponent(jLabel2)).addGap(39,
                                                                                         39,
                                                                                         39).addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addComponent(
                                                                                                         portSpinner, javax.swing.GroupLayout.PREFERRED_SIZE, 63,

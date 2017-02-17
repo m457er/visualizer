@@ -81,6 +81,7 @@ import org.openide.util.lookup.ProxyLookup;
 import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
+import java.util.stream.Collectors;
 
 public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
 
@@ -541,9 +542,9 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public void hideNodes() {
-        Set<Integer> selectedNodes = this.getModel().getSelectedNodes();
+        Set<InputNode> selectedNodes = this.getModel().getSelectedNodes();
         HashSet<Integer> nodes = new HashSet<>(getModel().getHiddenNodes());
-        nodes.addAll(selectedNodes);
+        nodes.addAll(selectedNodes.stream().map(InputNode::getId).collect(Collectors.toList()));
         this.getModel().showNot(nodes);
     }
 
@@ -598,7 +599,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public void showAll() {
-        getModel().showNot(new HashSet<Integer>());
+        getModel().showNot(Collections.<Integer> emptySet());
     }
 
     public Diagram getDiagram() {

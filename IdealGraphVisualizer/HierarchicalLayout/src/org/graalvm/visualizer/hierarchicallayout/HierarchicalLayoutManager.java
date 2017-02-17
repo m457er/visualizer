@@ -1100,7 +1100,7 @@ public class HierarchicalLayoutManager implements LayoutManager {
                         assert e.from.layer < e.to.layer;
                         if (e.from.layer != e.to.layer - 1) {
                             if (maxLayerLength != -1 && e.to.layer - e.from.layer > maxLayerLength
-                            /* && e.to.preds.size() > 1 && e.from.succs.size() > 1*/) {
+                            /* && e.to.preds.size() > 1 && e.from.succs.size() > 1 */) {
                                 assert maxLayerLength > 2;
                                 e.to.preds.remove(e);
                                 e.from.succs.remove(e);

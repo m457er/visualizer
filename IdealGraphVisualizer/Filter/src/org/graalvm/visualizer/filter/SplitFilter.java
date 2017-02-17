@@ -23,12 +23,13 @@
  */
 package org.graalvm.visualizer.filter;
 
+import org.graalvm.visualizer.data.InputNode;
 import org.graalvm.visualizer.graph.Connection;
+import org.graalvm.visualizer.graph.Diagram;
+import org.graalvm.visualizer.graph.Figure;
+import org.graalvm.visualizer.graph.InputSlot;
 import org.graalvm.visualizer.graph.OutputSlot;
 import org.graalvm.visualizer.graph.Selector;
-import org.graalvm.visualizer.graph.Diagram;
-import org.graalvm.visualizer.graph.InputSlot;
-import org.graalvm.visualizer.graph.Figure;
 import java.util.List;
 
 public class SplitFilter extends AbstractFilter {
@@ -57,9 +58,10 @@ public class SplitFilter extends AbstractFilter {
             for (InputSlot is : f.getInputSlots()) {
                 for (Connection c : is.getConnections()) {
                     OutputSlot os = c.getOutputSlot();
-                    if (f.getSource().getSourceNodes().size() > 0) {
+                    InputNode n = f.getSource().first();
+                    if (n != null) {
                         os.getSource().addSourceNodes(f.getSource());
-                        os.setAssociatedNode(f.getSource().getSourceNodes().get(0));
+                        os.setAssociatedNode(n);
                         os.setColor(f.getColor());
                     }
 
@@ -73,9 +75,10 @@ public class SplitFilter extends AbstractFilter {
             for (OutputSlot os : f.getOutputSlots()) {
                 for (Connection c : os.getConnections()) {
                     InputSlot is = c.getInputSlot();
-                    if (f.getSource().getSourceNodes().size() > 0) {
+                    InputNode n = f.getSource().first();
+                    if (n != null) {
                         is.getSource().addSourceNodes(f.getSource());
-                        is.setAssociatedNode(f.getSource().getSourceNodes().get(0));
+                        is.setAssociatedNode(n);
                         is.setColor(f.getColor());
                     }
 
