@@ -105,6 +105,9 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     private static final String SATELLITE_STRING = "satellite";
     private static final String SCENE_STRING = "scene";
     private DiagramViewModel rangeSliderModel;
+    private Component quicksearch;
+    private JComponent toolbarContainer;
+    private Toolbar toolbar;
     private ExportCookie exportCookie = new ExportCookie() {
 
         @Override
@@ -203,10 +206,12 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
         ToolbarPool.getDefault().setPreferredIconSize(16);
         Toolbar toolBar = new Toolbar();
+        this.toolbar = toolBar;
         Border b = (Border) UIManager.get("Nb.Editor.Toolbar.border"); // NOI18N
         toolBar.setBorder(b);
         JPanel container = new JPanel();
         this.add(container, BorderLayout.NORTH);
+        this.toolbarContainer = container;
         container.setLayout(new BorderLayout());
         container.add(BorderLayout.NORTH, toolBar);
 
@@ -291,7 +296,7 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
 
         toolBar.add(Box.createHorizontalGlue());
         Action action = Utilities.actionsForPath("QuickSearchShadow").get(0);
-        Component quicksearch = ((Presenter.Toolbar) action).getToolbarPresenter();
+        quicksearch = ((Presenter.Toolbar) action).getToolbarPresenter();
         try {
             // (aw) workaround for disappearing search bar due to reparenting one shared component
             // instance.
@@ -446,12 +451,14 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     @Override
-    public void componentOpened() {
-    }
-
-    @Override
     public void componentClosed() {
         rangeSliderModel.close();
+        // the quicksearch does not unregister from global result list.
+        // remove it from the AWT hiearchy, so it does not keep this Component
+        // through parent chain.
+        this.remove(toolbarContainer);
+        this.toolbar.remove(this.quicksearch);
+        super.componentClosed();
     }
 
     @Override

@@ -712,7 +712,6 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
                     animator.animatePreferredLocation(w, p2);
                 } else {
                     w.setPreferredLocation(p2);
-                    animator.animatePreferredLocation(w, p2);
                 }
             }
         }

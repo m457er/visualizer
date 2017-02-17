@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.graalvm.visualizer.data.serialization.BinaryParser;
+import org.graalvm.visualizer.data.serialization.FileContent.BufferListChannel;
 import org.openide.modules.Places;
 
 /**
@@ -237,59 +238,6 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         if (startBuf != endBuf) {
             buffers.add(endBuf);
         }
-        return new Subchannel(buffers.iterator());
-    }
-
-    private static class Subchannel implements ReadableByteChannel {
-        private Iterator<ByteBuffer> buffers;
-        private ByteBuffer current;
-        private boolean eof;
-
-        public Subchannel(Iterator<ByteBuffer> buffers) {
-            this.buffers = buffers;
-            this.current = buffers.next();
-        }
-
-        @Override
-        public int read(ByteBuffer dst) throws IOException {
-            if (eof) {
-                throw new EOFException();
-            }
-            do {
-                if (current == null || current.position() == 0) {
-                    if (!buffers.hasNext()) {
-                        eof = true;
-                        // clear to allow GC
-                        buffers = null;
-                        current = null;
-                        return -1;
-                    }
-                    current = buffers.next();
-                }
-            } while (current.position() == 0);
-            int cnt = 0;
-            if (current.remaining() <= dst.remaining()) {
-                cnt = current.remaining();
-                dst.put(current);
-                current = null;
-                return cnt;
-            }
-            cnt = dst.remaining();
-            ByteBuffer from = current.duplicate();
-            from.limit(from.position() + dst.remaining());
-            dst.put(from);
-            current.position(from.limit());
-            return cnt;
-        }
-
-        @Override
-        public boolean isOpen() {
-            return !eof;
-        }
-
-        @Override
-        public void close() throws IOException {
-            eof = true;
-        }
+        return new BufferListChannel(buffers.iterator(), null);
     }
 }

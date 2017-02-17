@@ -40,7 +40,12 @@ import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.serialization.BinarySource;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
 import org.graalvm.visualizer.data.serialization.ModelBuilder;
+import org.graalvm.visualizer.data.serialization.ParseMonitor;
 import org.graalvm.visualizer.data.services.GroupCallback;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,10 +68,7 @@ public class ScanningModelBuilder extends ModelBuilder {
 
     private CachedContent streamContent;
     private BinarySource dataSource;
-    private final Map<Group, GroupCompleter> completors = new LinkedHashMap<>();
-    private InputGraph graph = new InputGraph(""); // NOI18N
-    private InputNode node = new InputNode(1);
-    private final Executor modelExecutor;
+    private final Map<Group, BaseCompleter> completors = new LinkedHashMap<>();
     private final ScheduledExecutorService fetchExecutor;
     private StreamPool pool;
     private final Properties dummyProperties = new Properties() {
@@ -79,15 +81,26 @@ public class ScanningModelBuilder extends ModelBuilder {
     private int groupLevel;
     private int graphLevel;
     private GroupCompleter completer;
+    private long graphStart;
+
+    /**
+     * Index information for Groups and Graphs in the stream. Only large groups/graphs are
+     * collected;
+     */
+    private final StreamIndex index = new StreamIndex();
+
+    private final Deque<StreamEntry> entryStack = new LinkedList<>();
+
+    private StreamEntry entry;
 
     public ScanningModelBuilder(
                     BinarySource dataSource,
                     CachedContent content,
                     GraphDocument rootDocument,
-                    GroupCallback callback,
+                    ParseMonitor monitor,
                     Executor modelExecutor,
                     ScheduledExecutorService fetchExecutor) {
-        this(dataSource, content, rootDocument, callback, modelExecutor, fetchExecutor,
+        this(dataSource, content, rootDocument, null, monitor, modelExecutor, fetchExecutor,
                         new StreamPool());
     }
 
@@ -96,13 +109,13 @@ public class ScanningModelBuilder extends ModelBuilder {
                     CachedContent content,
                     GraphDocument rootDocument,
                     GroupCallback callback,
+                    ParseMonitor monitor,
                     Executor modelExecutor,
                     ScheduledExecutorService fetchExecutor,
                     StreamPool initialPool) {
-        super(rootDocument, modelExecutor, callback, null);
+        super(rootDocument, modelExecutor, callback, monitor);
         this.dataSource = dataSource;
         this.streamContent = content;
-        this.modelExecutor = modelExecutor;
         this.pool = initialPool;
         this.fetchExecutor = fetchExecutor;
     }
@@ -154,10 +167,16 @@ public class ScanningModelBuilder extends ModelBuilder {
 
     @Override
     public void successorEdge(Port p, int from, int to, char num, int index) {
+        if (scanGraph) {
+            entry.getGraphMeta().addEdge(from, to);
+        }
     }
 
     @Override
     public void inputEdge(Port p, int from, int to, char num, int index) {
+        if (scanGraph) {
+            entry.getGraphMeta().addEdge(from, to);
+        }
     }
 
     @Override
@@ -174,78 +193,107 @@ public class ScanningModelBuilder extends ModelBuilder {
     public void setGroupName(String name, String shortName) {
         if (groupLevel == 1) {
             super.setGroupName(name, shortName);
+            completer.attachTo((LazyGroup) folder(), name);
         }
         currentGroupName = name;
+        reportState(name);
     }
 
     @Override
     public void endNode(int nodeId) {
     }
 
+    private long rootStartPos;
+
+    @Override
+    public void startRoot() {
+        super.startRoot();
+        rootStartPos = dataSource.getMark();
+    }
+
     @Override
     public void startNode(int nodeId, boolean hasPredecessors) {
-        if (graphLevel == 1) {
-            tlNodeCount++;
+        if (scanGraph) {
+            entry.getGraphMeta().addNode(nodeId);
         }
     }
 
     @Override
     public void markGraphDuplicate() {
+        entry.getGraphMeta().markDuplicate();
+    }
+
+    private void registerEntry(StreamEntry en, long pos) {
+        en.end(pos, pool);
+        replacePool(pool = pool.forkIfNeeded());
+        index.addEntry(en);
     }
 
     @Override
     public void endGroup() {
+        registerEntry(entry, dataSource.getMark());
         if (--groupLevel == 0) {
             LazyGroup g = (LazyGroup) folder();
-            completer.end(dataSource.getMark());
+            completer.end(entry.getEnd());
             super.endGroup();
             replacePool(pool = pool.forkIfNeeded());
             completer = null;
         }
+        entry = entryStack.pop();
     }
 
     @Override
     public void startGroupContent() {
         if (groupLevel == 1) {
             super.startGroupContent();
-            LOG.log(Level.FINER, "Starting group {0}, start = {1}", new Object[]{currentGroupName, gStart});
+            LOG.log(Level.FINER, "Starting group {0}, start = {1}", new Object[]{currentGroupName, rootStartPos});
         }
     }
 
-    private long gStart;
-
     @Override
     public Group startGroup() {
+        entryStack.push(entry);
+        entry = new StreamEntry(rootStartPos, getConstantPool());
         if (groupLevel++ > 0) {
             return null;
         }
         assert completer == null;
-        long start = dataSource.getMark() - 1;
-        gStart = start;
-        GroupCompleter grc = createCompleter(start);
+        GroupCompleter grc = createCompleter(rootStartPos);
         completer = grc;
         LazyGroup g = new LazyGroup(folder(), grc);
-        completer.attachGroup(g);
+        completer.attachTo(g, null);
         completors.put(g, grc);
         return pushGroup(g);
     }
 
     GroupCompleter createCompleter(long start) {
-        return new GroupCompleter(streamContent, getConstantPool(),
-                        modelExecutor, fetchExecutor, start);
+        return new GroupCompleter(
+                        new Env(streamContent, modelExecutor, fetchExecutor),
+                        index, entry);
     }
 
     private String tlGraphName;
-    private int tlNodeCount;
+
+    private boolean scanGraph;
+    private GraphMetadata tlGraphInfo;
 
     @Override
     public InputGraph startGraph(String title) {
+        entryStack.push(entry);
+        entry = new StreamEntry(rootStartPos, getConstantPool()).setMetadata(new GraphMetadata());
         graphLevel++;
+        scanGraph = false;
         if (graphLevel == 1) {
             tlGraphName = title;
-            tlNodeCount = 0;
-            LOG.log(Level.FINER, "Starting graph {0} at {1}", new Object[]{title, dataSource.getMark()});
+            LOG.log(Level.FINER, "Starting graph {0} at {1}", new Object[]{title, rootStartPos});
+
+            scanGraph = true;
+            if (groupLevel == 1) {
+                graphStart = rootStartPos;
+                tlGraphInfo = entry.getGraphMeta();
+            }
         }
+        reportProgress();
         return null;
     }
 
@@ -259,14 +307,27 @@ public class ScanningModelBuilder extends ModelBuilder {
         super.start();
     }
 
+    private void finishTLGraph() {
+        long end = dataSource.getMark();
+        long len = end - graphStart;
+        replacePool(pool = pool.forkIfNeeded());
+        tlGraphInfo = null;
+    }
+
     @Override
     public InputGraph endGraph() {
+        registerEntry(entry, dataSource.getMark());
         graphLevel--;
         if (graphLevel == 0) {
+            if (groupLevel == 1) {
+                finishTLGraph();
+            }
             LOG.log(Level.FINER, "Graph {0} ends at {1}, contains {2} nodes", new Object[]{
-                            tlGraphName, dataSource.getMark(), tlNodeCount
+                            tlGraphName, dataSource.getMark(), entry.getGraphMeta().getNodeCount()
             });
         }
+        scanGraph = graphLevel == 1;
+        entry = entryStack.pop();
         return null;
     }
 

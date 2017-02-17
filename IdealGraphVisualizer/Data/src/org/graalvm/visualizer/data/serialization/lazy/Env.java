@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,35 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.visualizer.data.serialization;
 
-public interface ParseMonitor {
-    /**
-     * Tick to report progress. The implementation should report the current progress status
-     */
-    public void updateProgress();
+package org.graalvm.visualizer.data.serialization.lazy;
 
-    /**
-     * Provides state detail information, usually name of object being worked on
-     * 
-     * @param state
-     */
-    public void setState(String state);
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 
-    /**
-     * Determines if the work was cancelled. The caller should terminate the work as soon as
-     * possible.
-     * 
-     * @return true, if work should be cancelled.
-     */
-    public boolean isCancelled();
+/**
+ * Holds environment services for lazy load
+ */
+final class Env {
+    private Executor modelExecutor;
+    private ScheduledExecutorService fetchExecutor;
+    private CachedContent content;
 
+    public Env(CachedContent content, Executor modelExecutor, ScheduledExecutorService fetchExecutor) {
+        this.modelExecutor = modelExecutor;
+        this.fetchExecutor = fetchExecutor;
+        this.content = content;
+    }
+
+    public Executor getModelExecutor() {
+        return modelExecutor;
+    }
+
+    public ScheduledExecutorService getFetchExecutor() {
+        return fetchExecutor;
+    }
+
+    public CachedContent getContent() {
+        return content;
+    }
 }

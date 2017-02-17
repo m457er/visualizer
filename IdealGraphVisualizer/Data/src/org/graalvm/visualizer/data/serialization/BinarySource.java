@@ -170,7 +170,7 @@ public class BinarySource {
         assert position == buffer.position();
     }
 
-    private void fill() throws IOException {
+    protected void fill() throws IOException {
         int position = buffer.position();
         digestUpToPosition();
         buffer.compact();
@@ -196,10 +196,13 @@ public class BinarySource {
     }
 
     byte[] readBytes(int len) throws IOException {
-        byte[] b = new byte[len];
+        return readBytes(new byte[len], len);
+    }
+
+    byte[] readBytes(byte[] b, int len) throws IOException {
         int bytesRead = 0;
-        while (bytesRead < b.length) {
-            int toRead = Math.min(b.length - bytesRead, buffer.capacity());
+        while (bytesRead < len) {
+            int toRead = Math.min(len - bytesRead, buffer.capacity());
             ensureAvailable(toRead);
             buffer.get(b, bytesRead, toRead);
             bytesRead += toRead;

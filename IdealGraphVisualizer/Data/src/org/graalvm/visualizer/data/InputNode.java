@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-public final class InputNode extends Properties.Entity {
+public class InputNode extends Properties.Entity {
 
     private int id;
     private List<InputGraph> subgraphs;
