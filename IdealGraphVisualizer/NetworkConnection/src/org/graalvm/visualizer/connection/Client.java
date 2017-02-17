@@ -43,7 +43,6 @@ import org.openide.util.Exceptions;
 import org.openide.util.RequestProcessor;
 
 public class Client implements Runnable {
-
     private static final Logger LOG = Logger.getLogger(Client.class.getName());
 
     private final boolean binary;
@@ -63,7 +62,7 @@ public class Client implements Runnable {
 
     /**
      * Model operations should happen in a dedicated thread, AWT right now.
-     *
+     * 
      * @param r
      */
     private void runInAWT(Runnable r) {

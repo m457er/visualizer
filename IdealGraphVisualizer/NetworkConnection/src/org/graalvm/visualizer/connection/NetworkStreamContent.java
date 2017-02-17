@@ -58,7 +58,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
     private static final Logger LOG = Logger.getLogger(NetworkStreamContent.class.getName());
 
     private static final int RECEIVE_BUFFER_SIZE = 10 * 1024 * 1024;    // 10 MBytes
-    private static final String CACHE_FILE_EXT = "bgv"; // NOI18N
+    private static final String CACHE_FILE_EXT = ".bgv"; // NOI18N
     private static final String CACHE_FILE_TEMPLATE = "igvdata_%d"; // NOI18N
     private static final String CACHE_DIRECTORY_NAME = "igv"; // NOI18N
 

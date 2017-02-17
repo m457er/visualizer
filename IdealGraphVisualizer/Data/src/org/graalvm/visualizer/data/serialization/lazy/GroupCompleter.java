@@ -97,8 +97,8 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
 
     synchronized void attachGroup(LazyGroup group) {
         this.toComplete = group;
-        if (LOG.isLoggable(Level.FINEST)) {
-            LOG.log(Level.FINEST, "Created completer for group {0}, pool id {1}, start = {2}, end = {3}",
+        if (LOG.isLoggable(Level.FINER)) {
+            LOG.log(Level.FINER, "Created completer for group {0}, pool id {1}, start = {2}, end = {3}",
                             new Object[]{
                                             group.getName(), System.identityHashCode(initialPool), start, end
                             });
@@ -111,7 +111,7 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
 
     synchronized void end(long end) {
         this.end = end;
-        LOG.log(Level.FINEST, "End mark for group {0}", toComplete.getName());
+        LOG.log(Level.FINER, "End mark for group {0}", toComplete.getName());
     }
 
     synchronized void attachGroup(LazyGroup g, ConstantPool pool) {
@@ -159,7 +159,7 @@ final class GroupCompleter implements LazyGroup.Completer, Callable<List<? exten
             if (end < 0) {
                 if (attemptCount++ > ATTEMPT_COUNT) {
                     LOG.log(Level.WARNING, "Completion of Group {0} timed out", toComplete.getName());
-                    scheduleFetch();
+                    fetchExecutor.schedule((Runnable) this, 0, TimeUnit.MILLISECONDS);
                     future.done = true;
                     future = null;
                     return Collections.emptyList();

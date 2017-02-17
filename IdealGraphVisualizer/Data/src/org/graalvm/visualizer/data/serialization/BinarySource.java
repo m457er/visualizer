@@ -174,10 +174,11 @@ public class BinarySource {
         int position = buffer.position();
         digestUpToPosition();
         buffer.compact();
+        lastPosition = buffer.position();
+        bufferOffset = bufferOffset + position;
+        // may throw EOF
         receiveBytes(buffer);
         buffer.flip();
-        bufferOffset = bufferOffset + position;
-        lastPosition = buffer.position();
     }
 
     protected void receiveBytes(ByteBuffer b) throws IOException {

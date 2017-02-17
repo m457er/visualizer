@@ -157,7 +157,10 @@ public class ConstantPool {
      * @return the reinitialized instance.
      */
     public ConstantPool restart() {
-        this.data.clear();
-        return this;
+        return create(new ArrayList<>());
+    }
+
+    public int getEntriesAdded() {
+        return entriesAdded;
     }
 }
