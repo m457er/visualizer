@@ -20,7 +20,7 @@ suite = {
     "Bytecodes" : {
       "subDir" : "IdealGraphVisualizer",
       "sourceDirs" : ["src"],
-      "dependecnies": [
+      "dependencies": [
         "Data",
         "Graph",
         "Util",

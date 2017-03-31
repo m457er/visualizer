@@ -56,7 +56,7 @@ public class GraalEdgeColorFilter extends AbstractFilter {
             for (InputSlot is : f.getInputSlots()) {
                 for (Connection c : is.getConnections()) {
                     String type = c.getType();
-                    if (type == "Association" && "EndNode".equals(c.getOutputSlot().getFigure().getProperties().get("class"))) {
+                    if ("Association".equals(type) && "EndNode".equals(c.getOutputSlot().getFigure().getProperties().get("class"))) {
                         type = "Successor";
                     }
 

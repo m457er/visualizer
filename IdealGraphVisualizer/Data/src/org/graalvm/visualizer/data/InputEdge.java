@@ -82,7 +82,7 @@ public class InputEdge {
         this.to = to;
         this.state = State.SAME;
         this.label = label;
-        this.type = type.intern();
+        this.type = type == null ? null : type.intern();
     }
 
     static WeakHashMap<InputEdge, WeakReference<InputEdge>> immutableCache = new WeakHashMap<>();

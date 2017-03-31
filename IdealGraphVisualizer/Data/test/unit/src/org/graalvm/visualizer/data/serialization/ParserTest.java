@@ -39,6 +39,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.*;
 import org.openide.util.Exceptions;
+import java.lang.reflect.InvocationTargetException;
+import javax.swing.SwingUtilities;
 
 public class ParserTest {
 
@@ -74,8 +76,12 @@ public class ParserTest {
             try {
                 Parser parser = new Parser(Channels.newChannel(in));
                 final GraphDocument parsedDocument = parser.parse();
+                // let all pending AWT stuff to finish:
+                SwingUtilities.invokeAndWait( () -> {});
                 Util.assertGraphDocumentEquals(document, parsedDocument);
             } catch (IOException ex) {
+                fail(ex.toString());
+            } catch (InterruptedException | InvocationTargetException ex) {
                 fail(ex.toString());
             }
         } catch (UnsupportedEncodingException ex) {

@@ -44,8 +44,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Printer {
 
@@ -78,7 +76,7 @@ public class Printer {
         xmlWriter.writeProperties(document.getProperties());
         try {
             for (FolderElement e : document.getElements()) {
-                if (cancel.get()) {
+                if (cancel != null && cancel.get()) {
                     return;
                 }
                 if (progressCallback != null) {

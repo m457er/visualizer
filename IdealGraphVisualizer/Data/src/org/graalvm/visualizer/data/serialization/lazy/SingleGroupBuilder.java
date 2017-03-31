@@ -268,7 +268,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
      */
     class Root extends ModelBuilder {
         private boolean newEntry;
-        
+
         public Root() {
             super(rootDocument, env.getModelExecutor(), null, new ParseMonitorBridge(entry, feedback, dataSource));
         }
@@ -356,7 +356,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             if (g instanceof LazyGraph) {
                 if (newEntry) {
                     entry.end(startOffset, pool);
-                    replacePool(pool = ((StreamPool)pool).forkIfNeeded());
+                    replacePool(pool = ((StreamPool) pool).forkIfNeeded());
                     streamIndex.addEntry(entry);
                 }
                 // avoid call to getNodes() in super
@@ -387,9 +387,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
 
         @Override
         public void markGraphDuplicate() {
-            if (collectCounts) {
-                gInfo.markDuplicate();
-            }
+            gInfo.markDuplicate();
         }
 
         @Override
@@ -403,7 +401,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
                 for (InputNode n : g.getNodes()) {
                     int nodeId = n.getId();
                     gInfo.addNode(nodeId);
-                    registerNodeProperties(nodeId, getProperties());
+                    registerNodeProperties(nodeId, n.getProperties());
                 }
             }
         }
@@ -412,9 +410,9 @@ public class SingleGroupBuilder extends DelegatingBuilder {
     class ChildGraphBuilder extends ModelBuilder {
         private InputGraph nested;
         private final LazyGraph g;
-        private Map<Integer, Properties>    stageProperties = new HashMap<>();
+        private Map<Integer, Properties> stageProperties = new HashMap<>();
         private String blockName;
-        
+
         public ChildGraphBuilder(LazyGraph g) {
             super(rootDocument, env.getModelExecutor(), null, null);
             this.g = g;

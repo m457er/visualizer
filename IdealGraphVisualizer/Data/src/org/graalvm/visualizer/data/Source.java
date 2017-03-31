@@ -173,6 +173,7 @@ public class Source {
             InputNode existing = (InputNode) sources;
             sources = nodes = new ArrayList<>(2);
             nodes.add(existing);
+            many = true;
         } else {
             List<InputNode> l = list();
             if (l.size() < SET_THRESHOLD) {

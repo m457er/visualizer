@@ -614,6 +614,7 @@ public final class BinaryReader implements GraphParser {
         while (folderLevel > 0) {
             doCloseGroup();
         }
+        builder.end();
     }
 
     public GraphDocument parse() throws IOException {

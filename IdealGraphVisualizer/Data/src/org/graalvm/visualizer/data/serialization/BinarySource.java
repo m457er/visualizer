@@ -174,8 +174,8 @@ public class BinarySource {
         int position = buffer.position();
         digestUpToPosition();
         buffer.compact();
-        lastPosition = buffer.position();
-        bufferOffset = bufferOffset + position;
+        bufferOffset += position;
+        lastPosition = 0;
         // may throw EOF
         receiveBytes(buffer);
         buffer.flip();
