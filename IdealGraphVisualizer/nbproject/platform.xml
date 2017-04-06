@@ -12,7 +12,15 @@
             </and>
 	</or>
     </condition>
-    <target name="download" if="download.required">
+
+    <target name="download-platform-dist" if="platform.dist.url">
+        <property name="cache.platform.zip" location="${java.io.tmpdir}/igv_platform.zip"/>
+        <mkdir dir="${nbplatform.default.netbeans.dest.dir}"/>
+        <get src="${platform.dist.url}" dest="${cache.platform.zip}" usetimestamp="true"/>
+        <unzip dest="${nbplatform.default.netbeans.dest.dir}" overwrite="true" src="${cache.platform.zip}"/>
+    </target>
+
+    <target name="download-nbms" unless="platform.dist.url">
         <mkdir dir="${harness.dir}"/>
         <pathconvert pathsep="|" property="download.clusters">
             <mapper type="flatten"/>
@@ -33,5 +41,12 @@
             <modules includes="${module.includes}.*" clusters="${download.clusters}"/>
             <modules includes="org[.]netbeans[.]modules[.]apisupport[.]harness" clusters="harness"/>
         </autoupdate>
+    </target>
+    
+    <target name="-do-download" depends="download-platform-dist,download-nbms"/>
+
+    <target name="download" if="download.required">
+        <echo message="harness=${harness.dir}"/>
+        <antcall target="-do-download" inheritall="true"/>
     </target>
 </project>
