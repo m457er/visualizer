@@ -58,7 +58,10 @@ public class Properties implements Serializable, Iterable<Property> {
         }
 
         Properties p = (Properties) o;
-
+        if (this.map.length != p.map.length) {
+            // different number of properties
+            return false;
+        }
         for (Property prop : this) {
             String value = p.get(prop.getName());
             if (value == null || !value.equals(prop.getValue())) {

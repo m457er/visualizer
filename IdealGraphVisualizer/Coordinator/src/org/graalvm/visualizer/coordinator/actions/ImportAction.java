@@ -26,7 +26,6 @@ package org.graalvm.visualizer.coordinator.actions;
 
 import org.graalvm.visualizer.coordinator.OutlineTopComponent;
 import org.graalvm.visualizer.data.GraphDocument;
-import org.graalvm.visualizer.data.serialization.BinaryParser;
 import org.graalvm.visualizer.data.serialization.GraphParser;
 import org.graalvm.visualizer.data.serialization.ParseMonitor;
 import org.graalvm.visualizer.data.serialization.Parser;
@@ -44,11 +43,10 @@ import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
 import org.graalvm.visualizer.connection.Server;
 import org.graalvm.visualizer.data.serialization.BinaryReader;
-import org.graalvm.visualizer.data.serialization.BinarySource;
 import org.graalvm.visualizer.data.serialization.FileContent;
 import org.graalvm.visualizer.data.serialization.ModelBuilder;
+import org.graalvm.visualizer.data.serialization.lazy.CancelableSource;
 import org.graalvm.visualizer.data.serialization.lazy.ScanningModelBuilder;
-import org.graalvm.visualizer.data.serialization.lazy.StreamPool;
 import org.netbeans.api.progress.ProgressHandle;
 import org.netbeans.api.progress.ProgressHandleFactory;
 import org.openide.DialogDisplayer;
@@ -59,9 +57,12 @@ import org.openide.awt.ActionID;
 import org.openide.awt.ActionReference;
 import org.openide.awt.ActionReferences;
 import org.openide.awt.ActionRegistration;
+import org.openide.util.Cancellable;
 import org.openide.util.HelpCtx;
 import org.openide.util.NbBundle;
 import org.openide.util.actions.SystemAction;
+import java.io.InterruptedIOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @ActionID(category = "File", id = "org.graalvm.visualizer.coordinator.actions.ImportAction")
 @ActionRegistration(iconBase = "org/graalvm/visualizer/coordinator/images/import.png", displayName = "#CTL_ImportAction")
@@ -98,7 +99,9 @@ public final class ImportAction extends SystemAction {
     @NbBundle.Messages({
                     "# {0} - file name",
                     "# {1} - error message",
-                    "ERR_ReadingFile=Error importing from file {0}: {1}"
+                    "ERR_ReadingFile=Error importing from file {0}: {1}",
+                    "# {0} - file name",
+                    "MSG_LoadCancelled=Load of {0} was cancelled"
     })
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -117,16 +120,24 @@ public final class ImportAction extends SystemAction {
                 Settings.get().put(Settings.DIRECTORY, dir.getAbsolutePath());
                 try {
                     final FileChannel channel = FileChannel.open(file.toPath(), StandardOpenOption.READ);
-                    final ProgressHandle handle = ProgressHandleFactory.createHandle("Opening file " + file.getName());
-                    handle.start(WORKUNITS);
                     final long startTime = System.currentTimeMillis();
                     final long start = channel.size();
-                    ParseMonitor monitor = new ParseMonitor() {
+
+                    class Mon implements ParseMonitor, Cancellable {
+                        final AtomicBoolean cancelFlag = new AtomicBoolean();
+                        ProgressHandle handle;
+
+                        synchronized void setHandle(ProgressHandle h) {
+                            this.handle = h;
+                        }
+
                         @Override
                         public void updateProgress() {
                             try {
                                 int prog = (int) (WORKUNITS * (double) channel.position() / (double) start);
-                                handle.progress(prog);
+                                synchronized (this) {
+                                    handle.progress(prog);
+                                }
                             } catch (IOException ex) {
                             }
                         }
@@ -136,18 +147,32 @@ public final class ImportAction extends SystemAction {
                             updateProgress();
                             handle.progress(state);
                         }
-                    };
+
+                        public boolean isCancelled() {
+                            return cancelFlag.get();
+                        }
+
+                        @Override
+                        public boolean cancel() {
+                            cancelFlag.set(true);
+                            return true;
+                        }
+                    }
+                    Mon monitor = new Mon();
+                    final ProgressHandle handle = ProgressHandleFactory.createHandle("Opening file " + file.getName(), monitor);
+                    monitor.setHandle(handle);
+                    handle.start(WORKUNITS);
                     final GraphParser parser;
                     final OutlineTopComponent component = OutlineTopComponent.findInstance();
                     if (file.getName().endsWith(".xml")) {
                         parser = new Parser(channel, monitor, null);
                     } else if (file.getName().endsWith(".bgv")) {
                         FileContent content = new FileContent(file.toPath(), channel);
-                        BinarySource src = new BinarySource(content);
+                        CancelableSource src = new CancelableSource(monitor, content);
                         ModelBuilder bld = new ScanningModelBuilder(
                                         src,
                                         content,
-                                        new GraphDocument(), null,
+                                        new GraphDocument(), monitor,
                                         (r) -> r.run(), LOADER_RP);
                         parser = new BinaryReader(src, bld);
                     } else {
@@ -167,8 +192,13 @@ public final class ImportAction extends SystemAction {
                                         }
                                     });
                                 }
+                            } catch (InterruptedIOException ex) {
+                                DialogDisplayer.getDefault().notifyLater(
+                                                new NotifyDescriptor.Message(
+                                                                Bundle.MSG_LoadCancelled(file.toPath()),
+                                                                NotifyDescriptor.INFORMATION_MESSAGE));
                             } catch (IOException ex) {
-                                LOG.log(Level.FINE, "Error reading file: ",
+                                LOG.log(Level.INFO, "Error reading file: ",
                                                 Exceptions.attachSeverity(ex, Level.FINE));
                                 DialogDisplayer.getDefault().notifyLater(
                                                 new NotifyDescriptor.Message(

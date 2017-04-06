@@ -112,7 +112,7 @@ public class InputGraphTest {
         parentB.addElement(b);
 
         InputGraph c = new InputGraph("graph");
-        parentB.addElement(b);
+        parentB.addElement(c);
 
         Util.assertGraphEquals(a, b);
         Util.assertGraphEquals(b, c);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,52 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.graalvm.visualizer.data.serialization;
 
-public interface ParseMonitor {
-    /**
-     * Tick to report progress. The implementation should report the current progress status
-     */
-    public void updateProgress();
+package org.graalvm.visualizer.data.serialization.lazy;
 
-    /**
-     * Provides state detail information, usually name of object being worked on
-     * 
-     * @param state
-     */
-    public void setState(String state);
+import java.util.BitSet;
 
-    /**
-     * Determines if the work was cancelled. The caller should terminate the work as soon as
-     * possible.
-     * 
-     * @return true, if work should be cancelled.
-     */
-    public boolean isCancelled();
+/**
+ * Metadata distilled during scanning the input data, for use before the graph is fully loaded.
+ */
+final class GraphMetadata {
+    final BitSet nodeIds = new BitSet();
+    final BitSet changedNodeIds = new BitSet();
 
+    private int edgeCount;
+    private int nodeCount;
+    private boolean duplicate;
+
+    void addEdge(int from, int to) {
+        edgeCount++;
+    }
+
+    void addNode(int id) {
+        nodeIds.set(id);
+        nodeCount++;
+    }
+
+    public BitSet getNodeIds() {
+        return nodeIds;
+    }
+
+    void markDuplicate() {
+        this.duplicate = true;
+    }
+
+    public boolean isDuplicate() {
+        return duplicate;
+    }
+
+    public int getNodeCount() {
+        return nodeCount;
+    }
+
+    public int getEdgeCount() {
+        return edgeCount;
+    }
+
+    public void nodeChanged(int id) {
+        changedNodeIds.set(id);
+    }
 }

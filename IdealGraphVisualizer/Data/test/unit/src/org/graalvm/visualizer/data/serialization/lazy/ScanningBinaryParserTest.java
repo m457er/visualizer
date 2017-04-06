@@ -369,7 +369,7 @@ public class ScanningBinaryParserTest extends NbTestCase {
         
         ModelBuilder mb = new ScanningModelBuilder(scanSource, 
                 fc, checkDocument, 
-                (g) -> checkDocument.addElement(g), 
+                (g) -> checkDocument.addElement(g),  null,
                 this::run, RP, new StreamPool());
         reader = new BinaryReader(scanSource, mb);
         reader.parse();

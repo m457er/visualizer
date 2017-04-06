@@ -94,7 +94,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         boolean viewChanged = false;
         boolean viewPropertiesChanged = false;
 
-        boolean groupChanged = (group == newModel.group);
+        boolean groupChanged = (group != newModel.group);
         this.group = newModel.group;
         if (groupChanged) {
             filterGraphs();
@@ -255,8 +255,8 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     public void setSelectedNodes(Set<InputNode> nodes) {
         this.selectedNodes = nodes;
-        List<Color> colors = new ArrayList<>();
-        for (String s : getPositions()) {
+        List<Color> colors = new ArrayList<>(getPositions().size());
+        for (int i = getPositions().size(); i > 0; i--) {
             colors.add(Color.black);
         }
         if (nodes.size() >= 1) {
@@ -265,16 +265,17 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                 if (id < 0) {
                     id = -id;
                 }
-                InputNode last = null;
+                boolean firstDefined = true;
                 int index = 0;
+                InputGraph lastGraph = null;
                 for (InputGraph g : graphs) {
                     Color curColor = colors.get(index);
-                    InputNode cur = g.getNode(id);
-                    if (cur != null) {
-                        if (last == null) {
+                    if (g.containsNode(id)) {
+                        if (firstDefined) {
                             curColor = Color.green;
                         } else {
-                            if (last.equals(cur) && last.getProperties().equals(cur.getProperties())) {
+                            assert lastGraph != null;
+                            if (!group.isNodeChanged(lastGraph, g, id)) {
                                 if (curColor == Color.black) {
                                     curColor = Color.white;
                                 }
@@ -284,8 +285,13 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                                 }
                             }
                         }
+                        firstDefined = false;
+                        lastGraph = g;
+                    } else {
+                        // can the node re-appear ??
+                        firstDefined = true;
+                        lastGraph = null;
                     }
-                    last = cur;
                     colors.set(index, curColor);
                     index++;
                 }

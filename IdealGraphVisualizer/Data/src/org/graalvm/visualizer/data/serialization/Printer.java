@@ -29,15 +29,19 @@ import org.graalvm.visualizer.data.Group;
 import org.graalvm.visualizer.data.FolderElement;
 import org.graalvm.visualizer.data.InputMethod;
 import org.graalvm.visualizer.data.GraphDocument;
+import org.graalvm.visualizer.data.Group.LazyContent;
 import org.graalvm.visualizer.data.InputEdge;
 import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.data.InputBlock;
 import org.graalvm.visualizer.data.InputNode;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InterruptedIOException;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -70,25 +74,37 @@ public class Printer {
     private void export(XMLWriter xmlWriter, GraphDocument document, Consumer<FolderElement> progressCallback, AtomicBoolean cancel) throws IOException {
         xmlWriter.startTag(Parser.ROOT_ELEMENT);
         xmlWriter.writeProperties(document.getProperties());
-        for (FolderElement e : document.getElements()) {
-            if (cancel.get()) {
-                return;
+        try {
+            for (FolderElement e : document.getElements()) {
+                if (cancel != null && cancel.get()) {
+                    return;
+                }
+                if (progressCallback != null) {
+                    progressCallback.accept(e);
+                }
+                if (e instanceof Group) {
+                    export(xmlWriter, (Group) e);
+                } else if (e instanceof InputGraph) {
+                    export(xmlWriter, (InputGraph) e, null, false);
+                }
             }
-            if (progressCallback != null) {
-                progressCallback.accept(e);
-            }
-            if (e instanceof Group) {
-                export(xmlWriter, (Group) e);
-            } else if (e instanceof InputGraph) {
-                export(xmlWriter, (InputGraph) e, null, false);
-            }
+        } catch (InterruptedException ex) {
+            throw new InterruptedIOException();
         }
-
         xmlWriter.endTag();
         xmlWriter.flush();
     }
 
-    private void export(XMLWriter writer, Group g) throws IOException {
+    private void export(XMLWriter writer, Group g) throws IOException, InterruptedException {
+        Future f;
+        if (g instanceof LazyContent) {
+            f = ((LazyContent) g).completeContents(null);
+            try {
+                f.get();
+            } catch (ExecutionException ex) {
+                throw new IOException("Cancelled");
+            }
+        }
         Properties attributes = new Properties();
         attributes.setProperty("difference", Boolean.toString(true));
         writer.startTag(Parser.GROUP_ELEMENT, attributes);
@@ -122,7 +138,17 @@ public class Printer {
         writer.endTag();
     }
 
-    public void export(XMLWriter writer, InputGraph graph, InputGraph previous, boolean difference) throws IOException {
+    public void export(XMLWriter writer, InputGraph graph, InputGraph previous, boolean difference) throws IOException, InterruptedException {
+        Future f;
+
+        if (graph instanceof LazyContent) {
+            f = ((LazyContent) graph).completeContents(null);
+            try {
+                f.get();
+            } catch (ExecutionException ex) {
+                throw new IOException("Cancelled");
+            }
+        }
 
         writer.startTag(Parser.GRAPH_ELEMENT);
         writer.writeProperties(graph.getProperties());

@@ -24,14 +24,10 @@
 package org.graalvm.visualizer.data.serialization.lazy;
 
 import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.graalvm.visualizer.data.ChangedEvent;
@@ -58,43 +54,30 @@ final class LazyGroup extends Group implements Group.LazyContent {
     private static final Reference EMPTY = new WeakReference(null);
 
     /**
-     * Completer responsible to load group's contents on demand.
-     */
-    private final Completer completer;
-
-    private volatile Reference<Future<List<? extends FolderElement>>> processing = EMPTY;
-
-    /**
      * Filtered list of completed elements
      */
     private volatile Reference<List<InputGraph>> graphs = EMPTY;
 
+    private final LoadSupport<List<? extends FolderElement>> cSupport;
+
     public LazyGroup(Folder parent, Completer completer) {
         super(parent);
-        this.completer = completer;
+        this.cSupport = new LoadSupport<List<? extends FolderElement>>(completer) {
+            @Override
+            protected List<? extends FolderElement> emptyData() {
+                return LazyGroup.super.getElementsInternal();
+            }
+        };
     }
 
     @Override
     public boolean isComplete() {
-        if (completer == null) {
-            return true;
-        }
-        Future<List<? extends FolderElement>> f = processing.get();
-        return f != null && f.isDone();
+        return cSupport.isComplete();
     }
 
     @Override
     protected List<? extends FolderElement> getElementsInternal() {
-        try {
-            Future<List<? extends FolderElement>> f = completeContents();
-            if (f.isDone() || incompleteWaits) {
-                return f.get();
-            }
-        } catch (InterruptedException | ExecutionException ex) {
-            LOG.log(Level.WARNING, "Exception during expansion of group " + getName());
-        }
-        LOG.log(Level.FINE, "Group " + getName() + " contents incomplete, return empty");
-        return Collections.emptyList();
+        return cSupport.getContents();
     }
 
     @Override
@@ -115,26 +98,8 @@ final class LazyGroup extends Group implements Group.LazyContent {
     }
 
     @Override
-    public synchronized Future<List<? extends FolderElement>> completeContents() {
-        Future<List<? extends FolderElement>> f = processing.get();
-        if (f == null) {
-            graphs = EMPTY;
-            if (completer == null) {
-                CompletableFuture<List<? extends FolderElement>> c = new CompletableFuture<>();
-                c.complete(super.getElements());
-                f = c;
-                processing = new SoftReference(processing) {
-                    // keep forever
-                    Future x = c;
-                };
-                LOG.log(Level.FINE, "No completer, provide empty contents");
-            } else {
-                f = completer.completeContents();
-            }
-            LOG.log(Level.FINE, "Contents of group " + getName() + " not available, scheduling fetch");
-            this.processing = new WeakReference<>(f);
-        }
-        return f;
+    public synchronized Future<List<? extends FolderElement>> completeContents(Feedback feedback) {
+        return cSupport.completeContents(feedback);
     }
 
     @Override
@@ -151,18 +116,42 @@ final class LazyGroup extends Group implements Group.LazyContent {
      */
     static class LoadedGraph extends InputGraph implements ChangedEventProvider<Object> {
         private ChangedEvent ev = new ChangedEvent(this);
+        private GraphMetadata meta;
 
-        public LoadedGraph(String name) {
+        public LoadedGraph(String name, GraphMetadata meta) {
             super(name);
+            this.meta = meta;
         }
 
         @Override
         public ChangedEvent<Object> getChangedEvent() {
             return ev;
         }
+
+        /**
+         * Checks change status of a node. Avoids expansion of the preceding graph
+         * 
+         * @param nodeId node ID
+         * @return true, if the node has changed from the preceding graph.
+         */
+        @Override
+        public boolean isNodeChanged(int nodeId) {
+            if (meta != null) {
+                return meta.changedNodeIds.get(nodeId);
+            } else {
+                return super.isNodeChanged(nodeId);
+            }
+        }
     }
 
-    public interface Completer {
-        public Future<List<? extends FolderElement>> completeContents();
+    @Override
+    public String toString() {
+        if (isComplete()) {
+            return super.toString();
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("Group ").append(getProperties()).append("\n");
+        return sb.toString();
     }
+
 }

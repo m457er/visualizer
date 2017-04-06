@@ -89,8 +89,8 @@ public class GraphNode extends AbstractNode {
         Sheet s = super.createSheet();
         Properties p = new Properties();
         p.add(graph.getProperties());
-        p.setProperty("nodeCount", Integer.toString(graph.getNodes().size()));
-        p.setProperty("edgeCount", Integer.toString(graph.getEdges().size()));
+        p.setProperty("nodeCount", Integer.toString(graph.getNodeCount()));
+        p.setProperty("edgeCount", Integer.toString(graph.getEdgeCount()));
         PropertiesSheet.initializeSheet(p, s);
         return s;
     }

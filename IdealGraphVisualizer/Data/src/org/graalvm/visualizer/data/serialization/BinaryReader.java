@@ -35,11 +35,11 @@ import org.graalvm.visualizer.data.Folder;
 import org.graalvm.visualizer.data.GraphDocument;
 import org.graalvm.visualizer.data.Group;
 import org.graalvm.visualizer.data.InputGraph;
-import org.graalvm.visualizer.data.serialization.ModelBuilder.TypedPort;
-import org.graalvm.visualizer.data.serialization.ModelBuilder.Length;
-import org.graalvm.visualizer.data.serialization.ModelBuilder.LengthToString;
-import org.graalvm.visualizer.data.serialization.ModelBuilder.NodeClass;
-import org.graalvm.visualizer.data.serialization.ModelBuilder.Port;
+import org.graalvm.visualizer.data.serialization.Builder.TypedPort;
+import org.graalvm.visualizer.data.serialization.Builder.Length;
+import org.graalvm.visualizer.data.serialization.Builder.LengthToString;
+import org.graalvm.visualizer.data.serialization.Builder.NodeClass;
+import org.graalvm.visualizer.data.serialization.Builder.Port;
 import static org.graalvm.visualizer.data.serialization.BinaryStreamDefs.*;
 import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
 import java.util.Collections;
@@ -71,11 +71,12 @@ public final class BinaryReader implements GraphParser {
 
     private MessageDigest digest;
 
-    private int constantPoolSize;
-
     private ConstantPool constantPool;
 
-    private ModelBuilder builder;
+    private Builder builder;
+    // diagnostics only
+    private int constantPoolSize;
+    private int graphReadCount;
 
     private static abstract class Member implements LengthToString {
         public final Klass holder;
@@ -353,12 +354,14 @@ public final class BinaryReader implements GraphParser {
         }
     }
 
-    public BinaryReader(BinarySource dataSource, ModelBuilder builder) {
+    public BinaryReader(BinarySource dataSource, Builder builder) {
+        if (builder instanceof ModelBuilder) {
+            ((ModelBuilder) builder).setPoolTarget(this::replaceConstantPool);
+        }
         this.dataSource = dataSource;
         this.builder = builder;
         this.constantPool = builder.getConstantPool();
         // allow the builder to reconfigure the reader.
-        this.builder.setPoolTarget(this::replaceConstantPool);
         hashStack = new LinkedList<>();
     }
 
@@ -545,16 +548,22 @@ public final class BinaryReader implements GraphParser {
         if (poolEntries.isEmpty()) {
             return;
         }
-        LOG.log(Level.FINE, "Dumping cpool statistics");
-        int oneSize = poolEntries.entrySet().stream().mapToInt((e) -> (e.getValue()[0])).sum();
-        int totalSize = poolEntries.entrySet().stream().mapToInt((e) -> (e.getValue()[1] * e.getValue()[0])).sum();
-        LOG.log(Level.FINE, "Total {0} values, {1} size of useful data, {2} size with redefinitions", new Object[]{poolEntries.size(), oneSize, totalSize});
-
         List<Map.Entry<Object, int[]>> entries = new ArrayList(poolEntries.entrySet());
         Collections.sort(entries, (o1, o2) -> {
             return o1.getValue()[0] * o1.getValue()[1] - o2.getValue()[0] * o2.getValue()[1];
         });
-
+        int oneSize = poolEntries.entrySet().stream().mapToInt((e) -> (e.getValue()[0])).sum();
+        int totalSize = poolEntries.entrySet().stream().mapToInt((e) -> (e.getValue()[1] * e.getValue()[0])).sum();
+        // ignore smal overhead
+        if (totalSize < oneSize * 2) {
+            return;
+        }
+        // ignore small # of duplications
+        if (entries.get(entries.size() - 1).getValue()[1] < 10) {
+            return;
+        }
+        LOG.log(Level.FINE, "Dumping cpool statistics");
+        LOG.log(Level.FINE, "Total {0} values, {1} size of useful data, {2} size with redefinitions", new Object[]{poolEntries.size(), oneSize, totalSize});
         LOG.log(Level.FINE, "Dumping the most consuming entries:");
         int count = 0;
         for (int i = entries.size() - 1; count < 50 && i >= 0; i--, count++) {
@@ -605,6 +614,7 @@ public final class BinaryReader implements GraphParser {
         while (folderLevel > 0) {
             doCloseGroup();
         }
+        builder.end();
     }
 
     public GraphDocument parse() throws IOException {
@@ -649,22 +659,41 @@ public final class BinaryReader implements GraphParser {
     }
 
     protected void parseRoot() throws IOException {
+        builder.startRoot();
         int type = dataSource.readByte();
-        switch (type) {
-            case BEGIN_GRAPH: {
-                parseGraph();
-                break;
+        try {
+            switch (type) {
+                case BEGIN_GRAPH: {
+                    parseGraph();
+                    break;
+                }
+                case BEGIN_GROUP: {
+                    beginGroup();
+                    break;
+                }
+                case CLOSE_GROUP: {
+                    doCloseGroup();
+                    break;
+                }
+                default:
+                    throw new IOException("unknown root : " + type);
             }
-            case BEGIN_GROUP: {
-                beginGroup();
-                break;
+        } catch (SkipRootException ex) {
+            long s = ex.getStart();
+            long e = ex.getEnd();
+            long pos = dataSource.getMark();
+            LOG.log(Level.FINE, "Skipping to offset " + e + ", " + (e - pos) + " bytes skipped");
+
+            assert s < pos && e >= pos;
+            if (pos < e) {
+                long count = e - pos;
+                byte[] scratch = new byte[(int) Math.min(count, 1024 * 1024 * 50)];
+                while (count > 0) {
+                    int l = (int) Math.min(scratch.length, count);
+                    dataSource.readBytes(scratch, l);
+                    count -= l;
+                }
             }
-            case CLOSE_GROUP: {
-                doCloseGroup();
-                break;
-            }
-            default:
-                throw new IOException("unknown root : " + type);
         }
     }
 
@@ -711,19 +740,22 @@ public final class BinaryReader implements GraphParser {
         }
     }
 
-    private int graphReadCount;
-
     private InputGraph parseGraph(String title, boolean toplevel) throws IOException {
         graphReadCount++;
-        builder.startGraph(title);
-        parseProperties();
-        dataSource.startDigest();
-        parseNodes();
-        parseBlocks();
-        if (toplevel) {
-            computeGraphDigest();
+        InputGraph g = builder.startGraph(title);
+        try {
+            parseProperties();
+            builder.startGraphContents(g);
+            dataSource.startDigest();
+            parseNodes();
+            parseBlocks();
+            if (toplevel) {
+                computeGraphDigest();
+            }
+        } finally {
+            g = builder.endGraph();
         }
-        return builder.endGraph();
+        return g;
     }
 
     private void parseBlocks() throws IOException {

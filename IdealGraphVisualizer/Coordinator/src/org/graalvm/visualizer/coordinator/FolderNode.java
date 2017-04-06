@@ -37,14 +37,18 @@ import java.util.List;
 import org.graalvm.visualizer.util.ListenerSupport;
 import java.util.concurrent.Future;
 import org.graalvm.visualizer.data.Group.LazyContent;
+import org.netbeans.api.progress.ProgressHandle;
+import org.openide.awt.StatusDisplayer;
 import org.openide.nodes.AbstractNode;
 import org.openide.nodes.Children;
 import org.openide.nodes.Node;
 import org.openide.nodes.Sheet;
+import org.openide.util.Cancellable;
 import org.openide.util.ImageUtilities;
 import org.openide.util.NbBundle;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FolderNode extends AbstractNode {
     private InstanceContent content;
@@ -117,11 +121,78 @@ public class FolderNode extends AbstractNode {
             refreshKeys();
         }
 
+        @NbBundle.Messages({
+                        "# {0} - name of the loaded folder",
+                        "MSG_Loading=Loading contents of {0}",
+                        "# {0} - name of the loaded folder",
+                        "MSG_ExpansionFailed=Expansion of {0} failed, please see log for possible error.",
+                        "# {0} - name of the loaded folder",
+                        "MSG_ExpansionCancelled=Expansion of {0} cancelled"
+        })
+        class Feedback implements Group.Feedback, Cancellable {
+            final AtomicBoolean cancelled = new AtomicBoolean();
+            ProgressHandle handle;
+            Future f;
+
+            String name() {
+                return ((Group) folder).getName();
+            }
+
+            void setFuture(Future f) {
+                this.f = f;
+            }
+
+            private void init(int total) {
+                if (handle == null) {
+                    handle = ProgressHandle.createHandle(Bundle.MSG_Loading(name()), this);
+                    handle.start(total);
+                }
+            }
+
+            @Override
+            public void reportProgress(int workDone, int totalWork, String description) {
+                init(totalWork);
+                if (description != null) {
+                    handle.progress(description, workDone);
+                } else {
+                    handle.progress(workDone);
+                }
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return cancelled.get();
+            }
+
+            @Override
+            public boolean cancel() {
+                f.cancel(true);
+                return !cancelled.getAndSet(true);
+            }
+
+            @Override
+            public void finish() {
+                // same sync as in refreshKeys
+                synchronized (FolderChildren.this) {
+                    if (!f.isDone()) {
+                        StatusDisplayer.getDefault().setStatusText(Bundle.MSG_ExpansionFailed(name()), StatusDisplayer.IMPORTANCE_ANNOTATION);
+                        refreshing = false;
+                    } else if (f.isCancelled()) {
+                        StatusDisplayer.getDefault().setStatusText(Bundle.MSG_ExpansionCancelled(name()), StatusDisplayer.IMPORTANCE_ANNOTATION);
+                        refreshing = false;
+                    }
+                }
+                handle.finish();
+            }
+        }
+
         private synchronized void refreshKeys() {
             if (folder instanceof Group.LazyContent) {
                 LazyContent lazyFolder = (LazyContent) folder;
-                Future<List<? extends FolderElement>> fContents = lazyFolder.completeContents();
+                Feedback feedback = new Feedback();
+                Future<List<? extends FolderElement>> fContents = lazyFolder.completeContents(feedback);
                 if (!fContents.isDone()) {
+                    feedback.setFuture(fContents);
                     if (!refreshing) {
                         setKeys(Collections.singletonList(WAIT_KEY));
                         refreshing = true;
@@ -185,4 +256,10 @@ public class FolderNode extends AbstractNode {
             setIconBaseWithExtension("org/graalvm/visualizer/coordinator/images/wait.gif");
         }
     }
+
+    /*
+     * private static class R implements Feedback, Runnable {
+     * 
+     * }
+     */
 }

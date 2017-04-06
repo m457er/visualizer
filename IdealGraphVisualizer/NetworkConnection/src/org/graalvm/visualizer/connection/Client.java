@@ -83,6 +83,7 @@ public class Client implements Runnable {
                     BinarySource bs = new BinarySource(captureChannel);
                     ModelBuilder mb = new ScanningModelBuilder(
                                     bs, captureChannel, rootDocument, callback,
+                                    null,
                                     this::runInAWT,
                                     loader,
                                     new StreamPool());
