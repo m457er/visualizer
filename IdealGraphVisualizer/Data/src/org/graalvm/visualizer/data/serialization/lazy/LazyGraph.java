@@ -258,7 +258,7 @@ public class LazyGraph extends InputGraph implements Group.LazyContent<Collectio
                 throw new NoSuchElementException();
             }
             int n = index;
-            index = set.nextSetBit(index);
+            index = set.nextSetBit(index + 1);
             return n;
         }
     }

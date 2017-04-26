@@ -328,9 +328,13 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
             Set<InputNode> nodeSelection = new HashSet<>();
             for (Object o : newSet) {
+                InstanceContent nodeContent = new InstanceContent();
+                Lookup nodeLookup = new AbstractLookup(nodeContent);
+                AbstractNode node = null;
+                
                 if (o instanceof Properties.Provider) {
                     final Properties.Provider provider = (Properties.Provider) o;
-                    AbstractNode node = new AbstractNode(Children.LEAF) {
+                    node = new AbstractNode(Children.LEAF, nodeLookup) {
 
                         @Override
                         protected Sheet createSheet() {
@@ -340,13 +344,25 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
                         }
                     };
                     node.setDisplayName(provider.getProperties().get("name"));
-                    content.add(node);
+                    content.add(o);
+                    nodeContent.add(o);
                 }
 
                 if (o instanceof Figure) {
+                    Figure f = (Figure)o;
+                    for (InputNode n : f.getSource().getSourceNodes()) {
+                        nodeContent.add(n);
+                    }
                     nodeSelection.addAll(((Figure) o).getSource().getSourceNodes());
                 } else if (o instanceof Slot) {
+                    Slot s = (Slot)o;
+                    for (InputNode n : s.getSource().getSourceNodes()) {
+                        nodeContent.add(n);
+                    }
                     nodeSelection.addAll(((Slot) o).getSource().getSourceNodes());
+                }
+                if (node != null) {
+                    content.add(node);
                 }
             }
             getModel().setSelectedNodes(nodeSelection);
