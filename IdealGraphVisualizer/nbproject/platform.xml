@@ -17,7 +17,12 @@
         <property name="cache.platform.zip" location="${java.io.tmpdir}/igv_platform.zip"/>
         <mkdir dir="${nbplatform.default.netbeans.dest.dir}"/>
         <get src="${platform.dist.url}" dest="${cache.platform.zip}" usetimestamp="true"/>
-        <unzip dest="${nbplatform.default.netbeans.dest.dir}" overwrite="true" src="${cache.platform.zip}"/>
+        <unzip dest="${nbplatform.default.netbeans.dest.dir}" overwrite="true" src="${cache.platform.zip}">
+	    <patternset>
+		<include name="netbeans/**"/>
+	    </patternset>
+	    <cutdirsmapper dirs="1"/>
+	</unzip>
     </target>
 
     <target name="download-nbms" unless="platform.dist.url">
