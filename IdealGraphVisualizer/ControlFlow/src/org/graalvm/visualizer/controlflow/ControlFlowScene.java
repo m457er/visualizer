@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.BorderFactory;
+import org.graalvm.visualizer.selectioncoordinator.SelectionCoordinator;
 import org.netbeans.api.visual.action.ActionFactory;
 import org.netbeans.api.visual.action.MoveProvider;
 import org.netbeans.api.visual.action.RectangularSelectDecorator;
@@ -83,6 +84,13 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         this.getActions().addAction(selectAction);
         this.getActions().addAction(ActionFactory.createRectangularSelectAction(this, selectLayer, this));
         this.getActions().addAction(ActionFactory.createMouseCenteredZoomAction(1.1));
+
+        initSelectionHighlighting();
+    }
+
+    private void initSelectionHighlighting() {
+        SelectionCoordinator sc = SelectionCoordinator.getInstance();
+        sc.getSelectedChangedEvent().addListener(new SelectionChangedListener(this));
     }
 
     public void setGraph(InputGraph g) {
@@ -118,6 +126,10 @@ public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> imp
         sceneLayout.invokeLayout();
 
         this.validate();
+    }
+
+    public InputGraph getGraph() {
+        return oldGraph;
     }
 
     public void clearSelection() {

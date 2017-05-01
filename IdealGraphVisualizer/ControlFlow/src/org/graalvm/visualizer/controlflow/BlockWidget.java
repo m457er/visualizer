@@ -57,6 +57,7 @@ public class BlockWidget extends LabelWidget implements Vertex {
         this.setForeground(NORMAL_FOREGROUND_COLOR);
         this.setBorder(BorderFactory.createLineBorder(1, NORMAL_FOREGROUND_COLOR));
         this.setMinimumSize(MIN_SIZE);
+        this.setOpaque(true);
 
         this.setFont(FONT);
         this.setAlignment(Alignment.CENTER);
