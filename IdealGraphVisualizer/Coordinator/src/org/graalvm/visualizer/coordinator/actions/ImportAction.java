@@ -134,11 +134,15 @@ public final class ImportAction extends SystemAction {
                         @Override
                         public void updateProgress() {
                             try {
-                                int prog = (int) (WORKUNITS * (double) channel.position() / (double) start);
+                                int prog = (int) (WORKUNITS * (double) channel.position() / (double) channel.size());
+                                if (prog > WORKUNITS) {
+                                    prog = WORKUNITS;
+                                }
                                 synchronized (this) {
                                     handle.progress(prog);
                                 }
                             } catch (IOException ex) {
+                                // ignore
                             }
                         }
 

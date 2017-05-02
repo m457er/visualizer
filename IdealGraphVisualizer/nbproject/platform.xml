@@ -45,6 +45,9 @@
         <autoupdate installdir="${nbplatform.active.dir}" updatecenter="${autoupdate.catalog.url}">
             <modules includes="${module.includes}.*" clusters="${download.clusters}"/>
             <modules includes="org[.]netbeans[.]modules[.]apisupport[.]harness" clusters="harness"/>
+            <modules includes="org[.]netbeans[.]libs[.]junit4" clusters="platform"/>
+            <modules includes="org[.]netbeans[.]modules[.]nbjunit" clusters="harness"/>
+            <modules includes="org[.]netbeans[.]insane" clusters="harness"/>
         </autoupdate>
     </target>
     

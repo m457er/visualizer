@@ -76,13 +76,7 @@ public class InputEdge {
     }
 
     public InputEdge(char fromIndex, char toIndex, int from, int to, String label, String type) {
-        this.toIndex = toIndex;
-        this.fromIndex = fromIndex;
-        this.from = from;
-        this.to = to;
-        this.state = State.SAME;
-        this.label = label;
-        this.type = type == null ? null : type.intern();
+        this(fromIndex, toIndex, from, to, label, type, State.SAME);
     }
 
     static WeakHashMap<InputEdge, WeakReference<InputEdge>> immutableCache = new WeakHashMap<>();
@@ -121,10 +115,17 @@ public class InputEdge {
     }
 
     public void setState(State x) {
+        if (x == state) {
+            return;
+        }
         if (state == State.IMMUTABLE) {
             throw new InternalError("Can't change immutable instances");
         }
         this.state = x;
+        // terminal state
+        if (state == State.IMMUTABLE) {
+            hashCode = hashCode << 5 ^ label.hashCode();
+        }
     }
 
     public char getToIndex() {
@@ -176,6 +177,7 @@ public class InputEdge {
 
     @Override
     public int hashCode() {
+        assert hashCode != -1;
         return hashCode;
     }
 }
