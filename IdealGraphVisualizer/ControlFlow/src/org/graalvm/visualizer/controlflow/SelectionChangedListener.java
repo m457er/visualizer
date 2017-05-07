@@ -5,6 +5,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import org.graalvm.visualizer.data.ChangedListener;
 import org.graalvm.visualizer.data.InputBlock;
+import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.data.InputNode;
 import org.graalvm.visualizer.selectioncoordinator.SelectionCoordinator;
 
@@ -25,13 +26,17 @@ class SelectionChangedListener implements ChangedListener<SelectionCoordinator> 
 
     @Override
     public void changed(SelectionCoordinator source) {
+        InputGraph graph = scene.getGraph();
+        if (graph == null)
+            return;
+
         Set<BlockWidget> remainingWidgets = collectAllBlockWidgets(scene);
         Set<BlockWidget> selectedWidgets = new LinkedHashSet<BlockWidget>();
 
         // collect block widgets (control flow) according to selected nodes
         for (Object object : source.getSelectedObjects()) {
-            InputBlock block = getInputBlock(object);
-            
+            InputBlock block = getInputBlock(object, graph);
+
             if (block == null) {
                 // this can happen for example when more diagram views are
                 //   opened at the same time
@@ -50,17 +55,17 @@ class SelectionChangedListener implements ChangedListener<SelectionCoordinator> 
         apply(selectedWidgets, remainingWidgets);
     }
     
-    private InputBlock getInputBlock(Object object) {
+    private InputBlock getInputBlock(Object object, InputGraph graph) {
         if (object instanceof Integer) {
             Integer nodeID = (Integer) object;
-            return scene.getGraph().getBlock(nodeID);
+            return graph.getBlock(nodeID);
         }
 
         if (object instanceof InputNode) {
             InputNode node = (InputNode) object;
-            return scene.getGraph().getBlock(node.getId());
+            return graph.getBlock(node.getId());
         }
-        
+
         return null;
     }
 
