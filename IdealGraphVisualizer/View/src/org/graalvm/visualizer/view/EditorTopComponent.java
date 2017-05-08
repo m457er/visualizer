@@ -38,6 +38,10 @@ import org.graalvm.visualizer.view.actions.HideAction;
 import org.graalvm.visualizer.view.actions.ZoomOutAction;
 import org.graalvm.visualizer.view.actions.OverviewAction;
 import org.graalvm.visualizer.view.actions.ExpandPredecessorsAction;
+import org.graalvm.visualizer.view.actions.CollapseBlockAction;
+import org.graalvm.visualizer.view.actions.CollapseAllBlocksAction;
+import org.graalvm.visualizer.view.actions.ExpandBlockAction;
+import org.graalvm.visualizer.view.actions.ExpandAllBlocksAction;
 import org.graalvm.visualizer.data.ChangedEvent;
 import org.graalvm.visualizer.data.ChangedListener;
 import org.graalvm.visualizer.data.InputNode;
@@ -189,6 +193,8 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
                         ExtractAction.get(ExtractAction.class),
                         ShowAllAction.get(HideAction.class),
                         ShowAllAction.get(ShowAllAction.class),
+                        CollapseBlockAction.get(CollapseBlockAction.class),
+                        ExpandBlockAction.get(ExpandBlockAction.class),
                         null,
                         ZoomInAction.get(ZoomInAction.class),
                         ZoomOutAction.get(ZoomOutAction.class),
@@ -245,6 +251,9 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.add(ExtractAction.get(ExtractAction.class));
         toolBar.add(ShowAllAction.get(HideAction.class));
         toolBar.add(ShowAllAction.get(ShowAllAction.class));
+        toolBar.addSeparator();
+        toolBar.add(CollapseAllBlocksAction.get(CollapseAllBlocksAction.class));
+        toolBar.add(ExpandAllBlocksAction.get(ExpandAllBlocksAction.class));
         toolBar.addSeparator();
         toolBar.add(ShowAllAction.get(ZoomInAction.class));
         toolBar.add(ShowAllAction.get(ZoomOutAction.class));

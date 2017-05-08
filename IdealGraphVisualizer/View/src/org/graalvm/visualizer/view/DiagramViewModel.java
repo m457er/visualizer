@@ -40,6 +40,7 @@ import java.awt.Color;
 import java.util.*;
 import org.graalvm.visualizer.util.ListenerSupport;
 import java.util.stream.Collectors;
+import org.openide.util.Lookup;
 
 public class DiagramViewModel extends RangeSliderModel implements ChangedListener<RangeSliderModel> {
 
@@ -427,9 +428,27 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                                 "colorize('state', 'same', white);" + "colorize('state', 'changed', orange);" + "colorize('state', 'new', green);" + "colorize('state', 'deleted', red);");
                 f.apply(diagram);
             }
+
+            CollapseManager cm = Lookup.getDefault().lookup(CollapseManager.class);
+            if (cm.isActive()) {
+                // blocks needs to be initialized
+                initBlocks(diagram);
+
+                cm.apply(diagram);
+            }
         }
 
         return diagram;
+    }
+
+    private void initBlocks(Diagram diagram) {
+        InputGraph graph = diagram.getGraph();
+
+        if (graph.getBlocks().isEmpty()) {
+            graph.clearBlocks();
+            graph.ensureNodesInBlocks();
+            diagram.updateBlocks();
+        }
     }
 
     public InputGraph getGraphToView() {
