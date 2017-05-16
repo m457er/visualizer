@@ -51,6 +51,7 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
         private final VertexWrapper from;
         private final VertexWrapper to;
+        private boolean visible = true;
 
         public LinkWrapper(VertexWrapper from, VertexWrapper to) {
             this.from = from;
@@ -76,6 +77,16 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
         public boolean isVIP() {
             return false;
         }
+
+        public boolean isVisible()
+        {
+            return visible;
+        }
+
+        public void setVisible(boolean visible)
+        {
+            this.visible = visible;
+        }
     }
 
     private class VertexWrapper implements Vertex {
@@ -84,6 +95,7 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
         private UniversalGraph<N, E> graph;
         private final Port slot;
         private Point position;
+        private boolean visible = true;
 
         public VertexWrapper(N node, UniversalGraph<N, E> graph) {
             this.node = node;
@@ -134,6 +146,16 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
         public Port getSlot() {
             return slot;
+        }
+
+        public boolean isVisible()
+        {
+            return visible;
+        }
+
+        public void setVisible(boolean visible)
+        {
+            this.visible = visible;
         }
     }
 

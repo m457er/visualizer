@@ -86,6 +86,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -103,6 +104,9 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.AbstractUndoableEdit;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
+import org.graalvm.visualizer.hierarchicallayout.StableHierarchicalClusterLayoutManager;
+import org.graalvm.visualizer.hierarchicallayout.StableHierarchicalLayoutManager;
+import org.graalvm.visualizer.layout.StableLayoutGraph;
 
 public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
@@ -124,6 +128,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
     private DiagramViewModel modelCopy;
     private final WidgetAction zoomAction;
     private boolean rebuilding;
+    private boolean newLayouting = true;
 
     /**
      * The alpha level of partially visible figures.
@@ -605,20 +610,66 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
         for (Figure f : diagram.getFigures()) {
             FigureWidget w = getWidget(f);
+            if (newLayouting) {
+                figures.add(f);
+                f.setVisible(w.isVisible());
+            } else {
             if (w.isVisible()) {
                 figures.add(f);
             }
+        }
         }
 
         HashSet<Connection> edges = new HashSet<>();
 
         for (Connection c : diagram.getConnections()) {
+            if (newLayouting) {
+                edges.add(c);
+                c.setVisible(isVisible(c));
+            } else {
             if (isVisible(c)) {
                 edges.add(c);
             }
         }
+        }
 
         if (getModel().getShowBlocks()) {
+            if (newLayouting) {
+                StableHierarchicalClusterLayoutManager m = new StableHierarchicalClusterLayoutManager();
+                StableHierarchicalLayoutManager manager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NONE, StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
+                
+                manager.setLongEdgeMaxLayers(2);
+                StableHierarchicalLayoutManager subManager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NONE, StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
+                subManager.setLongEdgeMaxLayers(10);
+                subManager.setIgnoreTooLongEdges(false);
+                m.setManager(manager);
+                m.setSubManager(subManager);
+
+                List<Figure> figureList = new ArrayList<>(figures);
+                Collections.sort(figureList, new Comparator<Figure>() {
+                    @Override
+                    public int compare(Figure t, Figure t1) {
+                        return t.getSource().getSourceNodes().get(0).getId() - t1.getSource().getSourceNodes().get(0).getId(); 
+                    }
+                });
+                
+                List<Connection> connectionList = new ArrayList<>(edges);
+                Collections.sort(connectionList, new Comparator<Connection>() {
+                    @Override
+                    public int compare(Connection t, Connection t1) {
+                        int a = t.getFrom().getVertex().compareTo(t1.getFrom().getVertex());
+                        if (a == 0) {
+                            return t.getTo().getVertex().compareTo(t1.getTo().getVertex());
+                        } else {
+                            return a;
+                        }
+                    }
+                });
+
+                m.doLayout(new StableLayoutGraph(connectionList, figureList));
+            }
+            else
+            {
             HierarchicalClusterLayoutManager m = new HierarchicalClusterLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
             HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
             manager.setMaxLayerLength(9);
@@ -626,10 +677,45 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
             m.setManager(manager);
             m.setSubManager(new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS));
             m.doLayout(new LayoutGraph(edges, figures));
+            }
+            
         } else {
+            if(newLayouting)
+            {
+                StableHierarchicalLayoutManager manager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NONE,  StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
+                manager.setLongEdgeMaxLayers(10);
+                manager.setIgnoreTooLongEdges(false);
+                
+                List<Figure> figureList = new ArrayList<>(figures);
+                
+                Collections.sort(figureList, new Comparator<Figure>() {
+                    @Override
+                    public int compare(Figure t, Figure t1) {
+                        return t.getSource().getSourceNodes().get(0).getId() - t1.getSource().getSourceNodes().get(0).getId(); 
+                    }
+                });
+
+                List<Connection> connectionList = new ArrayList<>(edges);
+                Collections.sort(connectionList, new Comparator<Connection>() {
+                    @Override
+                    public int compare(Connection t, Connection t1) {
+                        int a = t.getFrom().getVertex().compareTo(t1.getFrom().getVertex());
+                        if (a == 0) {
+                            return t.getTo().getVertex().compareTo(t1.getTo().getVertex());
+                        } else {
+                            return a;
+                        }
+                    }
+                });
+                
+                manager.doLayout(new StableLayoutGraph(connectionList, figureList));
+            }
+            else
+            {
             HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
             manager.setMaxLayerLength(10);
             manager.doLayout(new LayoutGraph(edges, figures));
+        }
         }
 
         relayoutWithoutLayout(oldVisibleWidgets);

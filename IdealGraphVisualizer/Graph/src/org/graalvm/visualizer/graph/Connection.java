@@ -53,6 +53,7 @@ public final class Connection implements Source.Provider, Link {
     private List<Point> controlPoints;
     private final String label;
     private final String type;
+    private boolean visible = true;
 
     protected Connection(InputSlot inputSlot, OutputSlot outputSlot, String label, String type) {
         this.inputSlot = inputSlot;
@@ -154,5 +155,16 @@ public final class Connection implements Source.Provider, Link {
     @Override
     public void setControlPoints(List<Point> list) {
         controlPoints = list;
+    }
+    
+    @Override
+    public boolean isVisible() {
+        return visible;
+}
+    
+    @Override
+    public void setVisible(boolean visible)
+    {
+        this.visible = visible;
     }
 }

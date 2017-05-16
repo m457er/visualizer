@@ -37,4 +37,8 @@ public interface Link {
     public List<Point> getControlPoints();
 
     public void setControlPoints(List<Point> list);
+    
+    public boolean isVisible();
+    
+    public void setVisible(boolean visible);
 }

@@ -36,6 +36,7 @@ public class InterClusterConnection implements Link {
     private List<Point> intermediatePoints;
     private final ClusterInputSlotNode inputSlotNode;
     private final ClusterOutputSlotNode outputSlotNode;
+    private boolean visible = true;
 
     public InterClusterConnection(ClusterOutputSlotNode outputSlotNode, ClusterInputSlotNode inputSlotNode) {
         this.outputSlotNode = outputSlotNode;
@@ -77,5 +78,15 @@ public class InterClusterConnection implements Link {
     @Override
     public boolean isVIP() {
         return false;
+    }
+    
+    @Override
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+}
+
+    @Override
+    public boolean isVisible() {
+        return visible;
     }
 }

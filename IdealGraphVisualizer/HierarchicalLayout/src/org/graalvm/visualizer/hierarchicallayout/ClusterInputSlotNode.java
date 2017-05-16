@@ -39,6 +39,7 @@ public final class ClusterInputSlotNode implements Vertex {
     private InterClusterConnection interBlockConnection;
     private Cluster cluster;
     private ClusterIngoingConnection conn;
+    private boolean visible = false;
 
     public void setIngoingConnection(ClusterIngoingConnection c) {
         conn = c;
@@ -148,5 +149,15 @@ public final class ClusterInputSlotNode implements Vertex {
     @Override
     public int compareTo(Vertex o) {
         return toString().compareTo(o.toString());
+    }
+    
+    @Override
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+}
+
+    @Override
+    public boolean isVisible() {
+        return visible;
     }
 }

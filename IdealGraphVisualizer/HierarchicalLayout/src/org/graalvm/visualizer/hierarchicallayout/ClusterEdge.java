@@ -33,6 +33,7 @@ public class ClusterEdge implements Link {
     private final ClusterNode from;
     private final ClusterNode to;
     private List<Point> points;
+    private boolean visible = true;
 
     public ClusterEdge(ClusterNode from, ClusterNode to) {
         assert from != null;
@@ -64,5 +65,15 @@ public class ClusterEdge implements Link {
     @Override
     public boolean isVIP() {
         return false;
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+}
+
+    @Override
+    public boolean isVisible() {
+        return visible;
     }
 }

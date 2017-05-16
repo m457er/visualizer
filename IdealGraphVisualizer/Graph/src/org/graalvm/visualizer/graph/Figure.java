@@ -58,6 +58,7 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
     private String[] lines;
     private int heightCash = -1;
     private int widthCash = -1;
+    private boolean visible = true;
 
     public int getHeight() {
         if (heightCash == -1) {
@@ -432,5 +433,17 @@ public class Figure extends Properties.Entity implements Source.Provider, Vertex
 
     void sourcesChanged(Source s) {
         diagram.invalidateSlotMap();
+    }
+    
+    @Override
+    public boolean isVisible()
+    {
+        return visible;
+}
+    
+    @Override
+    public void setVisible(boolean visible)
+    {
+        this.visible = visible;
     }
 }

@@ -24,6 +24,7 @@
 package org.graalvm.visualizer.layout;
 
 import java.awt.Rectangle;
+import java.util.List;
 import java.util.Set;
 
 public interface Cluster extends Comparable<Cluster> {
@@ -33,4 +34,6 @@ public interface Cluster extends Comparable<Cluster> {
     public void setBounds(Rectangle r);
 
     public Set<? extends Cluster> getSuccessors();
+    
+    public List<? extends Cluster> getStableSuccessors();
 }

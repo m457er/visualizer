@@ -26,7 +26,10 @@ package org.graalvm.visualizer.graph;
 import org.graalvm.visualizer.data.InputBlock;
 import org.graalvm.visualizer.layout.Cluster;
 import java.awt.Rectangle;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public final class Block implements Cluster {
@@ -55,6 +58,21 @@ public final class Block implements Cluster {
         for (InputBlock b : inputBlock.getSuccessors()) {
             succs.add(diagram.getBlock(b));
         }
+        return succs;
+    }
+
+    @Override
+    public List<? extends Cluster> getStableSuccessors() {
+        List<Block> succs = new ArrayList<>();
+        for (InputBlock b : inputBlock.getSuccessors()) {
+            succs.add(diagram.getBlock(b));
+        }
+        succs.sort(new Comparator<Block>(){
+            @Override
+            public int compare(Block o1, Block o2) {
+                return o1.inputBlock.getName().compareTo(o2.inputBlock.getName());
+            }
+        });
         return succs;
     }
 

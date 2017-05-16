@@ -36,6 +36,7 @@ public class ClusterOutgoingConnection implements Link {
     private final Link connection;
     private final Port inputSlot;
     private final Port outputSlot;
+    private boolean visible = true;
 
     public ClusterOutgoingConnection(ClusterOutputSlotNode outputSlotNode, Link c) {
         this.outputSlotNode = outputSlotNode;
@@ -69,5 +70,15 @@ public class ClusterOutgoingConnection implements Link {
     @Override
     public boolean isVIP() {
         return false;
+    }
+    
+    @Override
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+}
+
+    @Override
+    public boolean isVisible() {
+        return visible;
     }
 }

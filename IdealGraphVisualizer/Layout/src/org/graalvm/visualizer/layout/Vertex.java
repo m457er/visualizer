@@ -37,4 +37,8 @@ public interface Vertex extends Comparable<Vertex> {
     public boolean isRoot();
 
     public Cluster getCluster();
+    
+    public boolean isVisible();
+    
+    public void setVisible(boolean visible);
 }
