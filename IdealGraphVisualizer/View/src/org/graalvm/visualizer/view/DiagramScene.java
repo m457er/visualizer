@@ -328,6 +328,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
             content.set(newSet, null);
 
             Set<InputNode> nodeSelection = new HashSet<>();
+            Set<InputBlock> blockSelection = new HashSet<>();
             for (Object o : newSet) {
                 if (o instanceof Properties.Provider) {
                     final Properties.Provider provider = (Properties.Provider) o;
@@ -348,9 +349,12 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
                     nodeSelection.addAll(((Figure) o).getSource().getSourceNodes());
                 } else if (o instanceof Slot) {
                     nodeSelection.addAll(((Slot) o).getSource().getSourceNodes());
+                } else if (o instanceof InputBlock) {
+                    blockSelection.add((InputBlock) o);
                 }
             }
             getModel().setSelectedNodes(nodeSelection);
+            getModel().setSelectedBlocks(blockSelection);
 
             boolean b = selectedCoordinatorListener.isEnabled();
             selectedCoordinatorListener.setEnabled(false);
@@ -555,6 +559,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         if (getModel().getShowBlocks()) {
             for (InputBlock bn : d.getGraph().getBlocks()) {
                 BlockWidget w = new BlockWidget(this, d, bn);
+                w.getActions().addAction(selectAction);
                 w.setVisible(false);
                 this.addObject(bn, w);
                 blockLayer.addChild(w);

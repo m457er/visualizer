@@ -24,6 +24,7 @@
  */
 package org.graalvm.visualizer.view;
 
+import org.graalvm.visualizer.data.InputBlock;
 import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.data.ChangedListener;
 import org.graalvm.visualizer.data.InputNode;
@@ -58,6 +59,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
      * remembered using node IDs, so it can be adapted when the graph display changes.
      */
     private Set<InputNode> selectedNodes;
+    private Set<InputBlock> selectedBlocks;
     private FilterChain filterChain;
     private FilterChain sequenceFilterChain;
     private Diagram diagram;
@@ -183,6 +185,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.sequenceFilterChain = sequenceFilterChain;
         hiddenNodes = new HashSet<>();
         selectedNodes = new HashSet<>();
+        selectedBlocks = new HashSet<>();
         super.getChangedEvent().addListener(this);
         diagramChangedEvent = new ChangedEvent<>(this);
         viewChangedEvent = new ChangedEvent<>(this);
@@ -300,6 +303,15 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
         setColors(colors);
         viewChangedEvent.fire();
+    }
+
+    public void setSelectedBlocks(Set<InputBlock> blocks) {
+        selectedBlocks.clear();
+        selectedBlocks.addAll(blocks);
+    }
+
+    public Set<InputBlock> getSelectedBlocks() {
+        return Collections.unmodifiableSet(selectedBlocks);
     }
 
     public void showNot(final Set<Integer> nodes) {

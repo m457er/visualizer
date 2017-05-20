@@ -88,14 +88,13 @@ public class CollapseManagerImpl implements CollapseManager {
             clusters.add(figure.getCluster());
         }
 
-        // TODO selected clusters
-//        for (InputBlock inputBlock : model.getSelectedBlocks()) {
-//            try {
-//                clusters.add(diagram.getBlock(inputBlock));
-//            } catch (AssertionError e) {
-//                // selected block is not present in this diagram
-//            }
-//        }
+        for (InputBlock inputBlock : model.getSelectedBlocks()) {
+            try {
+                clusters.add(diagram.getBlock(inputBlock));
+            } catch (AssertionError e) {
+                // selected block is not present in this diagram
+            }
+        }
 
         return clusters;
     }

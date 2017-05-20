@@ -554,14 +554,28 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
     }
 
     public void extract() {
-        getModel().showOnly(getModel().getSelectedNodes());
+        getModel().showOnly(collectSelectedNodes());
     }
 
     public void hideNodes() {
-        Set<InputNode> selectedNodes = this.getModel().getSelectedNodes();
-        HashSet<Integer> nodes = new HashSet<>(getModel().getHiddenNodes());
-        nodes.addAll(selectedNodes.stream().map(InputNode::getId).collect(Collectors.toList()));
-        this.getModel().showNot(nodes);
+        Set<InputNode> nodes = collectSelectedNodes();
+        nodes.addAll(getModel().getHiddenGraphNodes());
+
+        getModel().showNot(nodes.stream().map(InputNode::getId).collect(Collectors.toSet()));
+    }
+
+    private Set<InputNode> collectSelectedNodes() {
+        HashSet<InputNode> nodes = new HashSet<>();
+
+        // selected nodes
+        nodes.addAll(getModel().getSelectedNodes());
+ 
+        // nodes from selected blocks
+        getModel().getSelectedBlocks().stream()
+                .flatMap(b -> b.getNodes().stream())
+                .forEach(nodes::add);
+
+        return nodes;
     }
 
     public void expandPredecessors() {
