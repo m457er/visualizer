@@ -20,7 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  *
- */package org.graalvm.visualizer.data.serialization;
+ */
+package org.graalvm.visualizer.data.serialization;
 
 import java.io.EOFException;
 import java.io.IOException;

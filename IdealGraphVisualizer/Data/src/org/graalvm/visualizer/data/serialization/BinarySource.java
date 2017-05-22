@@ -234,6 +234,12 @@ public class BinarySource {
 
     // readString is only called from CP reads, CP items are cached, no need to intern
     String readString() throws IOException {
+        String orig = readStringImpl();
+        String conv = BinaryMap.obfuscationMap().get(orig);
+        return conv == null ? orig : conv;
+    }
+
+    private String readStringImpl() throws IOException {
         if (stringCharset == UTF8) {
             return maybeIntern(new String(readBytes(), UTF8));
         } else if (stringCharset == UTF16) {

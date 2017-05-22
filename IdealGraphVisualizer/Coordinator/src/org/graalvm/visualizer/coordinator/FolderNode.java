@@ -182,6 +182,7 @@ public class FolderNode extends AbstractNode {
                         refreshing = false;
                     }
                 }
+                init(1);
                 handle.finish();
             }
         }
