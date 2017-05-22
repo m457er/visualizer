@@ -714,7 +714,27 @@ public final class BinaryReader implements GraphParser {
     }
 
     private InputGraph parseGraph() throws IOException {
-        String title = readPoolObject(String.class);
+        int dumpId = dataSource.readInt();
+        String format = dataSource.readString();
+        int argsCount = dataSource.readInt();
+        Object[] args = new Object[argsCount];
+        for (int i = 0; i < argsCount; i++) {
+            args[i] = readPoolObject(Object.class);
+            if (args[i] instanceof Klass) {
+                String className = args[i].toString();
+                String s = className.substring(className.lastIndexOf(".") + 1); // strip the package name
+                int innerClassPos = s.indexOf('$');
+                if (innerClassPos > 0) {
+                    /* Remove inner class name. */
+                    s = s.substring(0, innerClassPos);
+                }
+                if (s.endsWith("Phase")) {
+                    s = s.substring(0, s.length() - "Phase".length());
+                }
+                args[i] = s;
+            }
+        }
+        String title = dumpId + ": " + String.format(format, args);
         return parseGraph(title, true);
     }
 
