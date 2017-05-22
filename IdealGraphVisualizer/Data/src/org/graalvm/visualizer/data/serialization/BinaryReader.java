@@ -65,7 +65,7 @@ public final class BinaryReader implements GraphParser {
     private static final boolean POOL_STATS = Boolean.getBoolean(BinaryReader.class.getName() + ".poolStats");
     private static final Logger LOG = Logger.getLogger(BinaryReader.class.getName());
 
-    private BinarySource dataSource;
+    private final BinarySource dataSource;
 
     private final Deque<byte[]> hashStack;
     private int folderLevel;
@@ -74,7 +74,7 @@ public final class BinaryReader implements GraphParser {
 
     private ConstantPool constantPool;
 
-    private Builder builder;
+    private final Builder builder;
     // diagnostics only
     private int constantPoolSize;
     private int graphReadCount;
@@ -113,10 +113,7 @@ public final class BinaryReader implements GraphParser {
             if (!Objects.equals(this.name, other.name)) {
                 return false;
             }
-            if (!Objects.equals(this.holder, other.holder)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(this.holder, other.holder);
         }
     }
 
@@ -187,10 +184,10 @@ public final class BinaryReader implements GraphParser {
 
     }
 
-    private static class Signature {
+    private static final class Signature {
         public final String returnType;
         public final String[] argTypes;
-        private int hash;
+        private final int hash;
 
         public Signature(String returnType, String[] argTypes) {
             this.returnType = returnType;
@@ -198,6 +195,7 @@ public final class BinaryReader implements GraphParser {
             this.hash = toString().hashCode();
         }
 
+        @Override
         public String toString() {
             return "Signature(" + returnType + ":" + String.join(":", argTypes) + ")";
         }
@@ -222,10 +220,7 @@ public final class BinaryReader implements GraphParser {
             if (!Objects.equals(this.returnType, other.returnType)) {
                 return false;
             }
-            if (!Arrays.deepEquals(this.argTypes, other.argTypes)) {
-                return false;
-            }
-            return true;
+            return Arrays.deepEquals(this.argTypes, other.argTypes);
         }
     }
 
@@ -311,10 +306,7 @@ public final class BinaryReader implements GraphParser {
             if (!Objects.equals(this.name, other.name)) {
                 return false;
             }
-            if (!Objects.equals(this.simpleName, other.simpleName)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(this.simpleName, other.simpleName);
         }
 
     }
@@ -437,6 +429,10 @@ public final class BinaryReader implements GraphParser {
         switch (type) {
             case POOL_CLASS: {
                 String name = dataSource.readString();
+                String conv = BinaryMap.obfuscationMap().get(name);
+                if (conv != null) {
+                    name = conv;
+                }
                 int klasstype = dataSource.readByte();
                 if (klasstype == ENUM_KLASS) {
                     int len = dataSource.readInt();
@@ -462,9 +458,9 @@ public final class BinaryReader implements GraphParser {
                 break;
             }
             case POOL_NODE_CLASS: {
-                String className = dataSource.readString();
+                Klass className = readPoolObject(Klass.class);
                 String nameTemplate = dataSource.readString();
-                size = className.length() + nameTemplate.length();
+                size = nameTemplate.length();
                 int inputCount = dataSource.readShort();
                 List<TypedPort> inputs = new ArrayList<>(inputCount);
                 for (int i = 0; i < inputCount; i++) {
@@ -480,7 +476,7 @@ public final class BinaryReader implements GraphParser {
                     String name = readPoolObject(String.class);
                     sux.add(new Port(isList, name));
                 }
-                obj = new NodeClass(className, nameTemplate, inputs, sux);
+                obj = new NodeClass(className.toString(), nameTemplate, inputs, sux);
                 break;
             }
             case POOL_METHOD: {
@@ -529,7 +525,7 @@ public final class BinaryReader implements GraphParser {
      * Each value holds 2 ints - 0 is the approx size of the data, 1 is the number of addPooLEntry
      * calls for this value - the number of redundant appearances in the constant pool.
      */
-    private Map<Object, int[]> poolEntries = new LinkedHashMap<>(100, 0.8f, true);
+    private final Map<Object, int[]> poolEntries = new LinkedHashMap<>(100, 0.8f, true);
 
     private void recordNewEntry(Object data, int size) {
         // TODO: the stats can be compacted from time to time - e.g. if the number of objects goes
@@ -618,6 +614,7 @@ public final class BinaryReader implements GraphParser {
         builder.end();
     }
 
+    @Override
     public GraphDocument parse() throws IOException {
         hashStack.push(null);
 
@@ -683,7 +680,7 @@ public final class BinaryReader implements GraphParser {
             long s = ex.getStart();
             long e = ex.getEnd();
             long pos = dataSource.getMark();
-            LOG.log(Level.FINE, "Skipping to offset " + e + ", " + (e - pos) + " bytes skipped");
+            LOG.log(Level.FINE, "Skipping to offset {0}, {1} bytes skipped", new Object[]{e, e - pos});
 
             assert s < pos && e >= pos;
             if (pos < e) {
