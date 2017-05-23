@@ -253,7 +253,10 @@ public class ScanningModelBuilder extends ModelBuilder {
     @Override
     public Group startGroup() {
         entryStack.push(entry);
-        entry = new StreamEntry(rootStartPos, getConstantPool());
+        entry = new StreamEntry(
+            dataSource.getMajorVersion(), dataSource.getMinorVersion(),
+            rootStartPos, getConstantPool()
+        );
         if (groupLevel++ > 0) {
             return null;
         }
@@ -280,7 +283,10 @@ public class ScanningModelBuilder extends ModelBuilder {
     @Override
     public InputGraph startGraph(String title) {
         entryStack.push(entry);
-        entry = new StreamEntry(rootStartPos, getConstantPool()).setMetadata(new GraphMetadata());
+        entry = new StreamEntry(
+            dataSource.getMajorVersion(), dataSource.getMinorVersion(),
+            rootStartPos, getConstantPool()
+        ).setMetadata(new GraphMetadata());
         graphLevel++;
         scanGraph = false;
         if (graphLevel == 1) {
