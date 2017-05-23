@@ -458,7 +458,13 @@ public final class BinaryReader implements GraphParser {
                 break;
             }
             case POOL_NODE_CLASS: {
-                Klass className = readPoolObject(Klass.class);
+                String className;
+                if (dataSource.getMajorVersion() < 2) {
+                    className = dataSource.readString();
+                } else {
+                    Klass nodeClass = readPoolObject(Klass.class);
+                    className = nodeClass.toString();
+                }
                 String nameTemplate = dataSource.readString();
                 size = nameTemplate.length();
                 int inputCount = dataSource.readShort();
@@ -476,7 +482,7 @@ public final class BinaryReader implements GraphParser {
                     String name = readPoolObject(String.class);
                     sux.add(new Port(isList, name));
                 }
-                obj = new NodeClass(className.toString(), nameTemplate, inputs, sux);
+                obj = new NodeClass(className, nameTemplate, inputs, sux);
                 break;
             }
             case POOL_METHOD: {
@@ -714,6 +720,10 @@ public final class BinaryReader implements GraphParser {
     }
 
     private InputGraph parseGraph() throws IOException {
+        if (dataSource.getMajorVersion() < 2) {
+            String title = readPoolObject(String.class);
+            return parseGraph(title, true);
+        }
         int dumpId = dataSource.readInt();
         String format = dataSource.readString();
         int argsCount = dataSource.readInt();

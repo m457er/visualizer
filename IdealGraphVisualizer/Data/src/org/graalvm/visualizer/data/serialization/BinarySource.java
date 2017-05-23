@@ -38,7 +38,7 @@ import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
  */
 public class BinarySource {
     static final byte[] MAGIC_BYTES = {'B', 'I', 'G', 'V'};
-    static final int CURRENT_MAJOR_VERSION = 1;
+    static final int CURRENT_MAJOR_VERSION = 2;
     static final int CURRENT_MINOR_VERSION = 0;
     static final String CURRENT_VERSION = versionPair(CURRENT_MAJOR_VERSION, CURRENT_MINOR_VERSION);
 
@@ -57,6 +57,12 @@ public class BinarySource {
     private boolean performDigest;
 
     public BinarySource(ReadableByteChannel channel) {
+        this(channel, CURRENT_MAJOR_VERSION, CURRENT_MINOR_VERSION);
+    }
+
+    public BinarySource(ReadableByteChannel channel, int major, int minor) {
+        this.majorVersion = major;
+        this.minorVersion = minor;
         buffer = ByteBuffer.allocateDirect(256 * 1024);
         buffer.flip();
         this.channel = channel;
@@ -82,6 +88,14 @@ public class BinarySource {
         majorVersion = newMajorVersion;
         minorVersion = newMinorVersion;
         stringCharset = UTF8;
+    }
+
+    public int getMajorVersion() {
+        return majorVersion;
+    }
+
+    public int getMinorVersion() {
+        return minorVersion;
     }
 
     public long getMark() {
@@ -252,7 +266,9 @@ public class BinarySource {
             stringCharset = UTF16;
             return maybeIntern(new String(readBytes(len * 2), UTF16));
         } else {
-            setVersion(1, 0);
+            if (getMajorVersion() < 1) {
+                setVersion(1, 0);
+            }
             return maybeIntern(new String(readBytes(len), UTF8));
         }
     }
