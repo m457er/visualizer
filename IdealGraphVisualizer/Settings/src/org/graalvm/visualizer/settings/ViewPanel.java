@@ -67,7 +67,7 @@ final class ViewPanel extends javax.swing.JPanel {
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel3, "Network Port");
 
-        org.openide.awt.Mnemonics.setLocalizedText(jLabel4, "Obfuscation map");
+        org.openide.awt.Mnemonics.setLocalizedText(jLabel4, "Stripping map");
 
         map.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
