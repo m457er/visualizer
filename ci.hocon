@@ -24,20 +24,20 @@ builds += [
     targets : [ gate ],
     name: "gate-igv-linux-lite-9"
   }
-  ${solaris-sparcv9} ${java8} ${gateLite} {
-    targets : [ gate ],
-    name: "gate-igv-solaris-lite-8"
-  }
-  ${solaris-sparcv9} ${java9} ${gateLite} {
-    targets : [ gate ],
-    name: "gate-igv-solaris-lite-9"
-  }
-  ${darwin-amd64} ${java8} ${gateLite} {
-    targets : [ gate ],
-    name: "gate-igv-mac-lite-8"
-  }
-  ${darwin-amd64} ${java9} ${gateLite} {
-    targets : [ gate ],
-    name: "gate-igv-mac-lite-9"
-  }
+#  ${solaris-sparcv9} ${java8} ${gateLite} {
+#    targets : [ gate ],
+#    name: "gate-igv-solaris-lite-8"
+#  }
+#  ${solaris-sparcv9} ${java9} ${gateLite} {
+#    targets : [ gate ],
+#    name: "gate-igv-solaris-lite-9"
+#  }
+#  ${darwin-amd64} ${java8} ${gateLite} {
+#    targets : [ gate ],
+#    name: "gate-igv-mac-lite-8"
+#  }
+#  ${darwin-amd64} ${java9} ${gateLite} {
+#    targets : [ gate ],
+#    name: "gate-igv-mac-lite-9"
+#  }
 ]
