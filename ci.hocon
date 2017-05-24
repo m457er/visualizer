@@ -10,7 +10,8 @@ igvCommon: {
 gateLite : ${igvCommon} {
   run : [
     ["ant", "build" ],
-    ["ant", "-Dcontinue.after.failing.tests=false", "test" ]
+    ["ant", "patch-test" ],
+    ["ant", "test" ]
   ]
 }
 
