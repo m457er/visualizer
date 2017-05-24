@@ -149,7 +149,7 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
         });
     }
 
-    protected T load(ReadableByteChannel channel, Feedback feedback) throws IOException {
+    protected T load(ReadableByteChannel channel, int majorVersion, int minorVersion, Feedback feedback) throws IOException {
         return null;
     }
 
@@ -219,7 +219,7 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
             LOG.log(Level.FINER, "Reading group {0}, range {1}-{2}", new Object[]{name, entry.getStart(), entry.getEnd()});
             completingThread.set(true);
             try {
-                newElements = load(env.getContent().subChannel(entry.getStart(), entry.getEnd()), feedback);
+                newElements = load(env.getContent().subChannel(entry.getStart(), entry.getEnd()), entry.getMajorVersion(), entry.getMinorVersion(), feedback);
             } catch (InterruptedIOException ex) {
                 future.cancel();
             } catch (ThreadDeath ex) {

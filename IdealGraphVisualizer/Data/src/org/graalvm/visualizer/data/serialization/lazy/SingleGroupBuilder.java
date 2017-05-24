@@ -339,7 +339,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             } else {
                 gInfo = new GraphMetadata();
                 if (rootEntry.size() >= LARGE_GRAPH_THRESHOLD) {
-                    entry = new StreamEntry(startOffset, getConstantPool());
+                    entry = new StreamEntry(dataSource.getMajorVersion(), dataSource.getMinorVersion(), startOffset, getConstantPool());
                     newEntry = true;
                     entry.setMetadata(gInfo);
                 }

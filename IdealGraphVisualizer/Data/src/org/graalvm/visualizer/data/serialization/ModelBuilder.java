@@ -450,7 +450,7 @@ public class ModelBuilder implements Builder {
     @Override
     public void setNodeName(NodeClass nodeClass) {
         assert currentNode != null;
-        getProperties().setProperty(PROPNAME_NAME, createName(nodeEdges, nodeClass.nameTemplate));
+        getProperties().setProperty(PROPNAME_NAME, createName(nodeClass, nodeEdges, nodeClass.nameTemplate));
         getProperties().setProperty(PROPNAME_CLASS, nodeClass.className);
         switch (nodeClass.className) {
             case "BeginNode":
@@ -464,7 +464,16 @@ public class ModelBuilder implements Builder {
 
     static final Pattern TEMPLATE_PATTERN = Pattern.compile("\\{(p|i)#([a-zA-Z0-9$_]+)(/(l|m|s))?\\}");
 
-    private String createName(List<EdgeInfo> edges, String template) {
+    private String createName(NodeClass nodeClass, List<EdgeInfo> edges, String template) {
+        if (template.isEmpty()) {
+            int lastDot = nodeClass.className.lastIndexOf('.');
+            String localShortName = nodeClass.className.substring(lastDot + 1);
+            if (localShortName.endsWith("Node") && !localShortName.equals("StartNode") && !localShortName.equals("EndNode")) {
+                return localShortName.substring(0, localShortName.length() - 4);
+            } else {
+                return localShortName;
+            }
+        }
         Matcher m = TEMPLATE_PATTERN.matcher(template);
         StringBuffer sb = new StringBuffer();
         while (m.find()) {

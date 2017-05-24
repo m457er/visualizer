@@ -20,7 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  *
- */package org.graalvm.visualizer.data.serialization;
+ */
+package org.graalvm.visualizer.data.serialization;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -64,7 +65,7 @@ public final class BinaryReader implements GraphParser {
     private static final boolean POOL_STATS = Boolean.getBoolean(BinaryReader.class.getName() + ".poolStats");
     private static final Logger LOG = Logger.getLogger(BinaryReader.class.getName());
 
-    private BinarySource dataSource;
+    private final BinarySource dataSource;
 
     private final Deque<byte[]> hashStack;
     private int folderLevel;
@@ -73,7 +74,7 @@ public final class BinaryReader implements GraphParser {
 
     private ConstantPool constantPool;
 
-    private Builder builder;
+    private final Builder builder;
     // diagnostics only
     private int constantPoolSize;
     private int graphReadCount;
@@ -112,10 +113,7 @@ public final class BinaryReader implements GraphParser {
             if (!Objects.equals(this.name, other.name)) {
                 return false;
             }
-            if (!Objects.equals(this.holder, other.holder)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(this.holder, other.holder);
         }
     }
 
@@ -186,10 +184,10 @@ public final class BinaryReader implements GraphParser {
 
     }
 
-    private static class Signature {
+    private static final class Signature {
         public final String returnType;
         public final String[] argTypes;
-        private int hash;
+        private final int hash;
 
         public Signature(String returnType, String[] argTypes) {
             this.returnType = returnType;
@@ -197,6 +195,7 @@ public final class BinaryReader implements GraphParser {
             this.hash = toString().hashCode();
         }
 
+        @Override
         public String toString() {
             return "Signature(" + returnType + ":" + String.join(":", argTypes) + ")";
         }
@@ -221,10 +220,7 @@ public final class BinaryReader implements GraphParser {
             if (!Objects.equals(this.returnType, other.returnType)) {
                 return false;
             }
-            if (!Arrays.deepEquals(this.argTypes, other.argTypes)) {
-                return false;
-            }
-            return true;
+            return Arrays.deepEquals(this.argTypes, other.argTypes);
         }
     }
 
@@ -310,10 +306,7 @@ public final class BinaryReader implements GraphParser {
             if (!Objects.equals(this.name, other.name)) {
                 return false;
             }
-            if (!Objects.equals(this.simpleName, other.simpleName)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(this.simpleName, other.simpleName);
         }
 
     }
@@ -436,6 +429,10 @@ public final class BinaryReader implements GraphParser {
         switch (type) {
             case POOL_CLASS: {
                 String name = dataSource.readString();
+                String conv = BinaryMap.obfuscationMap().get(name);
+                if (conv != null) {
+                    name = conv;
+                }
                 int klasstype = dataSource.readByte();
                 if (klasstype == ENUM_KLASS) {
                     int len = dataSource.readInt();
@@ -461,9 +458,15 @@ public final class BinaryReader implements GraphParser {
                 break;
             }
             case POOL_NODE_CLASS: {
-                String className = dataSource.readString();
+                String className;
+                if (dataSource.getMajorVersion() < 2) {
+                    className = dataSource.readString();
+                } else {
+                    Klass nodeClass = readPoolObject(Klass.class);
+                    className = nodeClass.toString();
+                }
                 String nameTemplate = dataSource.readString();
-                size = className.length() + nameTemplate.length();
+                size = nameTemplate.length();
                 int inputCount = dataSource.readShort();
                 List<TypedPort> inputs = new ArrayList<>(inputCount);
                 for (int i = 0; i < inputCount; i++) {
@@ -528,7 +531,7 @@ public final class BinaryReader implements GraphParser {
      * Each value holds 2 ints - 0 is the approx size of the data, 1 is the number of addPooLEntry
      * calls for this value - the number of redundant appearances in the constant pool.
      */
-    private Map<Object, int[]> poolEntries = new LinkedHashMap<>(100, 0.8f, true);
+    private final Map<Object, int[]> poolEntries = new LinkedHashMap<>(100, 0.8f, true);
 
     private void recordNewEntry(Object data, int size) {
         // TODO: the stats can be compacted from time to time - e.g. if the number of objects goes
@@ -617,6 +620,7 @@ public final class BinaryReader implements GraphParser {
         builder.end();
     }
 
+    @Override
     public GraphDocument parse() throws IOException {
         hashStack.push(null);
 
@@ -682,7 +686,7 @@ public final class BinaryReader implements GraphParser {
             long s = ex.getStart();
             long e = ex.getEnd();
             long pos = dataSource.getMark();
-            LOG.log(Level.FINE, "Skipping to offset " + e + ", " + (e - pos) + " bytes skipped");
+            LOG.log(Level.FINE, "Skipping to offset {0}, {1} bytes skipped", new Object[]{e, e - pos});
 
             assert s < pos && e >= pos;
             if (pos < e) {
@@ -716,7 +720,31 @@ public final class BinaryReader implements GraphParser {
     }
 
     private InputGraph parseGraph() throws IOException {
-        String title = readPoolObject(String.class);
+        if (dataSource.getMajorVersion() < 2) {
+            String title = readPoolObject(String.class);
+            return parseGraph(title, true);
+        }
+        int dumpId = dataSource.readInt();
+        String format = dataSource.readString();
+        int argsCount = dataSource.readInt();
+        Object[] args = new Object[argsCount];
+        for (int i = 0; i < argsCount; i++) {
+            args[i] = readPoolObject(Object.class);
+            if (args[i] instanceof Klass) {
+                String className = args[i].toString();
+                String s = className.substring(className.lastIndexOf(".") + 1); // strip the package name
+                int innerClassPos = s.indexOf('$');
+                if (innerClassPos > 0) {
+                    /* Remove inner class name. */
+                    s = s.substring(0, innerClassPos);
+                }
+                if (s.endsWith("Phase")) {
+                    s = s.substring(0, s.length() - "Phase".length());
+                }
+                args[i] = s;
+            }
+        }
+        String title = dumpId + ": " + String.format(format, args);
         return parseGraph(title, true);
     }
 

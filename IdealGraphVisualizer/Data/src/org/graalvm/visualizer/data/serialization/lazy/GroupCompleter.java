@@ -76,8 +76,8 @@ final class GroupCompleter extends BaseCompleter<List<? extends FolderElement>, 
         return data;
     }
 
-    protected List<? extends FolderElement> load(ReadableByteChannel channel, Feedback feedback) throws IOException {
-        BinarySource bs = new BinarySource(channel);
+    protected List<? extends FolderElement> load(ReadableByteChannel channel, int majorVersion, int minorVersion, Feedback feedback) throws IOException {
+        BinarySource bs = new BinarySource(channel, majorVersion, minorVersion);
         SingleGroupBuilder builder = new SingleGroupBuilder(
                         toComplete, env(), bs,
                         streamIndex, entry,

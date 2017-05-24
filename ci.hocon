@@ -1,0 +1,43 @@
+include "common.hocon"
+
+igvCommon: {
+  setup : [
+    [cd, "./IdealGraphVisualizer"]
+  ]
+  timelimit : "20:00"
+}
+
+gateLite : ${igvCommon} {
+  run : [
+    ["ant", "build" ],
+    ["ant", "patch-test" ],
+    ["ant", "test" ]
+  ]
+}
+
+builds += [
+  ${linux-amd64} ${java8} ${gateLite} {
+    targets : [ gate ],
+    name: "gate-igv-linux-lite-8"
+  }
+  ${linux-amd64} ${java9} ${gateLite} {
+    targets : [ gate ],
+    name: "gate-igv-linux-lite-9"
+  }
+#  ${solaris-sparcv9} ${java8} ${gateLite} {
+#    targets : [ gate ],
+#    name: "gate-igv-solaris-lite-8"
+#  }
+#  ${solaris-sparcv9} ${java9} ${gateLite} {
+#    targets : [ gate ],
+#    name: "gate-igv-solaris-lite-9"
+#  }
+#  ${darwin-amd64} ${java8} ${gateLite} {
+#    targets : [ gate ],
+#    name: "gate-igv-mac-lite-8"
+#  }
+#  ${darwin-amd64} ${java9} ${gateLite} {
+#    targets : [ gate ],
+#    name: "gate-igv-mac-lite-9"
+#  }
+]

@@ -54,8 +54,12 @@ class StreamEntry {
      */
     private ConstantPool skipPool;
     private GraphMetadata graphMeta;
+    private final int majorVersion;
+    private final int minorVersion;
 
-    public StreamEntry(long start, ConstantPool initialPool) {
+    public StreamEntry(int majorVersion, int minorVersion, long start, ConstantPool initialPool) {
+        this.majorVersion = majorVersion;
+        this.minorVersion = minorVersion;
         this.start = start;
         this.initialPool = initialPool;
     }
@@ -97,5 +101,13 @@ class StreamEntry {
 
     public GraphMetadata getGraphMeta() {
         return graphMeta;
+    }
+
+    public int getMajorVersion() {
+        return majorVersion;
+    }
+
+    public int getMinorVersion() {
+        return minorVersion;
     }
 }
