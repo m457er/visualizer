@@ -25,12 +25,10 @@
 
 package org.graalvm.visualizer.data.serialization.lazy;
 
-import org.graalvm.visualizer.data.serialization.FileContent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +44,7 @@ import org.graalvm.visualizer.data.serialization.BinaryParser;
 import org.graalvm.visualizer.data.serialization.BinaryReader;
 import org.graalvm.visualizer.data.serialization.BinarySource;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
+import org.graalvm.visualizer.data.serialization.FileContent;
 import org.graalvm.visualizer.data.serialization.ModelBuilder;
 import org.graalvm.visualizer.data.services.GroupCallback;
 import org.netbeans.junit.NbTestCase;
@@ -56,8 +55,6 @@ import org.openide.util.RequestProcessor;
  *
  */
 public class ScanningBinaryParserTest extends NbTestCase {
-    private static final String DATA_LOCATION_PROPERTY = "igv.test.dataLocation"; // NOI18N
-    
     public ScanningBinaryParserTest(String name) {
         super(name);
     }
@@ -302,11 +299,9 @@ public class ScanningBinaryParserTest extends NbTestCase {
      * Checks that the data can be fully read correctly by the new implementation
      * of full scanner.
      */
-    public void testReadDataNewImpl() throws IOException {
-        Path p = getTestDataPath("binaryOutput.bgv");
-        File f = p.toFile();
-        System.err.println("Checking file: " + f);
-        FileChannel fch = FileChannel.open(f.toPath(), StandardOpenOption.READ);
+    public void testReadData20() throws Exception {
+        URL bigv = ScanningBinaryParserTest.class.getResource("bigv-2.0.bgv");
+        File f = new File(bigv.toURI());
         FileChannel fch2 = FileChannel.open(f.toPath(), StandardOpenOption.READ);
         GraphDocument checkDocument = new GraphDocument();
         BinarySource scanSource = new BinarySource(fch2);
@@ -322,11 +317,27 @@ public class ScanningBinaryParserTest extends NbTestCase {
      * Checks that the data can be fully read correctly by the new implementation
      * of full scanner.
      */
-    public void testReadDataOldImpl() throws IOException {
-        Path p = getTestDataPath("binaryOutput.bgv");
-        File f = p.toFile();
-        System.err.println("Checking file: " + f);
-        FileChannel fch = FileChannel.open(f.toPath(), StandardOpenOption.READ);
+    public void testReadData10() throws Exception {
+        URL bigv = ScanningBinaryParserTest.class.getResource("bigv-1.0.bgv");
+        File f = new File(bigv.toURI());
+        FileChannel fch2 = FileChannel.open(f.toPath(), StandardOpenOption.READ);
+        GraphDocument checkDocument = new GraphDocument();
+        BinarySource scanSource = new BinarySource(fch2);
+        AtomicInteger count = new AtomicInteger();
+        ModelBuilder mb = new ModelBuilder(checkDocument, this::run,
+                (g) -> count.incrementAndGet(), null);
+        BinaryReader rdr = new BinaryReader(scanSource, mb);
+        rdr.parse();
+        System.err.println("Read " + count.get());
+    }
+
+    /**
+     * Checks that the data can be fully read correctly by the new implementation
+     * of full scanner.
+     */
+    public void testReadDataOldImpl() throws Exception {
+        URL bigv = ScanningBinaryParserTest.class.getResource("bigv-1.0.bgv");
+        File f = new File(bigv.toURI());
         FileChannel fch2 = FileChannel.open(f.toPath(), StandardOpenOption.READ);
         GraphDocument checkDocument = new GraphDocument();
         
@@ -342,29 +353,19 @@ public class ScanningBinaryParserTest extends NbTestCase {
         return reader.getConstantPool();
     }
     
-    private Path getTestDataPath(String relPath) {
-        String s = System.getProperty(DATA_LOCATION_PROPERTY);
-        if (s != null) {
-            return Paths.get(s, relPath);
-        }
-        fail("No test data location given");
-        return null; // not reached.
-    }
-
     /**
      * Checks that groups whose contents are skipped during initial scan
      * are read when expanded.
      * @throws IOException 
      */
     public void testReadLazy() throws Exception {
-        Path p = getTestDataPath("binaryOutput.bgv");
-        File f = p.toFile();
-        System.err.println("Checking file: " + f);
+        URL bigv = ScanningBinaryParserTest.class.getResource("bigv-2.0.bgv");
+        File f = new File(bigv.toURI());
         FileChannel fch = FileChannel.open(f.toPath(), StandardOpenOption.READ);
         FileChannel fch2 = FileChannel.open(f.toPath(), StandardOpenOption.READ);
         GraphDocument checkDocument = new GraphDocument();
         
-        FileContent fc = new FileContent(p, null);
+        FileContent fc = new FileContent(f.toPath(), null);
         BinarySource scanSource = new BinarySource(fc);
         
         ModelBuilder mb = new ScanningModelBuilder(scanSource, 
