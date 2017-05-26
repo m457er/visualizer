@@ -729,7 +729,7 @@ public final class BinaryReader implements GraphParser {
         int argsCount = dataSource.readInt();
         Object[] args = new Object[argsCount];
         for (int i = 0; i < argsCount; i++) {
-            args[i] = readPoolObject(Object.class);
+            args[i] = dataSource.getMajorVersion() == 2 ? readPoolObject(Object.class) : readPropertyObject(null);
             if (args[i] instanceof Klass) {
                 String className = args[i].toString();
                 String s = className.substring(className.lastIndexOf(".") + 1); // strip the package name
