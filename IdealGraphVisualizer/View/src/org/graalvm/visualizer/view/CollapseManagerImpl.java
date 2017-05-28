@@ -3,6 +3,8 @@ package org.graalvm.visualizer.view;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.graalvm.visualizer.data.InputBlock;
 import org.graalvm.visualizer.filter.FilterChain;
 import org.graalvm.visualizer.graph.Diagram;
@@ -17,6 +19,8 @@ import org.openide.util.lookup.ServiceProvider;
  */
 @ServiceProvider(service = CollapseManager.class)
 public class CollapseManagerImpl implements CollapseManager {
+
+    private static final Logger LOGGER = Logger.getLogger(CollapseManagerImpl.class.getName());
 
     private final Set<ClusterId> collapsed;
     private final Collapser collapser;
@@ -33,7 +37,11 @@ public class CollapseManagerImpl implements CollapseManager {
 
     private void collapse(DiagramViewModel model, Collection<? extends Cluster> clusters) {
         for (Cluster cluster : clusters) {
-            collapsed.add(ClusterId.of(cluster));
+            try {
+                collapsed.add(ClusterId.of(cluster));
+            } catch (AssertionError e) {
+                LOGGER.log(Level.WARNING, "Assert error - " + e.getMessage());
+            }
         }
 
         update(model);
@@ -54,7 +62,11 @@ public class CollapseManagerImpl implements CollapseManager {
         Set<Cluster> clusters = collectSelectedClusters(model);
 
         for (Cluster cluster : clusters) {
-            collapsed.remove(ClusterId.of(cluster));
+            try {
+                collapsed.remove(ClusterId.of(cluster));
+            } catch (AssertionError e) {
+                LOGGER.log(Level.WARNING, "Assert error - " + e.getMessage());
+            }
         }
 
         update(model);
