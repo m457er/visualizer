@@ -6,7 +6,6 @@
 
 package org.graalvm.visualizer.data.serialization;
 
-import org.netbeans.junit.NbTestCase;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -15,11 +14,12 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import junit.framework.TestCase;
 
 /**
  *
  */
-public class BinarySourceTest extends NbTestCase {
+public class BinarySourceTest extends TestCase {
     public BinarySourceTest(String name) {
         super(name);
     }

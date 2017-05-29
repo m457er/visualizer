@@ -145,7 +145,7 @@ public class FolderNode extends AbstractNode {
             private void init(int total) {
                 if (handle == null) {
                     handle = ProgressHandle.createHandle(Bundle.MSG_Loading(name()), this);
-                    handle.start(total);
+                    handle.start(Math.max(1, total));
                 }
             }
 

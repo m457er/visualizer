@@ -38,7 +38,7 @@ import static org.graalvm.visualizer.data.serialization.StreamUtils.maybeIntern;
  */
 public class BinarySource {
     static final byte[] MAGIC_BYTES = {'B', 'I', 'G', 'V'};
-    static final int CURRENT_MAJOR_VERSION = 2;
+    static final int CURRENT_MAJOR_VERSION = 3;
     static final int CURRENT_MINOR_VERSION = 0;
     static final String CURRENT_VERSION = versionPair(CURRENT_MAJOR_VERSION, CURRENT_MINOR_VERSION);
 
