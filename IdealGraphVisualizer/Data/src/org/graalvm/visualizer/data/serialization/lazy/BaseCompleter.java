@@ -27,6 +27,7 @@ package org.graalvm.visualizer.data.serialization.lazy;
 
 import org.graalvm.visualizer.data.ChangedEventProvider;
 import org.graalvm.visualizer.data.ChangedListener;
+import org.graalvm.visualizer.data.FolderElement;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -37,7 +38,12 @@ import org.graalvm.visualizer.data.Group;
 import org.graalvm.visualizer.data.Group.Feedback;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
 import java.io.InterruptedIOException;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.nio.channels.ReadableByteChannel;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -79,11 +85,14 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
     private T keepElements;
     private String name;
     private final Env env;
-
     BaseCompleter(Env env, StreamEntry entry) {
         this.env = env;
         this.initialPool = entry.getInitialPool();
         this.entry = entry;
+    }
+    
+    protected T filter(T data) {
+        return data;
     }
 
     protected synchronized void attachTo(E group, String name) {
@@ -101,7 +110,7 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
         return env;
     }
 
-    E getGroup() {
+    E getModel() {
         return toComplete;
     }
 
@@ -135,7 +144,6 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
     public void run() {
         env().getModelExecutor().execute(() -> {
             LOG.log(Level.FINER, "Expanding/notifying group " + name);
-            toComplete.getChangedEvent().fire();
             Feedback f;
 
             synchronized (BaseCompleter.this) {
@@ -143,6 +151,7 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
                 f = feedbackToFinish;
                 feedbackToFinish = null;
             }
+            toComplete.getChangedEvent().fire();
             if (f != null) {
                 f.finish();
             }
@@ -190,9 +199,10 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
         }
 
         private T invokeEvent(T newElements) {
-            env.getFetchExecutor().schedule(BaseCompleter.this, 0, TimeUnit.MILLISECONDS);
+            newElements = filter(newElements);
             future.complete(newElements);
             future = null;
+            env.getFetchExecutor().schedule(BaseCompleter.this, 0, TimeUnit.MILLISECONDS);
             completingThread.remove();
             return newElements;
         }
@@ -256,6 +266,7 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
         void complete(T data) {
             this.done = true;
             hookData(data);
+            this.items = data;
         }
 
         void cancel() {

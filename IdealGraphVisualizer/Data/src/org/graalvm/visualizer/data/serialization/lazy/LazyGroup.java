@@ -36,6 +36,8 @@ import org.graalvm.visualizer.data.Folder;
 import org.graalvm.visualizer.data.FolderElement;
 import org.graalvm.visualizer.data.Group;
 import org.graalvm.visualizer.data.InputGraph;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Lazy implementation of Group, which fetches its contents lazily, using {@link GroupCompleter}.
@@ -60,8 +62,16 @@ final class LazyGroup extends Group implements Group.LazyContent {
 
     private final LoadSupport<List<? extends FolderElement>> cSupport;
 
-    public LazyGroup(Folder parent, Completer completer) {
+    /**
+     * Remembered element IDs which will be excluded from possible future reloads.
+     */
+    private final Set<String> excludedNames = new HashSet<>();
+    
+    private final GroupCompleter completer;
+
+    public LazyGroup(Folder parent, GroupCompleter completer) {
         super(parent);
+        this.completer = completer;
         this.cSupport = new LoadSupport<List<? extends FolderElement>>(completer) {
             @Override
             protected List<? extends FolderElement> emptyData() {
@@ -78,6 +88,26 @@ final class LazyGroup extends Group implements Group.LazyContent {
     @Override
     protected List<? extends FolderElement> getElementsInternal() {
         return cSupport.getContents();
+    }
+
+    @Override
+    public void removeElement(FolderElement element) {
+        if (element == null) {
+            return;
+        }
+        List<? extends FolderElement> els = getElementsInternal();
+        if (!els.contains(element)) {
+            return;
+        }
+        completer.removeData(element);
+        synchronized (this) {
+            excludedNames.add(element.getName());
+        }
+        fireChangedEvent();
+    }
+    
+    synchronized Set<String> getExcludedNames() {
+        return new HashSet<>(excludedNames);
     }
 
     @Override
