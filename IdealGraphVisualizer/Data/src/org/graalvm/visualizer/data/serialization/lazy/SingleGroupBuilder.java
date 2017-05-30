@@ -262,6 +262,10 @@ public class SingleGroupBuilder extends DelegatingBuilder {
         return startOffset + p;
     }
 
+    long relPosition(long p) {
+        return p - startOffset;
+    }
+
     /**
      * Root builder, builds full model. Identifies large graphs and loads them as lazy. PENDING -
      * maybe identify also large groups and load them as lazy.
@@ -317,11 +321,10 @@ public class SingleGroupBuilder extends DelegatingBuilder {
 
         @Override
         public void startGraphContents(InputGraph g) {
-            if (graphLevel == 1 && !collectChanges) {
-                // the graph was already seen, we can safely skip it, metadata was already collected
+            if (graphLevel == 1 && !collectChanges && !(g instanceof LazyGroup.LoadedGraph)) {
+                // the graph was already seen, we can safely skip it if it is lazy-loaded, metadata was already collected
                 replacePool(entry.getSkipPool().clone());
-                endGraph();
-                throw new SkipRootException(entry.getStart(), entry.getEnd());
+                throw new SkipRootException(relPosition(entry.getStart()), relPosition(entry.getEnd()));
             }
             super.startGraphContents(g);
         }
@@ -355,7 +358,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             InputGraph g = graph();
             if (g instanceof LazyGraph) {
                 if (newEntry) {
-                    entry.end(startOffset, pool);
+                    entry.end(dataSource.getMark(), pool);
                     replacePool(pool = ((StreamPool) pool).forkIfNeeded());
                     streamIndex.addEntry(entry);
                 }
