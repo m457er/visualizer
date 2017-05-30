@@ -42,7 +42,7 @@ class StreamEntry {
     /**
      * End of the object.
      */
-    private long end;
+    private long end = -1;
 
     /**
      * Constant pool to be used when the object should be read. Must be cloned.
