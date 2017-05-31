@@ -55,7 +55,7 @@ final class GroupCompleter extends BaseCompleter<List<? extends FolderElement>, 
      * Loaded data
      */
     private volatile Reference<List<? extends FolderElement>> refData = new WeakReference<>(null);
-
+    
     public GroupCompleter(Env env, StreamIndex index, StreamEntry groupEntry) {
         super(env, groupEntry);
         this.streamIndex = index;
@@ -109,7 +109,6 @@ final class GroupCompleter extends BaseCompleter<List<? extends FolderElement>, 
                     // just keep a backreference to the whole list
                     ((ChangedEventProvider) f).getChangedEvent().addListener(l);
                 }
-                f.setParent(element());
             }
         }
         refData = new WeakReference<>(data);
@@ -122,11 +121,11 @@ final class GroupCompleter extends BaseCompleter<List<? extends FolderElement>, 
                         toComplete, env(), bs,
                         streamIndex, entry,
                         feedback,
-                        firstExpand);
+                        firstExpand, 
+                        entry.getEnd() == -1 ? this::setPartialData : null);
         firstExpand = false;
         new BinaryReader(bs, builder).parse();
         List<? extends FolderElement> els = builder.getItems();
         return els;
     }
-
 }

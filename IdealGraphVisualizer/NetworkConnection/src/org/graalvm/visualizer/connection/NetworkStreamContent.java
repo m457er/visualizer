@@ -36,7 +36,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.graalvm.visualizer.data.serialization.BinaryParser;
@@ -70,7 +72,7 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
     private final FileChannel dumpChannel;
 
     private boolean eof;
-    private int readBytes;
+    private long readBytes;
     private static final AtomicInteger contentId = new AtomicInteger();
     private long receiveBufferOffset;
 
@@ -115,33 +117,41 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
     @Override
     public int read(ByteBuffer dst) throws IOException {
         if (eof) {
+            synchronized (this) {
+                notifyAll();
+            }
             throw new EOFException();
         }
         int pos = dst.position();
         int count = ioDelegate.read(dst);
-        if (count < 0) {
-            eof = true;
-            return count;
-        }
-        readBytes += count;
-
         synchronized (this) {
-            // buffer in our cache:
-            ByteBuffer del = dst.asReadOnlyBuffer();
-            del.flip();
-            del.position(pos);
-            while (del.remaining() > 0) {
-                if (del.remaining() < receiveBuffer.remaining()) {
-                    receiveBuffer.put(del);
-                } else {
-                    del.limit(pos + receiveBuffer.remaining());
-                    receiveBuffer.put(del);
-                    flushToDisk();
-                    pos = del.position();
-                    del = dst.asReadOnlyBuffer();
-                    del.flip();
-                    del.position(pos);
+            try {
+                if (count < 0) {
+                    eof = true;
+                    return count;
                 }
+                readBytes += count;
+
+                // buffer in our cache:
+                ByteBuffer del = dst.asReadOnlyBuffer();
+                del.flip();
+                del.position(pos);
+                while (del.remaining() > 0) {
+                    if (del.remaining() < receiveBuffer.remaining()) {
+                        receiveBuffer.put(del);
+                    } else {
+                        del.limit(pos + receiveBuffer.remaining());
+                        receiveBuffer.put(del);
+                        flushToDisk();
+                        pos = del.position();
+                        del = dst.asReadOnlyBuffer();
+                        del.flip();
+                        del.position(pos);
+                    }
+                }
+            } finally {
+                // notify potential waiters:
+                notifyAll();
             }
         }
         int bufferedCount = (cacheBuffers.size()) * RECEIVE_BUFFER_SIZE + receiveBuffer.position();
@@ -157,11 +167,28 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
 
     @Override
     public void close() throws IOException {
+        synchronized (this) {
+            notifyAll();
+        }
         flushToDisk();
         ioDelegate.close();
     }
 
+    @Override
     public synchronized ReadableByteChannel subChannel(long start, long end) {
+        Iterator<ByteBuffer> buffers = buffers(start, end);
+        if (end > 0) {
+            return new BufferListChannel(buffers, null);
+        } else {
+            return new BufferListChannel(
+                    new FollowupIterator(buffers, readBytes), 
+                    null
+            );
+        }
+        
+    }
+    
+    private Iterator<ByteBuffer> buffers(long start, long endPos) {
         int fromBuffer = -1;
         long pos = 0;
         long prevPos = 0;
@@ -173,7 +200,9 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         ByteBuffer endBuf;
         List<ByteBuffer> buffers = new ArrayList<>();
         int toBuffer;
-        LOG.log(Level.FINER, "Allocating subchannel from dumpfile {0} range {1}-{2}", new Object[]{dumpFile, start, end});
+        long end = endPos == -1 ? readBytes : endPos;
+        
+        LOG.log(Level.FINER, "Allocating subchannel from dumpfile {0} range {1}-{2}", new Object[]{dumpFile, start, endPos});
         try {
 
             if (start >= receiveBufferOffset) {
@@ -238,6 +267,73 @@ public class NetworkStreamContent implements ReadableByteChannel, CachedContent,
         if (startBuf != endBuf) {
             buffers.add(endBuf);
         }
-        return new BufferListChannel(buffers.iterator(), null);
+        return buffers.iterator();
+    }
+    
+    private Iterator<ByteBuffer> waitBuffers(long fromPos, Consumer<Long> newPos) {
+        while (true) {
+            synchronized (this) {
+                if (readBytes > fromPos) {
+                    newPos.accept(readBytes);
+                    return buffers(fromPos, -1);
+                }
+                try {
+                    wait();
+                    if (eof) {
+                        return null;
+                    }
+                } catch (InterruptedException ex) {
+                    return null;
+                }
+            }
+        }
+    }
+    
+    private synchronized boolean hasMoreData(long pos) {
+        return !eof || readBytes > pos;
+    }
+    
+    class FollowupIterator implements Iterator<ByteBuffer> {
+        private Iterator<ByteBuffer> delegate;
+        private long pos;
+        private boolean eof;
+
+        public FollowupIterator(Iterator<ByteBuffer> delegate, long pos) {
+            this.delegate = delegate;
+            this.pos = pos;
+        }
+        
+        void setPos(long pos) {
+            this.pos = pos;
+        }
+        
+        @Override
+        public boolean hasNext() {
+            if (eof) {
+                return false;
+            }
+            if (delegate != null) {
+                if (delegate.hasNext()) {
+                    return true;
+                }
+                delegate = null;
+            }
+            return hasMoreData(pos);
+        }
+
+        @Override
+        public ByteBuffer next() {
+            if (eof) {
+                throw new NoSuchElementException();
+            }
+            if (delegate == null) {
+                delegate = waitBuffers(pos, this::setPos);
+                if (delegate == null) {
+                    eof = true;
+                    return ByteBuffer.allocate(0);
+                }
+            }
+            return delegate.next();
+        }
     }
 }

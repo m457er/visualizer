@@ -27,7 +27,6 @@ package org.graalvm.visualizer.data.serialization.lazy;
 
 import org.graalvm.visualizer.data.ChangedEventProvider;
 import org.graalvm.visualizer.data.ChangedListener;
-import org.graalvm.visualizer.data.FolderElement;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -38,12 +37,7 @@ import org.graalvm.visualizer.data.Group;
 import org.graalvm.visualizer.data.Group.Feedback;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
 import java.io.InterruptedIOException;
-import java.lang.ref.Reference;
-import java.lang.ref.WeakReference;
 import java.nio.channels.ReadableByteChannel;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -55,7 +49,7 @@ import java.util.concurrent.TimeoutException;
  * the loading for {@link #RESCHEDULE_DELAY} millis, gives up after {@link #ATTEMPT_COUNT} attempts
  * providing empty content for the group.
  */
-class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> implements Completer<T>, Runnable {
+abstract class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> implements Completer<T>, Runnable {
     private static final Logger LOG = Logger.getLogger(BaseCompleter.class.getName());
 
     /**
@@ -78,6 +72,8 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
 
     // diagnostics only
     private int attemptCount;
+    
+    private T partialData = createEmpty();
 
     /**
      * Will keep the currently resolved elements until the events are delivered by the executor.
@@ -150,6 +146,7 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
                 keepElements = null;
                 f = feedbackToFinish;
                 feedbackToFinish = null;
+                partialData = null;
             }
             toComplete.getChangedEvent().fire();
             if (f != null) {
@@ -157,7 +154,7 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
             }
         });
     }
-
+    
     protected T load(ReadableByteChannel channel, int majorVersion, int minorVersion, Feedback feedback) throws IOException {
         return null;
     }
@@ -210,6 +207,7 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
         @Override
         public T call() throws Exception {
             T newElements;
+                /*
             synchronized (BaseCompleter.this) {
                 if (entry.getEnd() < 0) {
                     if (attemptCount++ > ATTEMPT_COUNT) {
@@ -225,6 +223,7 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
                     return null;
                 }
             }
+                */
             newElements = createEmpty();
             LOG.log(Level.FINER, "Reading group {0}, range {1}-{2}", new Object[]{name, entry.getStart(), entry.getEnd()});
             completingThread.set(true);
@@ -262,7 +261,7 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
         public KeepDataFuture(Future<T> delegate) {
             this.delegate = delegate;
         }
-
+        
         void complete(T data) {
             this.done = true;
             hookData(data);
@@ -291,7 +290,15 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
         public boolean isDone() {
             return done && delegate.isDone();
         }
-
+        
+        public synchronized T tryGet() {
+            if (isDone()) {
+                return items;
+            } else {
+                return null;
+            }
+        }
+        
         @Override
         public T get() throws InterruptedException, ExecutionException {
             T res;
@@ -326,5 +333,28 @@ class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvider> imple
         @Override
         public void changed(Object source) {
         }
+    }
+    
+    protected synchronized void setPartialData(T partialData) {
+        this.partialData = partialData;
+        env().getModelExecutor().execute(() -> {
+            toComplete.getChangedEvent().fire();
+        });
+    }
+    
+    public T partialData() {
+        KeepDataFuture f;
+        T p;
+        synchronized (this) {
+            f = this.future;
+            p = partialData;
+        }
+        if (f != null) {
+            T x = future.tryGet();
+            if (x != null) {
+                return x;
+            }
+        }
+        return p;
     }
 }

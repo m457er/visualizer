@@ -284,6 +284,8 @@ public class Group extends Properties.Entity implements ChangedEventProvider<Gro
          * @return handle to contents of the group.
          */
         public Future<T> completeContents(Feedback feedback);
+        
+        public T partialData();
     }
 
     /**

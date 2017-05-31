@@ -62,6 +62,11 @@ public class LazyGraph extends InputGraph implements Group.LazyContent<Collectio
     }
 
     @Override
+    public Collection<InputNode> partialData() {
+        return null;
+    }
+
+    @Override
     public ChangedEvent<InputGraph> getChangedEvent() {
         return changedEvent;
     }

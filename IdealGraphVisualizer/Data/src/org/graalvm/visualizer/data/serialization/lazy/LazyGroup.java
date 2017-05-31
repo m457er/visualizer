@@ -25,6 +25,7 @@ package org.graalvm.visualizer.data.serialization.lazy;
 
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -75,7 +76,7 @@ final class LazyGroup extends Group implements Group.LazyContent {
         this.cSupport = new LoadSupport<List<? extends FolderElement>>(completer) {
             @Override
             protected List<? extends FolderElement> emptyData() {
-                return LazyGroup.super.getElementsInternal();
+                return new ArrayList<>();
             }
         };
     }
@@ -88,6 +89,11 @@ final class LazyGroup extends Group implements Group.LazyContent {
     @Override
     protected List<? extends FolderElement> getElementsInternal() {
         return cSupport.getContents();
+    }
+
+    @Override
+    public Object partialData() {
+        return cSupport.partialData();
     }
 
     @Override

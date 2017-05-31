@@ -32,6 +32,7 @@ import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.coordinator.actions.RemoveCookie;
 import org.graalvm.visualizer.util.PropertiesSheet;
 import java.awt.Image;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.graalvm.visualizer.util.ListenerSupport;
@@ -49,8 +50,10 @@ import org.openide.util.NbBundle;
 import org.openide.util.lookup.AbstractLookup;
 import org.openide.util.lookup.InstanceContent;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.openide.util.RequestProcessor;
 
 public class FolderNode extends AbstractNode {
+    private static final RequestProcessor REFRESH_RP = new RequestProcessor(FolderNode.class);
     private InstanceContent content;
     private final Folder folder;
 
@@ -77,7 +80,8 @@ public class FolderNode extends AbstractNode {
 
         private final Folder folder;
         private ChangedListener l;
-        private boolean refreshing;
+        // delay refreshing UI for ~200ms to batch changes.
+        private final RequestProcessor.Task   refreshTask = REFRESH_RP.create(this::refreshKeys, true);
 
         public FolderChildren(Folder folder) {
             this.folder = folder;
@@ -118,7 +122,7 @@ public class FolderNode extends AbstractNode {
 
         @Override
         public void changed(Folder source) {
-            refreshKeys();
+            refreshTask.schedule(200);
         }
 
         @NbBundle.Messages({
@@ -145,7 +149,12 @@ public class FolderNode extends AbstractNode {
             private void init(int total) {
                 if (handle == null) {
                     handle = ProgressHandle.createHandle(Bundle.MSG_Loading(name()), this);
-                    handle.start(Math.max(1, total));
+                    if (f.isDone()) {
+                        handle.start(Math.max(1, total));
+                    } else {
+                        handle.switchToIndeterminate();
+                        handle.start();
+                    }
                 }
             }
 
@@ -176,10 +185,8 @@ public class FolderNode extends AbstractNode {
                 synchronized (FolderChildren.this) {
                     if (!f.isDone()) {
                         StatusDisplayer.getDefault().setStatusText(Bundle.MSG_ExpansionFailed(name()), StatusDisplayer.IMPORTANCE_ANNOTATION);
-                        refreshing = false;
                     } else if (f.isCancelled()) {
                         StatusDisplayer.getDefault().setStatusText(Bundle.MSG_ExpansionCancelled(name()), StatusDisplayer.IMPORTANCE_ANNOTATION);
-                        refreshing = false;
                     }
                 }
                 init(1);
@@ -189,15 +196,14 @@ public class FolderNode extends AbstractNode {
 
         private synchronized void refreshKeys() {
             if (folder instanceof Group.LazyContent) {
-                LazyContent lazyFolder = (LazyContent) folder;
+                LazyContent<List<? extends FolderElement>> lazyFolder = (LazyContent) folder;
                 Feedback feedback = new Feedback();
                 Future<List<? extends FolderElement>> fContents = lazyFolder.completeContents(feedback);
                 if (!fContents.isDone()) {
                     feedback.setFuture(fContents);
-                    if (!refreshing) {
-                        setKeys(Collections.singletonList(WAIT_KEY));
-                        refreshing = true;
-                    }
+                    List partial = new ArrayList<>(lazyFolder.partialData());
+                    partial.add(WAIT_KEY);
+                    setKeys(partial);
                     return;
                 }
             }

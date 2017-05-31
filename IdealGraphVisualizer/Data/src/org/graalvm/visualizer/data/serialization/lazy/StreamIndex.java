@@ -35,8 +35,9 @@ import java.util.Map;
 final class StreamIndex {
     private Map<Long, StreamEntry> map = new HashMap<>();
 
-    public void addEntry(StreamEntry en) {
-        map.put(en.getStart(), en);
+    public StreamEntry addEntry(StreamEntry en) {
+        StreamEntry res = map.putIfAbsent(en.getStart(), en);
+        return res == null ? en : res;
     }
 
     public StreamEntry get(long position) {

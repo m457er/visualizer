@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -82,7 +83,8 @@ public class SingleGroupBuilder extends DelegatingBuilder {
     private final Root rootBuilder;
     private final StreamEntry rootEntry;
     private final Feedback feedback;
-
+    private GroupCompleter completer;
+    
     private GraphMetadata gInfo;
 
     private long rootStartOffset;
@@ -133,6 +135,8 @@ public class SingleGroupBuilder extends DelegatingBuilder {
     private boolean collectChanges;
 
     private StreamEntry entry;
+    
+    private final Consumer<List<? extends FolderElement>> partialCallback;
 
     /**
      * Helper class, saves one level info on creation + clears out the data. Restores data in its
@@ -142,6 +146,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
         Map<Integer, Properties> props;
         GraphMetadata meta;
         StreamEntry e;
+        GroupCompleter c;
         boolean changes;
         boolean counts;
         int gIndex;
@@ -153,6 +158,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             this.changes = collectChanges;
             this.counts = collectCounts;
             this.gIndex = graphIndex;
+            this.c = completer;
 
             if (graphLevel > 1) {
                 nodeProperties = new HashMap<>();
@@ -162,6 +168,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
         }
 
         void restore() {
+            completer = c;
             nodeProperties = props;
             gInfo = meta;
             entry = e;
@@ -177,7 +184,8 @@ public class SingleGroupBuilder extends DelegatingBuilder {
                     StreamIndex streamIndex,
                     StreamEntry entry,
                     Feedback feedback,
-                    boolean firstExpand) {
+                    boolean firstExpand,
+                    Consumer<List<? extends FolderElement>> partialCallback) {
         this.env = env;
         this.toComplete = toComplete;
         this.pool = entry.getInitialPool().clone();
@@ -188,6 +196,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
         this.firstExpand = firstExpand;
         this.feedback = feedback;
         this.rootEntry = entry;
+        this.partialCallback = partialCallback;
 
         this.entry = rootEntry;
         rootBuilder = new Root();
@@ -195,7 +204,9 @@ public class SingleGroupBuilder extends DelegatingBuilder {
     }
 
     public List<? extends FolderElement> getItems() {
-        return items;
+        synchronized (items) {
+            return new ArrayList<>(items);
+        }
     }
 
     @Override
@@ -272,19 +283,49 @@ public class SingleGroupBuilder extends DelegatingBuilder {
      */
     class Root extends ModelBuilder {
         private boolean newEntry;
-
+        private long rootStartPos;
+        
         public Root() {
             super(rootDocument, env.getModelExecutor(), null, new ParseMonitorBridge(entry, feedback, dataSource));
+        }
+
+        @Override
+        public void startRoot() {
+            rootStartPos = absPosition(dataSource.getMark());
+            super.startRoot();
+        }
+
+        @Override
+        public void startGroupContent() {
+            super.startGroupContent();
+            if (groupLevel > 1 && folder() instanceof LazyGroup) {
+                waitEntryFinished();
+                replacePool(entry.getSkipPool().clone());
+                throw new SkipRootException(relPosition(entry.getStart()), relPosition(entry.getEnd()));
+            }
         }
 
         @Override
         protected Group createGroup(Folder parent) {
             if (parent == rootDocument) {
                 // do not create a Group for the completed instance, use the actual object
+                entry = rootEntry;
                 return toComplete;
-            } else {
+            } 
+            entry = streamIndex.addEntry(new StreamEntry(
+                dataSource.getMajorVersion(), dataSource.getMinorVersion(),
+                rootStartPos, getConstantPool()
+            ));
+            // already read by the scanning parser
+            if (entry.isFinished()) {
                 return super.createGroup(parent);
             }
+            assert completer == null;
+            GroupCompleter grc = new GroupCompleter(env, streamIndex, entry);
+            completer = grc;
+            LazyGroup g = new LazyGroup(folder(), grc);
+            completer.attachTo(g, null);
+            return g;
         }
 
         @Override
@@ -294,7 +335,13 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             }
             if (parent == toComplete) {
                 // do not put items into the completed group, fill them all at once at the end
-                items.add(item);
+                item.setParent(parent);
+                synchronized (items) {
+                    items.add(item);
+                }
+                if (partialCallback != null) {
+                    partialCallback.accept(getItems());
+                }
             } else {
                 // ignore threading, the item should have no listeners yet.
                 parent.addElement(item);
@@ -305,7 +352,9 @@ public class SingleGroupBuilder extends DelegatingBuilder {
         protected InputGraph createGraph(String title, String name, Properties.Entity parent) {
             if (rootEntry.size() < LARGE_GRAPH_THRESHOLD && (entry == null || entry.size() < LARGE_GRAPH_THRESHOLD)) {
                 // let Graph to keep entire group data in memory
-                return new LazyGroup.LoadedGraph(title, graphLevel == 1 ? gInfo : null);
+                InputGraph g = new LazyGroup.LoadedGraph(title, graphLevel == 1 ? gInfo : null);
+                g.setParent(toComplete);
+                return g;
             }
             GraphCompleter completer = new GraphCompleter(env, entry);
             LazyGraph g = new LazyGraph(title, gInfo, completer);
@@ -328,10 +377,25 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             }
             super.startGraphContents(g);
         }
+        
+        private void waitEntryFinished() {
+            synchronized (entry) {
+                while (!entry.isFinished()) {
+                    try {
+                        entry.wait();
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(SingleGroupBuilder.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        }
 
         public InputGraph startGraph(String title) {
-            entry = streamIndex.get(absPosition(rootStartOffset));
-            if (entry != null) {
+            long pos = absPosition(rootStartOffset);
+            entry = streamIndex.addEntry(new StreamEntry(
+                    dataSource.getMajorVersion(), dataSource.getMinorVersion(), pos, getConstantPool()));
+            waitEntryFinished();
+            if (entry.isFinished()) {
                 if (entry.size() > 1024 * 1024) {
                     reportState(title);
                 }

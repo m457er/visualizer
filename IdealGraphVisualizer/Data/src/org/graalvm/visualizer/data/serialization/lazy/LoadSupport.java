@@ -41,10 +41,6 @@ import java.util.logging.Logger;
  */
 class LoadSupport<T> implements Group.LazyContent<T> {
     private static final Logger LOG = Logger.getLogger(LoadSupport.class.getName());
-    /**
-     * If true, then incomplete groups wait for completion in {@link #getElementsInternal}.
-     */
-    private static final boolean incompleteWaits = true;
     private static final Reference EMPTY = new WeakReference(null);
 
     private final Completer<T> completer;
@@ -77,16 +73,39 @@ class LoadSupport<T> implements Group.LazyContent<T> {
         Future<T> f = processing.get();
         return f != null && f.isDone();
     }
+    
+    public T partialData() {
+        return completer == null ? emptyData() : completer.partialData();
+    }
 
     public T getContents() {
         try {
             if (completer != null && !completer.canComplete()) {
                 return emptyData();
             }
-            Future<T> f = completeContents(null);
-            if (f.isDone() || incompleteWaits) {
-                return f.get();
+            Future<T> wait;
+            synchronized (this) {
+                Future<T> f = completeContents(null);
+                if (f.isDone()) {
+                    return f.get();
+                } else {
+                    Future<T> cur;
+                    // HACK: first attempt to blindly getContents will block on the future.
+                    // After computation launches (cur == wait), other attempts will try to return at least
+                    // partial data, if the completer is willing to produce it.
+                    cur = processing.get();
+                    wait = completeContents(null);
+                    if (cur == wait) {
+                        if (completer != null) {
+                            T x = completer.partialData();
+                            if (x != null) {
+                                return x;
+                            }
+                        }
+                    }
+                }
             }
+            return wait.get();
         } catch (InterruptedException | ExecutionException ex) {
             LOG.log(Level.WARNING, "Exception during expansion of group " + name, ex);
         }

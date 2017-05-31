@@ -61,6 +61,8 @@ public class Server implements PreferenceChangeListener {
      */
     public static final RequestProcessor LOADER_RP = new RequestProcessor(Client.class);
 
+    private final RequestProcessor streamLoader = new RequestProcessor(Client.class.getName(), 10);
+    
     public Server(GraphDocument rootDocument, GroupCallback callback, boolean binary) {
         this.binary = binary;
         this.rootDocument = rootDocument;
@@ -108,7 +110,7 @@ public class Server implements PreferenceChangeListener {
                             clientSocket.close();
                             return;
                         }
-                        NETWORK_RP.post(new Client(clientSocket, rootDocument, callback, binary, LOADER_RP), 0, Thread.MAX_PRIORITY);
+                        NETWORK_RP.post(new Client(clientSocket, rootDocument, callback, binary, streamLoader), 0, Thread.MAX_PRIORITY);
                     } catch (IOException ex) {
                         serverSocket = null;
                         NotifyDescriptor message = new NotifyDescriptor.Message(

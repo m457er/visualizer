@@ -35,17 +35,14 @@ import org.graalvm.visualizer.data.Group;
 import org.graalvm.visualizer.data.InputBlock;
 import org.graalvm.visualizer.data.InputEdge;
 import org.graalvm.visualizer.data.InputGraph;
-import org.graalvm.visualizer.data.InputNode;
 import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.serialization.BinarySource;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
 import org.graalvm.visualizer.data.serialization.ModelBuilder;
 import org.graalvm.visualizer.data.serialization.ParseMonitor;
 import org.graalvm.visualizer.data.services.GroupCallback;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,17 +54,14 @@ import java.util.logging.Logger;
  * Data may load in a separate thread defined by `fetchExecutor', but since the whole data model is
  * single-threaded, modelExecutor is then used to attach the loaded data to the LazyContent group.
  * <p/>
- * The loaded group content may be GCed when no one holds a reference to the loaded items (graphs
- * and groups).
- * <p/>
  * This class blocks most of the {@link ModelBuilder} functionality so it creates only a few objects
- * during initial stream reading.
+ * during initial stream reading. It loads just toplevel groups.
  */
 public class ScanningModelBuilder extends ModelBuilder {
     private static final Logger LOG = Logger.getLogger(ScanningModelBuilder.class.getName());
 
-    private CachedContent streamContent;
-    private BinarySource dataSource;
+    private final CachedContent streamContent;
+    private final BinarySource dataSource;
     private final Map<Group, BaseCompleter> completors = new LinkedHashMap<>();
     private final ScheduledExecutorService fetchExecutor;
     private StreamPool pool;
@@ -226,7 +220,6 @@ public class ScanningModelBuilder extends ModelBuilder {
     private void registerEntry(StreamEntry en, long pos) {
         en.end(pos, pool);
         replacePool(pool = pool.forkIfNeeded());
-        index.addEntry(en);
     }
 
     @Override
@@ -253,10 +246,10 @@ public class ScanningModelBuilder extends ModelBuilder {
     @Override
     public Group startGroup() {
         entryStack.push(entry);
-        entry = new StreamEntry(
+        entry = index.addEntry(new StreamEntry(
             dataSource.getMajorVersion(), dataSource.getMinorVersion(),
             rootStartPos, getConstantPool()
-        );
+        ));
         if (groupLevel++ > 0) {
             return null;
         }
@@ -278,15 +271,14 @@ public class ScanningModelBuilder extends ModelBuilder {
     private String tlGraphName;
 
     private boolean scanGraph;
-    private GraphMetadata tlGraphInfo;
 
     @Override
     public InputGraph startGraph(String title) {
         entryStack.push(entry);
-        entry = new StreamEntry(
+        entry = index.addEntry(new StreamEntry(
             dataSource.getMajorVersion(), dataSource.getMinorVersion(),
             rootStartPos, getConstantPool()
-        ).setMetadata(new GraphMetadata());
+        ).setMetadata(new GraphMetadata()));
         graphLevel++;
         scanGraph = false;
         if (graphLevel == 1) {
@@ -296,7 +288,6 @@ public class ScanningModelBuilder extends ModelBuilder {
             scanGraph = true;
             if (groupLevel == 1) {
                 graphStart = rootStartPos;
-                tlGraphInfo = entry.getGraphMeta();
             }
         }
         reportProgress();
@@ -317,7 +308,6 @@ public class ScanningModelBuilder extends ModelBuilder {
         long end = dataSource.getMark();
         long len = end - graphStart;
         replacePool(pool = pool.forkIfNeeded());
-        tlGraphInfo = null;
     }
 
     @Override
