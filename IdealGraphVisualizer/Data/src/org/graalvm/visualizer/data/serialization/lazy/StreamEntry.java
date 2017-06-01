@@ -25,14 +25,14 @@
 
 package org.graalvm.visualizer.data.serialization.lazy;
 
-import java.util.concurrent.atomic.AtomicLong;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
 
 /**
  * Describes an entry in the data stream. For graphs, holds GraphMetadata
  */
 class StreamEntry {
-    static final int LARGE_ENTRY_THRESHOLD = 1024 * 1024 * 2; // 5Mbyte of serialized data
+    static final int LARGE_ENTRY_THRESHOLD = Integer.getInteger("visualizer.data.serialization.largeEntryLimit", // NOI18N
+            1024 * 1024 * 2); // 2Mbyte of serialized data
 
     /**
      * Offset in file/stream where the object starts.
@@ -88,6 +88,14 @@ class StreamEntry {
         return end;
     }
     
+    public long unfinishedSize() {
+        if (isFinished()) {
+            return end - start;
+        } else {
+            return -1;
+        }
+    }
+    
     public synchronized long size() {
         if (!isFinished()) {
             return Long.MAX_VALUE;
@@ -99,7 +107,7 @@ class StreamEntry {
         return initialPool;
     }
 
-    public ConstantPool getSkipPool() {
+    public synchronized ConstantPool getSkipPool() {
         return skipPool;
     }
 
@@ -113,5 +121,10 @@ class StreamEntry {
 
     public int getMinorVersion() {
         return minorVersion;
+    }
+    
+    public String toString() {
+        return getStart() + "[" + Integer.toHexString(System.identityHashCode(getInitialPool())) + "]-" + 
+                getEnd()+ "[" + Integer.toHexString(System.identityHashCode(getInitialPool())) + "]";
     }
 }

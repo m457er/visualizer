@@ -45,6 +45,12 @@ public class BinarySource {
     public static final Charset UTF8 = Charset.forName("UTF-8");
     public static final Charset UTF16 = Charset.forName("UTF-16");
 
+    /**
+     * For data sources on just part of stream, the base offset is the offset of the
+     * processed portion from the stream start. Used to compute absolute positions
+     * to match entries discovered during initial stream scan
+     */
+    private final long baseOffset;
     private final ByteBuffer buffer;
     private int lastPosition = 0;
     final ReadableByteChannel channel;
@@ -55,24 +61,31 @@ public class BinarySource {
     private int minorVersion;
     private MessageDigest digest;
     private boolean performDigest;
-
+    
     public BinarySource(ReadableByteChannel channel) {
-        this(channel, CURRENT_MAJOR_VERSION, CURRENT_MINOR_VERSION);
+        this(channel, CURRENT_MAJOR_VERSION, CURRENT_MINOR_VERSION, 0);
     }
 
-    public BinarySource(ReadableByteChannel channel, int major, int minor) {
+    /**
+     * Constructs source
+     * @param channel the input channel
+     * @param major major version of the protocol
+     * @param minor minor version of the protocol
+     * @param offset offset of the beginning of the channel, if reading from the middle of the data; 0 when reading whole file/stream
+     */
+    public BinarySource(ReadableByteChannel channel, int major, int minor, long offset) {
         this.majorVersion = major;
         this.minorVersion = minor;
         buffer = ByteBuffer.allocateDirect(256 * 1024);
         buffer.flip();
         this.channel = channel;
-        this.bufferOffset = 0;
+        this.bufferOffset = baseOffset = offset;
         try {
             this.digest = MessageDigest.getInstance("SHA-1"); // NOI18N
         } catch (NoSuchAlgorithmException e) {
         }
     }
-
+    
     public void useDigest(MessageDigest digest) {
         this.digest = digest;
     }
@@ -98,12 +111,18 @@ public class BinarySource {
         return minorVersion;
     }
 
+    /**
+     * @return Returns absolute position of the source stream
+     */
     public long getMark() {
         return bufferOffset + buffer.position();
     }
-
-    public void setMark(long mark) {
-
+    
+    /**
+     * @return Returns relative position of the source stream
+     */
+    public long getMarkRelative() {
+        return getMark() - baseOffset;
     }
 
     int readInt() throws IOException {
@@ -194,7 +213,7 @@ public class BinarySource {
         receiveBytes(buffer);
         buffer.flip();
     }
-
+    
     protected void receiveBytes(ByteBuffer b) throws IOException {
         if (channel.read(b) < 0) {
             throw new EOFException();
@@ -293,5 +312,9 @@ public class BinarySource {
         } else {
             return false;
         }
+    }
+    
+    public String toString() {
+        return "BinarySource@" + Integer.toHexString(System.identityHashCode(this));
     }
 }

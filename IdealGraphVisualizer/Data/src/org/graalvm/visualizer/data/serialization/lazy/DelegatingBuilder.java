@@ -38,11 +38,12 @@ import org.graalvm.visualizer.data.serialization.ConstantPool;
  * containers. All interface methods are intentionally overridable.
  */
 class DelegatingBuilder implements Builder {
+    private ModelControl poolExchange;
     /**
      * The current delegate
      */
     private Builder delegate;
-
+    
     /**
      * Switches the delegate. Subsequent calls to {@link DelegatingBuilder} implemetations will
      * delegate to the new instance. Pay attention whether {@code super.* methods} are called before
@@ -53,6 +54,9 @@ class DelegatingBuilder implements Builder {
      */
     protected final Builder delegateTo(Builder newDelegate) {
         this.delegate = newDelegate;
+        if (delegate != null && poolExchange != null) {
+            delegate.setModelControl(poolExchange);
+        }
         return newDelegate;
     }
 
@@ -77,6 +81,7 @@ class DelegatingBuilder implements Builder {
     }
 
     public InputGraph startGraph(String title) {
+        checkConstantPool();
         return delegate.startGraph(title);
     }
 
@@ -93,6 +98,7 @@ class DelegatingBuilder implements Builder {
     }
 
     public Group startGroup() {
+        checkConstantPool();
         return delegate.startGroup();
     }
 
@@ -182,5 +188,17 @@ class DelegatingBuilder implements Builder {
 
     public void startRoot() {
         delegate.startRoot();
+    }
+
+    @Override
+    public void setModelControl(ModelControl poolExchange) {
+        this.poolExchange = poolExchange;
+        if (delegate != null && poolExchange != null) {
+            delegate.setModelControl(poolExchange);
+        }
+    }
+    
+    private void checkConstantPool() {
+        assert getConstantPool() == poolExchange.getConstantPool();
     }
 }

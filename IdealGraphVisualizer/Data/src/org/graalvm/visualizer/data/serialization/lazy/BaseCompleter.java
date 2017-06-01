@@ -61,28 +61,32 @@ abstract class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvid
      * Maximum attempts to complete the group.
      */
     public static final int ATTEMPT_COUNT = 10;
-
+    
     protected final ConstantPool initialPool;
     protected final StreamEntry entry;
+    private final Env env;
 
     protected E toComplete;
 
     private volatile KeepDataFuture future;
     private Feedback feedbackToFinish;
 
-    // diagnostics only
-    private int attemptCount;
-    
+    /**
+     * Partial data. Data is held during completion, and released when the completer
+     * finishes - they should be weakreferenced after through {@link KeepDataFuture}
+     */
     private T partialData = createEmpty();
 
     /**
      * Will keep the currently resolved elements until the events are delivered by the executor.
      */
     private T keepElements;
+    
+    // for diagnostics
     private String name;
-    private final Env env;
     BaseCompleter(Env env, StreamEntry entry) {
         this.env = env;
+        // intentionally NOT a clone, so that it has the same hash
         this.initialPool = entry.getInitialPool();
         this.entry = entry;
     }
@@ -97,7 +101,9 @@ abstract class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvid
         if (LOG.isLoggable(Level.FINER)) {
             LOG.log(Level.FINER, "Created completer for {0}, pool id {1}, start = {2}, end = {3}",
                             new Object[]{
-                                            name, System.identityHashCode(initialPool), entry.getStart(), entry.getEnd()
+                                name, 
+                                Integer.toHexString(System.identityHashCode(initialPool)), 
+                                entry.getStart(), entry.getEnd()
                             });
         }
     }
@@ -135,20 +141,24 @@ abstract class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvid
      * Sends changed event from the completed group. This method runs first in the
      * {@link #EXPAND_RP} - it is posted so that the code executes <b>after</b> the computing task
      * finishes, and the {@link Future#isDone} turns true. The actual event delivery is replanned
-     * into EDT, to maintain IGV threading model. This way
+     * into EDT, to maintain IGV threading model.
      */
     public void run() {
         env().getModelExecutor().execute(() -> {
             LOG.log(Level.FINER, "Expanding/notifying group " + name);
             Feedback f;
-
+            synchronized (this) {
+                partialData = null;
+            }
+            // must fire BEFORE keepElements is cleared, so that change event client
+            // will really get the contents.
+            toComplete.getChangedEvent().fire();
+            
             synchronized (BaseCompleter.this) {
                 keepElements = null;
                 f = feedbackToFinish;
                 feedbackToFinish = null;
-                partialData = null;
             }
-            toComplete.getChangedEvent().fire();
             if (f != null) {
                 f.finish();
             }
@@ -205,25 +215,9 @@ abstract class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvid
         }
 
         @Override
+        @SuppressWarnings("UseSpecificCatch")
         public T call() throws Exception {
             T newElements;
-                /*
-            synchronized (BaseCompleter.this) {
-                if (entry.getEnd() < 0) {
-                    if (attemptCount++ > ATTEMPT_COUNT) {
-                        LOG.log(Level.WARNING, "Completion of Group {0} timed out", name);
-                        return invokeEvent(createEmpty());
-                    }
-                    LOG.log(Level.FINE, "Group {0} not fully read, rescheduling; attempt #{1}", new Object[]{
-                                    name, attemptCount
-                    });
-                    // reschedule, since
-                    Future f = env.getFetchExecutor().schedule(this, RESCHEDULE_DELAY, TimeUnit.MILLISECONDS);
-                    future.replaceDelegate(f);
-                    return null;
-                }
-            }
-                */
             newElements = createEmpty();
             LOG.log(Level.FINER, "Reading group {0}, range {1}-{2}", new Object[]{name, entry.getStart(), entry.getEnd()});
             completingThread.set(true);
@@ -235,10 +229,11 @@ abstract class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvid
                 throw ex;
             } catch (Throwable ex) {
                 LOG.log(Level.WARNING, "Error during completion of group " + name, ex);
+                newElements = partialData();
             } finally {
                 synchronized (BaseCompleter.this) {
                     keepElements = newElements;
-                    LOG.log(Level.FINER, "Scheduling expansion of group  " + name);
+                    LOG.log(Level.FINER, "Scheduling expansion of group  {0}", name);
                     invokeEvent(newElements);
                 }
             }
@@ -248,12 +243,10 @@ abstract class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvid
 
     /**
      * Wrapper for the Future, which keeps the whole FolderElement list in memory as long as at
-     * least some item is alive. Also allows to rebind the delegate Future, so the completion task
-     * can be rescheduled.
+     * least some item is alive. 
      */
     class KeepDataFuture implements Future<T>, ChangedListener {
-        private volatile Future<T> delegate;
-        private boolean resolved;
+        private final Future<T> delegate;
         private volatile boolean done;
         private volatile T items;
         private volatile boolean cancel;
@@ -270,10 +263,6 @@ abstract class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvid
 
         void cancel() {
             this.cancel = true;
-        }
-
-        void replaceDelegate(Future<T> del) {
-            this.delegate = del;
         }
 
         @Override
@@ -301,27 +290,10 @@ abstract class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvid
         
         @Override
         public T get() throws InterruptedException, ExecutionException {
-            T res;
-
-            // if the Future completes, but the done flag is still false, loop back as new delegate
-            // may be in effect
-            Future<T> last;
-            do {
-                last = delegate;
-                res = last.get();
-            } while (!done && last != delegate);
-
-            boolean r;
-
+            T res = delegate.get();
             synchronized (this) {
                 items = res;
-                // register just once.
-                r = this.resolved;
-                this.resolved = true;
             }
-            /*
-             * if (!r) { hookData(res); }
-             */
             return res;
         }
 
@@ -335,8 +307,10 @@ abstract class BaseCompleter<T, E extends Group.LazyContent & ChangedEventProvid
         }
     }
     
-    protected synchronized void setPartialData(T partialData) {
-        this.partialData = partialData;
+    protected void setPartialData(T partialData) {
+        synchronized (this) {
+            this.partialData = partialData;
+        }
         env().getModelExecutor().execute(() -> {
             toComplete.getChangedEvent().fire();
         });

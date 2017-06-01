@@ -43,8 +43,14 @@ class LoadSupport<T> implements Group.LazyContent<T> {
     private static final Logger LOG = Logger.getLogger(LoadSupport.class.getName());
     private static final Reference EMPTY = new WeakReference(null);
 
-    private final Completer<T> completer;
-
+    // access by testing code
+    final Completer<T> completer;
+    
+    /**
+     * For testing only, prevents nondeterministic behaviour of softrefs
+     */
+    static boolean _testUseWeakRefs;
+    
     private volatile Reference<Future<T>> processing = EMPTY;
     private String name;
 
@@ -75,26 +81,49 @@ class LoadSupport<T> implements Group.LazyContent<T> {
     }
     
     public T partialData() {
-        return completer == null ? emptyData() : completer.partialData();
-    }
-
-    public T getContents() {
-        try {
-            if (completer != null && !completer.canComplete()) {
+        Future<T> f = processing.get();
+        T data = completer == null ? emptyData() : completer.partialData();
+        if (f != null && f.isDone()) {
+            // rather get future's final result, check for .isDone() must be done after
+            // partial query
+            try {
+                return f.get();
+            } catch (InterruptedException | ExecutionException ex) {
+                Logger.getLogger(LoadSupport.class.getName()).log(Level.SEVERE, null, ex);
                 return emptyData();
             }
+        }
+        return data;
+    }
+    
+    private Reference<Future> getContentsRef = new WeakReference<>(null);
+
+    /**
+     * Returns the lazy-loaded contents, or partial contents. The first call to 
+     * getContents will block. Subsequent calls will yield partial results; clients
+     * are required to observe change event to receive additional results.
+     * @return possibly partial contents
+     */
+    public T getContents() {
+        try {
             Future<T> wait;
             synchronized (this) {
-                Future<T> f = completeContents(null);
-                if (f.isDone()) {
-                    return f.get();
-                } else {
-                    Future<T> cur;
+                if (completer != null && !completer.canComplete()) {
+                    // if cannot complete, e.g. it's in the completion thread itself,
+                    // attempt to get at least partial data
+                    T x = completer.partialData();
+                    if (x != null) {
+                        return x;
+                    } else {
+                        return emptyData();
+                    }
+                }
+                Future<T> cur = processing.get();
+                wait = completeContents(null);
+                if (!wait.isDone()) {
                     // HACK: first attempt to blindly getContents will block on the future.
                     // After computation launches (cur == wait), other attempts will try to return at least
                     // partial data, if the completer is willing to produce it.
-                    cur = processing.get();
-                    wait = completeContents(null);
                     if (cur == wait) {
                         if (completer != null) {
                             T x = completer.partialData();
@@ -102,6 +131,8 @@ class LoadSupport<T> implements Group.LazyContent<T> {
                                 return x;
                             }
                         }
+//                    } else if (cur == null) {
+//                        getContentsRef = new WeakReference<>(wait);
                     }
                 }
             }
@@ -136,7 +167,7 @@ class LoadSupport<T> implements Group.LazyContent<T> {
                 }
             }
             LOG.log(Level.FINE, "Contents of group " + name + " not available, scheduling fetch");
-            this.processing = new WeakReference<>(f);
+            this.processing = _testUseWeakRefs ? new WeakReference<>(f) : new SoftReference<>(f);
         }
         return f;
     }

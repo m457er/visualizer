@@ -116,13 +116,13 @@ final class GroupCompleter extends BaseCompleter<List<? extends FolderElement>, 
     }
 
     protected List<? extends FolderElement> load(ReadableByteChannel channel, int majorVersion, int minorVersion, Feedback feedback) throws IOException {
-        BinarySource bs = new BinarySource(channel, majorVersion, minorVersion);
+        BinarySource bs = new BinarySource(channel, majorVersion, minorVersion, entry.getStart());
         SingleGroupBuilder builder = new SingleGroupBuilder(
-                        toComplete, env(), bs,
-                        streamIndex, entry,
-                        feedback,
-                        firstExpand, 
-                        entry.getEnd() == -1 ? this::setPartialData : null);
+                            toComplete, env(), bs,
+                            streamIndex, entry,
+                            feedback,
+                            firstExpand, 
+                            this::setPartialData);
         firstExpand = false;
         new BinaryReader(bs, builder).parse();
         List<? extends FolderElement> els = builder.getItems();

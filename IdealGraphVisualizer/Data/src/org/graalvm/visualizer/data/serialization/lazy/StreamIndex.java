@@ -25,22 +25,55 @@
 
 package org.graalvm.visualizer.data.serialization.lazy;
 
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Collects objects present in the stream. Currently only holds position-based Map of metadata, but
  * created as holder class to support future extensions
  */
 final class StreamIndex {
-    private Map<Long, StreamEntry> map = new HashMap<>();
-
-    public StreamEntry addEntry(StreamEntry en) {
+    private static final Logger LOG = Logger.getLogger(StreamIndex.class.getName());
+    
+    private final Map<Long, StreamEntry> map = new LinkedHashMap<>();
+    private long largestOffset = -1;
+    
+    public synchronized StreamEntry addEntry(StreamEntry en) {
         StreamEntry res = map.putIfAbsent(en.getStart(), en);
+        largestOffset = Math.max(en.getStart(), largestOffset);
+        notifyAll();
         return res == null ? en : res;
     }
 
-    public StreamEntry get(long position) {
+    public synchronized StreamEntry get(long position) {
+        waitOffset(position);
         return map.get(position);
+    }
+    
+    public void waitOffset(long offset) {
+        synchronized (this) {
+            while (offset > largestOffset) {
+                try {
+                    LOG.log(Level.FINER, "Waiting for indexer to reach offset {0}", offset);
+                    wait();
+                } catch (InterruptedException ex) {
+                    LOG.log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }
+    
+    public synchronized void close() {
+        LOG.log(Level.FINER, "Index closing, largest entry offset: {0}", largestOffset);
+        largestOffset = Long.MAX_VALUE;
+        notifyAll();
+    }
+    
+    public Iterator<StreamEntry> iterator() {
+        return Collections.unmodifiableMap(map).values().iterator();
     }
 }

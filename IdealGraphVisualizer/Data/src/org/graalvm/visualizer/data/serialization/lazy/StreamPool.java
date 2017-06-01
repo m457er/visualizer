@@ -24,6 +24,7 @@
 
 package org.graalvm.visualizer.data.serialization.lazy;
 
+import java.util.ArrayList;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
 import java.util.BitSet;
 import java.util.List;
@@ -33,12 +34,17 @@ import java.util.List;
  * can be forked, if necessary, leaving original undamaged data in the original instance, and
  * produces a new instance with latest data/content.
  */
-public class StreamPool extends ConstantPool {
+class StreamPool extends ConstantPool {
     private List<Object> originalData;
-    private final BitSet itemRead = new BitSet();
+    protected final BitSet itemRead = new BitSet();
     // for testing
     protected final int generation;
     private int entriesAdded;
+    
+    /**
+     * The pool is immutable.
+     */
+    private boolean frozen;
 
     public StreamPool() {
         this.generation = 0;
@@ -56,11 +62,18 @@ public class StreamPool extends ConstantPool {
     @Override
     public Object get(int index, long where) {
         itemRead.set(index);
-        return super.get(index, where);
+        Object res = super.get(index, where);
+        if (res == null) {
+            throw new IllegalStateException("Pool inconsistency");
+        }
+        return res;
     }
-
+    
     @Override
     public synchronized Object addPoolEntry(int index, Object obj, long where) {
+        if (frozen) {
+            throw new IllegalStateException("Pool copy is frozen");
+        }
         if (size() > index) {
             if (itemRead.get(index)) {
                 if (originalData == null) {
@@ -72,17 +85,31 @@ public class StreamPool extends ConstantPool {
         return super.addPoolEntry(index, obj, where);
     }
 
+    @Override
+    public synchronized ConstantPool copy() {
+        if (frozen || originalData == null) {
+            return super.copy();
+        } else {
+            return create(new ArrayList<>(originalData));
+        }
+    }
+    
     public synchronized StreamPool forkIfNeeded() {
         totalEntries.addAndGet(entriesAdded);
         entriesAdded = 0;
         if (originalData != null) {
             ConstantPool r = swap(originalData);
             originalData = null;
+            this.frozen = true;
             itemRead.clear();
             return (StreamPool) r;
         } else {
             return this;
         }
+    }
+    
+    public boolean modified() {
+        return originalData != null;
     }
 
 }

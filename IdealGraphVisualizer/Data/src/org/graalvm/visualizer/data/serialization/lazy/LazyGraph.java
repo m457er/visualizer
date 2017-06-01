@@ -44,7 +44,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Implementation which loads the data lazily
  */
-public class LazyGraph extends InputGraph implements Group.LazyContent<Collection<InputNode>>, ChangedEventProvider<InputGraph> {
+class LazyGraph extends InputGraph implements Group.LazyContent<Collection<InputNode>>, ChangedEventProvider<InputGraph> {
     private final ChangedEvent<InputGraph> changedEvent = new ChangedEvent(this);
     private final LoadSupport<GraphData> cSupport;
     private final GraphMetadata meta;
@@ -266,5 +266,10 @@ public class LazyGraph extends InputGraph implements Group.LazyContent<Collectio
             index = set.nextSetBit(index + 1);
             return n;
         }
+    }
+    
+    // testing only
+    static StreamEntry lazyGraphEntry(LazyGraph g) {
+        return ((GraphCompleter)g.cSupport.completer).entry;
     }
 }

@@ -56,11 +56,6 @@ public class Server implements PreferenceChangeListener {
      */
     private static final RequestProcessor NETWORK_RP = new RequestProcessor(Server.class.getName(), MAX_PARALLEL_READS);
 
-    /**
-     * Lazy-loading RP.
-     */
-    public static final RequestProcessor LOADER_RP = new RequestProcessor(Client.class);
-
     private final RequestProcessor streamLoader = new RequestProcessor(Client.class.getName(), 10);
     
     public Server(GraphDocument rootDocument, GroupCallback callback, boolean binary) {

@@ -40,7 +40,7 @@ public final class CancelableSource extends BinarySource implements ParseMonitor
     private final StreamEntry entry;
     private final Feedback feedback;
     private final ParseMonitor delegate;
-
+    
     public CancelableSource(ParseMonitor delegate, ReadableByteChannel channel) {
         super(channel);
         this.delegate = delegate;
@@ -54,18 +54,22 @@ public final class CancelableSource extends BinarySource implements ParseMonitor
         this.feedback = feedback;
         this.delegate = null;
     }
+    
+    private int pos() {
+        return (int)getMarkRelative();
+    }
 
     @Override
     public void updateProgress() {
         if (feedback != null) {
-            feedback.reportProgress((int) getMark(), (int) entry.size(), null);
+            feedback.reportProgress(pos(), (int) entry.unfinishedSize(), null);
         }
     }
 
     @Override
     public void setState(String state) {
         if (feedback != null) {
-            feedback.reportProgress((int) getMark(), (int) entry.size(), state);
+            feedback.reportProgress(pos(), (int) entry.unfinishedSize(), state);
         }
     }
 

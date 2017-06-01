@@ -190,4 +190,8 @@ final class LazyGroup extends Group implements Group.LazyContent {
         return sb.toString();
     }
 
+    // testing only
+    static StreamEntry lazyGroupEntry(LazyGroup g) {
+        return ((GroupCompleter)g.cSupport.completer).entry;
+    }
 }

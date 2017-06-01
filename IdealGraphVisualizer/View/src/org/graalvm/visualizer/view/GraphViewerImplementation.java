@@ -97,20 +97,33 @@ public class GraphViewerImplementation implements GraphViewer {
             private final ProgressHandle ph = ProgressHandle.createHandle(title, this);
             private final AtomicBoolean cancelled = new AtomicBoolean();
             private volatile Future waitFor;
+            private int lastTotal;
 
             @Override
             public void reportProgress(int workDone, int totalWork, String description) {
                 synchronized (this) {
                     if (!start) {
-                        ph.start(totalWork);
+                        if (totalWork == -1) {
+                            ph.start();
+                        } else {
+                            ph.start(totalWork);
+                        }
                         start = true;
                     }
                 }
+                if (totalWork != lastTotal) {
+                    ph.switchToDeterminate(totalWork);
+                }
                 if (description != null) {
-                    ph.progress(description, workDone);
-                } else {
+                    if (totalWork > 0) {
+                        ph.progress(description, workDone);
+                    } else {
+                        ph.progress(description);
+                    }
+                } else if (totalWork > 0) {
                     ph.progress(workDone);
                 }
+                lastTotal = totalWork;
             }
 
             @Override

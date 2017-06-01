@@ -35,6 +35,7 @@ import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import org.graalvm.visualizer.util.ListenerSupport;
 import java.util.concurrent.Future;
 import org.graalvm.visualizer.data.Group.LazyContent;
@@ -81,8 +82,8 @@ public class FolderNode extends AbstractNode {
         private final Folder folder;
         private ChangedListener l;
         // delay refreshing UI for ~200ms to batch changes.
-        private final RequestProcessor.Task   refreshTask = REFRESH_RP.create(this::refreshKeys, true);
-
+        private RequestProcessor.Task   refreshTask;
+        
         public FolderChildren(Folder folder) {
             this.folder = folder;
         }
@@ -122,7 +123,12 @@ public class FolderNode extends AbstractNode {
 
         @Override
         public void changed(Folder source) {
-            refreshTask.schedule(200);
+            synchronized (this) {
+                if (refreshTask == null) {
+                    // delay first refresh for 200ms
+                    refreshTask = REFRESH_RP.post(this::refreshKeys, 200);
+                }
+            }
         }
 
         @NbBundle.Messages({
@@ -133,12 +139,15 @@ public class FolderNode extends AbstractNode {
                         "# {0} - name of the loaded folder",
                         "MSG_ExpansionCancelled=Expansion of {0} cancelled"
         })
-        class Feedback implements Group.Feedback, Cancellable {
+        class Feedback implements Group.Feedback, Cancellable, Runnable {
             final AtomicBoolean cancelled = new AtomicBoolean();
             ProgressHandle handle;
             Future f;
             boolean indeterminate;
-
+            RequestProcessor.Task   cancelIndeterminate = REFRESH_RP.create(this, true);
+            boolean removed;
+            int lastTotal;
+            
             String name() {
                 return ((Group) folder).getName();
             }
@@ -147,28 +156,60 @@ public class FolderNode extends AbstractNode {
                 this.f = f;
             }
 
+            @Override
+            public void run() {
+                synchronized (this) {
+                    if (indeterminate) {
+                        init(1);
+                        handle.finish();
+                        removed = true;
+                    }
+                }
+            }
+
             private void init(int total) {
+                if (removed) {
+                    return;
+                }
                 if (handle == null) {
                     handle = ProgressHandle.createHandle(Bundle.MSG_Loading(name()), this);
                     if (total > 0) {
-                        handle.start(Math.max(1, total));
+                        handle.start(total);
                     } else {
-                        handle.switchToIndeterminate();
                         handle.start();
+                        handle.switchToIndeterminate();
                         indeterminate = true;
                     }
+                    lastTotal = total;
                 } else if (indeterminate && total > 0) {
                     handle.switchToDeterminate(total);
+                    lastTotal = total;
+                } else if (lastTotal < total) {
+                    handle.switchToDeterminate(total);
+                    lastTotal = total;
                 }
             }
 
             @Override
             public void reportProgress(int workDone, int totalWork, String description) {
-                init(totalWork);
+                synchronized (this) {
+                    init(totalWork);
+                    if (removed) {
+                        return;
+                    }
+                }
                 if (description != null) {
-                    handle.progress(description, workDone);
-                } else {
-                    handle.progress(workDone);
+                    if (totalWork > 0) {
+                        handle.progress(description, Math.min(lastTotal, workDone));
+                    } else {
+                        handle.progress(description);
+                    }
+                } else if (totalWork > 0) {
+                    handle.progress(Math.min(lastTotal, workDone));
+                }
+                if (indeterminate) {
+                    // cancel indeterminate (for unfinished entries) progress after some time, so it does not obscur
+                    cancelIndeterminate.schedule(5000);
                 }
             }
 
@@ -187,6 +228,9 @@ public class FolderNode extends AbstractNode {
             public void finish() {
                 // same sync as in refreshKeys
                 synchronized (FolderChildren.this) {
+                    if (removed) {
+                        return;
+                    }
                     if (!f.isDone()) {
                         StatusDisplayer.getDefault().setStatusText(Bundle.MSG_ExpansionFailed(name()), StatusDisplayer.IMPORTANCE_ANNOTATION);
                     } else if (f.isCancelled()) {
@@ -199,19 +243,28 @@ public class FolderNode extends AbstractNode {
         }
 
         private synchronized void refreshKeys() {
+            refreshTask = null;
+            List<FolderElement> elements;
             if (folder instanceof Group.LazyContent) {
                 LazyContent<List<? extends FolderElement>> lazyFolder = (LazyContent) folder;
                 Feedback feedback = new Feedback();
                 Future<List<? extends FolderElement>> fContents = lazyFolder.completeContents(feedback);
                 if (!fContents.isDone()) {
                     feedback.setFuture(fContents);
-                    List partial = new ArrayList<>(lazyFolder.partialData());
-                    partial.add(WAIT_KEY);
-                    setKeys(partial);
-                    return;
+                    elements = new ArrayList<>(lazyFolder.partialData());
+                    elements.add(WAIT_KEY);
+                } else {
+                    try {
+                        elements = (List)fContents.get();
+                    } catch (InterruptedException | ExecutionException ex) {
+                        // ignore, reported elsewhere
+                        return;
+                    }
                 }
+            } else {
+                elements = (List)folder.getElements();
             }
-            this.setKeys(folder.getElements());
+            this.setKeys(elements);
         }
     }
 
