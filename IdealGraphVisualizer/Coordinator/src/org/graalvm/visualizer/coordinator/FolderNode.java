@@ -137,6 +137,7 @@ public class FolderNode extends AbstractNode {
             final AtomicBoolean cancelled = new AtomicBoolean();
             ProgressHandle handle;
             Future f;
+            boolean indeterminate;
 
             String name() {
                 return ((Group) folder).getName();
@@ -149,12 +150,15 @@ public class FolderNode extends AbstractNode {
             private void init(int total) {
                 if (handle == null) {
                     handle = ProgressHandle.createHandle(Bundle.MSG_Loading(name()), this);
-                    if (f.isDone()) {
+                    if (total > 0) {
                         handle.start(Math.max(1, total));
                     } else {
                         handle.switchToIndeterminate();
                         handle.start();
+                        indeterminate = true;
                     }
+                } else if (indeterminate && total > 0) {
+                    handle.switchToDeterminate(total);
                 }
             }
 
