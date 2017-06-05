@@ -177,7 +177,7 @@ public final class ImportAction extends SystemAction {
                                         src,
                                         content,
                                         new GraphDocument(), monitor,
-                                        (r) -> r.run(), LOADER_RP);
+                                        SwingUtilities::invokeLater, LOADER_RP);
                         parser = new BinaryReader(src, bld);
                     } else {
                         parser = null;
