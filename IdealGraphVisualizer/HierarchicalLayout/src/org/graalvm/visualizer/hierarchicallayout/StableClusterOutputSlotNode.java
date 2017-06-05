@@ -17,7 +17,7 @@ public final class StableClusterOutputSlotNode implements Vertex{
     private Cluster cluster;
     private StableClusterOutgoingConnection conn;
     private String id;
-    private boolean visible = true;
+    private boolean visible = false;
     
     
     public StableClusterOutputSlotNode(StableClusterNode n, String id) {
