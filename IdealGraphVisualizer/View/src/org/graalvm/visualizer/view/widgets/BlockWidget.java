@@ -32,24 +32,80 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.Stroke;
 import java.awt.geom.Rectangle2D;
-import org.netbeans.api.visual.widget.Scene;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.graalvm.visualizer.data.InputNode;
+import org.graalvm.visualizer.util.DoubleClickAction;
+import org.graalvm.visualizer.util.DoubleClickHandler;
+import org.graalvm.visualizer.view.DiagramScene;
+import org.netbeans.api.visual.action.WidgetAction;
+import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 
 public final class BlockWidget extends Widget {
 
-    public static final int BORDER = 20;
     public static final Color BACKGROUND_COLOR = new Color(235, 235, 255);
+    public static final Color BACKGROUND_COLOR_SELECTED = new Color(225, 225, 255);
     private static final Font TITLE_FONT = new Font("Serif", Font.PLAIN, 14).deriveFont(Font.BOLD);
     private final InputBlock blockNode;
     private final Diagram diagram;
+    private final DiagramScene scene;
 
-    public BlockWidget(Scene scene, Diagram d, InputBlock blockNode) {
+    public BlockWidget(DiagramScene scene, Diagram diagram, InputBlock blockNode) {
         super(scene);
+        this.scene = scene;
+        this.diagram = diagram;
         this.blockNode = blockNode;
-        this.diagram = d;
+
         this.setBackground(BACKGROUND_COLOR);
         this.setOpaque(true);
         this.setCheckClipping(true);
+
+        this.getActions().addAction(new DoubleClickAction(new BlockDoubleClick()));
+    }
+
+    private class BlockDoubleClick implements DoubleClickHandler {
+
+        @Override
+        public void handleDoubleClick(Widget w, WidgetAction.WidgetMouseEvent e) {
+            if (scene.getModel().getHiddenNodes().isEmpty()) {
+                // no selected nodes - extract
+                scene.getModel().showOnly(new HashSet<>(blockNode.getNodes()));
+
+            } else {
+                toggleVisibility(collectSourceNodes(blockNode));
+            }
+        }
+
+        private Set<Integer> collectSourceNodes(InputBlock block) {
+            return block.getNodes().stream()
+                    .map(InputNode::getId)
+                    .collect(Collectors.toSet());
+        }
+
+        private void toggleVisibility(Set<Integer> selectedNodes) {
+            Set<Integer> hiddenNodes = scene.getModel().getHiddenNodes();
+ 
+            Set<Integer> hiddenSelected = new LinkedHashSet<>(hiddenNodes);
+            hiddenSelected.retainAll(selectedNodes);
+ 
+            if (hiddenSelected.isEmpty()) {
+                // all selected figures are visible
+                int size = hiddenNodes.size() + selectedNodes.size();
+                Set<Integer> toHide = new LinkedHashSet<>(size);
+                toHide.addAll(hiddenNodes);
+                toHide.addAll(selectedNodes);
+                scene.getModel().showNot(toHide);
+            } else {
+                // some of selected figures are hidden
+                Set<Integer> toHide = new LinkedHashSet<>();
+                toHide.addAll(hiddenNodes);
+                toHide.removeAll(selectedNodes);
+                scene.getModel().showNot(toHide);
+            }
+        }
     }
 
     @Override
@@ -75,4 +131,16 @@ public final class BlockWidget extends Widget {
         g.drawString(s, r.x + 5, r.y + (int) r1.getHeight());
         g.setStroke(old);
     }
+
+    @Override
+    protected void notifyStateChanged(ObjectState previousState, ObjectState state) {
+        super.notifyStateChanged(previousState, state);
+
+        if (state.isSelected() || state.isHighlighted()) {
+            this.setBackground(BACKGROUND_COLOR_SELECTED);
+        } else {
+            this.setBackground(BACKGROUND_COLOR);
+        }
+    }
+
 }

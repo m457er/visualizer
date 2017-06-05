@@ -24,6 +24,7 @@
  */
 package org.graalvm.visualizer.view;
 
+import org.graalvm.visualizer.data.InputBlock;
 import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.data.ChangedListener;
 import org.graalvm.visualizer.data.InputNode;
@@ -40,6 +41,7 @@ import java.awt.Color;
 import java.util.*;
 import org.graalvm.visualizer.util.ListenerSupport;
 import java.util.stream.Collectors;
+import org.openide.util.Lookup;
 
 public class DiagramViewModel extends RangeSliderModel implements ChangedListener<RangeSliderModel> {
 
@@ -57,6 +59,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
      * remembered using node IDs, so it can be adapted when the graph display changes.
      */
     private Set<InputNode> selectedNodes;
+    private Set<InputBlock> selectedBlocks;
     private FilterChain filterChain;
     private FilterChain sequenceFilterChain;
     private Diagram diagram;
@@ -182,6 +185,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         this.sequenceFilterChain = sequenceFilterChain;
         hiddenNodes = new HashSet<>();
         selectedNodes = new HashSet<>();
+        selectedBlocks = new HashSet<>();
         super.getChangedEvent().addListener(this);
         diagramChangedEvent = new ChangedEvent<>(this);
         viewChangedEvent = new ChangedEvent<>(this);
@@ -299,6 +303,15 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         }
         setColors(colors);
         viewChangedEvent.fire();
+    }
+
+    public void setSelectedBlocks(Set<InputBlock> blocks) {
+        selectedBlocks.clear();
+        selectedBlocks.addAll(blocks);
+    }
+
+    public Set<InputBlock> getSelectedBlocks() {
+        return Collections.unmodifiableSet(selectedBlocks);
     }
 
     public void showNot(final Set<Integer> nodes) {
@@ -427,9 +440,27 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
                                 "colorize('state', 'same', white);" + "colorize('state', 'changed', orange);" + "colorize('state', 'new', green);" + "colorize('state', 'deleted', red);");
                 f.apply(diagram);
             }
+
+            CollapseManager cm = Lookup.getDefault().lookup(CollapseManager.class);
+            if (cm.isActive()) {
+                // blocks needs to be initialized
+                initBlocks(diagram);
+
+                cm.apply(diagram);
+            }
         }
 
         return diagram;
+    }
+
+    private void initBlocks(Diagram diagram) {
+        InputGraph graph = diagram.getGraph();
+
+        if (graph.getBlocks().isEmpty()) {
+            graph.clearBlocks();
+            graph.ensureNodesInBlocks();
+            diagram.updateBlocks();
+        }
     }
 
     public InputGraph getGraphToView() {

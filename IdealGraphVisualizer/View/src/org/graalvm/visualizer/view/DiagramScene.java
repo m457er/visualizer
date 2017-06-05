@@ -99,6 +99,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JViewport;
 import javax.swing.SwingUtilities;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.undo.AbstractUndoableEdit;
@@ -332,6 +333,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
             content.set(newSet, null);
 
             Set<InputNode> nodeSelection = new HashSet<>();
+            Set<InputBlock> blockSelection = new HashSet<>();
             for (Object o : newSet) {
                 InstanceContent nodeContent = new InstanceContent();
                 Lookup nodeLookup = new AbstractLookup(nodeContent);
@@ -365,12 +367,15 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
                         nodeContent.add(n);
                     }
                     nodeSelection.addAll(((Slot) o).getSource().getSourceNodes());
+                } else if (o instanceof InputBlock) {
+                    blockSelection.add((InputBlock) o);
                 }
                 if (node != null) {
                     content.add(node);
                 }
             }
             getModel().setSelectedNodes(nodeSelection);
+            getModel().setSelectedBlocks(blockSelection);
 
             boolean b = selectedCoordinatorListener.isEnabled();
             selectedCoordinatorListener.setEnabled(false);
@@ -575,6 +580,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         if (getModel().getShowBlocks()) {
             for (InputBlock bn : d.getGraph().getBlocks()) {
                 BlockWidget w = new BlockWidget(this, d, bn);
+                w.getActions().addAction(selectAction);
                 w.setVisible(false);
                 this.addObject(bn, w);
                 blockLayer.addChild(w);
@@ -1027,28 +1033,32 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
     }
 
     private void centerRectangle(Rectangle r) {
+        final JViewport viewport = getScrollPane().getViewport();
 
-        if (getScrollPane().getViewport().getViewRect().width == 0 || getScrollPane().getViewport().getViewRect().height == 0) {
+        if (viewport.getViewRect().width == 0 || viewport.getViewRect().height == 0) {
             return;
         }
 
-        Rectangle r2 = new Rectangle(r.x, r.y, r.width, r.height);
-        r2 = convertSceneToView(r2);
+        Rectangle r2 = convertSceneToView(new Rectangle(r.x, r.y, r.width, r.height));
 
-        double factorX = (double) r2.width / (double) getScrollPane().getViewport().getViewRect().width;
-        double factorY = (double) r2.height / (double) getScrollPane().getViewport().getViewRect().height;
+        double factorX = (double) r2.width / viewport.getViewRect().width;
+        double factorY = (double) r2.height / viewport.getViewRect().height;
         double factor = Math.max(factorX, factorY);
+
         if (factor >= 1.0) {
-            Point p = getScrollPane().getViewport().getViewPosition();
             setZoomFactor(getZoomFactor() / factor);
             r2.x /= factor;
             r2.y /= factor;
             r2.width /= factor;
             r2.height /= factor;
-            getScrollPane().getViewport().setViewPosition(calcCenter(r2));
-        } else {
-            getScrollPane().getViewport().setViewPosition(calcCenter(r2));
         }
+
+        Point startPosition = viewport.getViewPosition();
+        Point finalPosition = calcCenter(r2);
+
+        Lookup.getDefault()
+                .lookup(TransitionAnimationProvider.class)
+                .translate(startPosition, finalPosition, 500, viewport::setViewPosition);
     }
 
     @Override

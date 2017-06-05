@@ -232,16 +232,25 @@ public final class LineWidget extends Widget implements PopupMenuProvider {
         g.setStroke(oldStroke);
     }
 
-    private void setHighlighted(boolean b) {
+    private enum HighlightType { PREDECESSORS, SUCCESSORS, BOTH }
+
+    private void setHighlighted(boolean b, HighlightType type) {
         this.highlighted = b;
-        Set<Object> highlightedObjects = new HashSet<Object>(scene.getHighlightedObjects());
+        Set<Object> highlightedObjects = new HashSet<>(scene.getHighlightedObjects());
         Set<Object> highlightedObjectsChange = new HashSet<>();
+        
         for (Connection c : connections) {
-            highlightedObjectsChange.add(c.getInputSlot().getFigure());
-            highlightedObjectsChange.add(c.getInputSlot());
-            highlightedObjectsChange.add(c.getOutputSlot().getFigure());
-            highlightedObjectsChange.add(c.getOutputSlot());
+            if (type == HighlightType.BOTH || type == HighlightType.SUCCESSORS) {
+                highlightedObjectsChange.add(c.getInputSlot().getFigure());
+                highlightedObjectsChange.add(c.getInputSlot());
+            }
+
+            if (type == HighlightType.BOTH || type == HighlightType.PREDECESSORS) {
+                highlightedObjectsChange.add(c.getOutputSlot().getFigure());
+                highlightedObjectsChange.add(c.getOutputSlot());
+            }
         }
+        
         if (b) {
             highlightedObjects.addAll(highlightedObjectsChange);
         } else {
@@ -271,17 +280,17 @@ public final class LineWidget extends Widget implements PopupMenuProvider {
     private void setRecursiveHighlighted(boolean b) {
         LineWidget cur = predecessor;
         while (cur != null) {
-            cur.setHighlighted(b);
+            cur.setHighlighted(b, HighlightType.PREDECESSORS);
             cur = cur.predecessor;
         }
 
         highlightSuccessors(b);
-        this.setHighlighted(b);
+        this.setHighlighted(b, HighlightType.BOTH);
     }
 
     private void highlightSuccessors(boolean b) {
         for (LineWidget s : successors) {
-            s.setHighlighted(b);
+            s.setHighlighted(b, HighlightType.SUCCESSORS);
             s.highlightSuccessors(b);
         }
     }

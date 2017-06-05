@@ -27,6 +27,7 @@ import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.data.InputNode;
 import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.services.GraphViewer;
+import org.graalvm.visualizer.difference.Difference;
 import org.graalvm.visualizer.graph.Figure;
 import org.graalvm.visualizer.util.DoubleClickAction;
 import org.graalvm.visualizer.util.DoubleClickHandler;
@@ -146,6 +147,42 @@ public final class FigureWidget extends Widget implements Properties.Provider, P
             }
         };
         node.setDisplayName(getName());
+        updateCollapsedBlockDiffColor();
+    }
+
+    private void updateCollapsedBlockDiffColor() {
+        String type = figure.getProperties().get("type");
+        if (type == null || !type.equals("block"))
+            return;
+
+        String state = figure.getProperties().get(Difference.PROPERTY_STATE);
+        if (state == null || state.equals(Difference.VALUE_SAME))
+            return;
+
+        Color bg = figure.getColor();
+        Color fg = null;
+
+        if (state.equals(Difference.VALUE_CHANGED)) {
+            fg = Color.ORANGE;
+        } else if (state.equals(Difference.VALUE_DELETED)) {
+            fg = Color.RED;
+        } else if (state.equals(Difference.VALUE_NEW)) {
+            fg = Color.GREEN;
+        }
+        assert fg != null;
+
+        float startX = 0;
+        float startY = 0;
+        float spaceBetweenLines = 5;
+
+        middleWidget.setBackground(new LinearGradientPaint(
+                startX, startY,
+                startX + spaceBetweenLines,
+                startY + spaceBetweenLines,
+                new float[] { 0, .5f, .5001f },
+                new Color[] { fg, bg, bg },
+                MultipleGradientPaint.CycleMethod.REPEAT)
+        );
     }
 
     public Widget getLeftWidget() {
