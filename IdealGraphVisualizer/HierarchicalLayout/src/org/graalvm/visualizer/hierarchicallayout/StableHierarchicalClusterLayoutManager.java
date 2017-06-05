@@ -143,7 +143,7 @@ public class StableHierarchicalClusterLayoutManager {
         for (StableClusterNode clusterNode : clusterNodeList) {
             clusterNode.setVisible(false);
             for (Vertex vertex : clusterNode.getSubNodes()) {
-                if (vertex.isVisible()) {
+                if (vertex.isVisible() && !(vertex instanceof StableClusterInputSlotNode || vertex instanceof StableClusterOutputSlotNode)) {
                     clusterNode.setVisible(true);
                     break;
                 }

@@ -678,6 +678,7 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
             }
         }
 
+        //edge beginning/ending for long edges should be drawn
         if(!ignoreTooLongEdges) {
             Map<Vertex, List<Port>> vertexToPortMap = new HashMap<>();
             Map<Port, List<Link>> portToLinkMap = new HashMap<>();
@@ -1182,7 +1183,7 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
             if (!layerVisible) {
                 ArrayList<StableHierarchicalLayoutNode> maintainedNodes = new ArrayList<>();
 
-                for (StableHierarchicalLayoutNode potentialVolatileNode : graph.layerMapping.get(layer)) {
+                for (StableHierarchicalLayoutNode potentialVolatileNode : layerList) {
                     //if volatile node then can be reduced
                     if (potentialVolatileNode.isVolatileNode() && potentialVolatileNode.isVisible()) {
                         // for each parent connector find child connector
