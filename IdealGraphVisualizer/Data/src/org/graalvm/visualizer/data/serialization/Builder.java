@@ -18,6 +18,12 @@ import java.util.Objects;
  * Interface for building IGV data from the stream
  */
 public interface Builder {
+    /**
+     * Allows to control the reader
+     * @param ctrl 
+     */
+    public void setModelControl(ModelControl ctrl);
+    
     void addBlockEdge(int from, int to);
 
     void addNodeToBlock(int nodeId);
@@ -83,6 +89,11 @@ public interface Builder {
     void startRoot();
 
     void successorEdge(Port p, int from, int to, char num, int index);
+    
+    interface ModelControl {
+        public ConstantPool getConstantPool();
+        public void setConstantPool(ConstantPool c);
+    }
 
     public enum Length {
         S,

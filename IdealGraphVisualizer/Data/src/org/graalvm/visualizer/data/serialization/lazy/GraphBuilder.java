@@ -51,7 +51,7 @@ final class GraphBuilder extends ModelBuilder {
         super(rootDocument, modelExecutor, null, monitor);
         this.keepData = keepData;
         this.toComplete = toComplete;
-        this.pool = entry.getInitialPool().clone();
+        this.pool = entry.getInitialPool().copy();
         // establish context
         pushGroup(toComplete.getGroup());
     }

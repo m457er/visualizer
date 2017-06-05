@@ -45,6 +45,7 @@ import org.graalvm.visualizer.data.InputGraph;
 import org.graalvm.visualizer.data.serialization.BinaryParser;
 import org.graalvm.visualizer.data.serialization.BinaryReader;
 import org.graalvm.visualizer.data.serialization.BinarySource;
+import org.graalvm.visualizer.data.serialization.Builder;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
 import org.graalvm.visualizer.data.serialization.FileContent;
 import org.graalvm.visualizer.data.serialization.ModelBuilder;
@@ -433,7 +434,7 @@ index 9e2fccf..eca9e3e 100644
         FileContent fc = new FileContent(f.toPath(), null);
         BinarySource scanSource = new BinarySource(fc);
 
-        ModelBuilder mb = new ScanningModelBuilder(scanSource,
+        ScanningModelBuilder mb = new ScanningModelBuilder(scanSource,
                 fc, checkDocument,
                 (g) -> checkDocument.addElement(g),  null,
                 this::run, RP, new StreamPool());

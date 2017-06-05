@@ -51,7 +51,6 @@ public class FileContent implements ReadableByteChannel, CachedContent, AutoClos
     private final Path filePath;
     private FileChannel ioDelegate;
     private boolean eof;
-    private long fileSize;
     /**
      * Self-opened channels will be closed by close().
      */
@@ -60,7 +59,6 @@ public class FileContent implements ReadableByteChannel, CachedContent, AutoClos
     public FileContent(Path filePath, FileChannel channel) {
         this.filePath = filePath;
         this.ioDelegate = channel;
-        this.fileSize = filePath.toFile().length();
     }
 
     private synchronized void openDelegate() throws IOException {
@@ -123,9 +121,13 @@ public class FileContent implements ReadableByteChannel, CachedContent, AutoClos
     @Override
     public ReadableByteChannel subChannel(long start, long end) throws IOException {
         openDelegate();
+        if (end == -1) {
+            // XX should also monitor the length of the file
+            end = ioDelegate.size();
+        }
         if (end - start >= Integer.MAX_VALUE) {
             return createLargeChannel(start, end);
-        }
+        } 
         MappedByteBuffer mbb = ioDelegate.map(FileChannel.MapMode.READ_ONLY, start, end - start);
         subchannelCount.incrementAndGet();
         return new ReadableByteChannel() {

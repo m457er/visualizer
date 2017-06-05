@@ -118,7 +118,8 @@ public class ModelBuilder implements Builder {
     private final ParseMonitor monitor;
     protected final Executor modelExecutor;
 
-    private Consumer<ConstantPool> poolTarget;
+    private ConstantPool pool = new ConstantPool();
+    private ModelControl control;
 
     private Properties.Entity entity;
     private Folder folder;
@@ -684,21 +685,28 @@ public class ModelBuilder implements Builder {
      */
     @Override
     public void resetStreamData() {
+        replacePool(getConstantPool().restart());
     }
 
     @Override
     public ConstantPool getConstantPool() {
-        return new ConstantPool();
+        return pool;
     }
 
     protected void replacePool(ConstantPool newPool) {
-        if (poolTarget != null) {
-            poolTarget.accept(newPool);
+        this.pool = newPool;
+        if (control != null) {
+            control.setConstantPool(newPool);
         }
     }
 
-    void setPoolTarget(Consumer<ConstantPool> target) {
-        this.poolTarget = target;
+    @Override
+    public void setModelControl(ModelControl target) {
+        this.control = target;
+    }
+    
+    protected ConstantPool getReaderPool() {
+        return control.getConstantPool();
     }
 
     @Override

@@ -36,38 +36,47 @@ import org.graalvm.visualizer.data.serialization.ParseMonitor;
 final class ParseMonitorBridge implements ParseMonitor {
     private final Feedback feedback;
     private final BinarySource dataSource;
-    private final int entrySize;
-    private final int scaleFactor;
+    private final StreamEntry entry;
+    private double scaleFactor;
 
     public ParseMonitorBridge(StreamEntry entry, Feedback feedback, BinarySource dataSource) {
         this.feedback = feedback;
         this.dataSource = dataSource;
         // Progress API does not support long workunits
-        long size = entry.size();
+        this.entry = entry;
+    }
+    
+    private int entrySize() {
+        long size = entry.unfinishedSize();
         if (size > Integer.MAX_VALUE) {
             scaleFactor = (int) Math.ceil((double) entry.size() / Integer.MAX_VALUE);
-            entrySize = (int) (entry.size() / scaleFactor);
+            return (int) (entry.size() / scaleFactor);
         } else {
-            scaleFactor = 1;
-            entrySize = (int) size;
+            scaleFactor = 1.0;
+            return (int) size;
         }
     }
 
-    private int work() {
-        return (int) (dataSource.getMark() / scaleFactor);
+    private int work(int total) {
+        if (total == -1) {
+            return (int)(dataSource.getMarkRelative() / scaleFactor);
+        }
+        return (int)Math.min(total, dataSource.getMarkRelative() / scaleFactor);
     }
 
     @Override
     public void updateProgress() {
         if (feedback != null) {
-            feedback.reportProgress(work(), entrySize, null);
+            int total = entrySize();
+            feedback.reportProgress(work(total), total, null);
         }
     }
 
     @Override
     public void setState(String state) {
         if (feedback != null) {
-            feedback.reportProgress(work(), entrySize, state);
+            int total = entrySize();
+            feedback.reportProgress(work(total), total, state);
         }
     }
 

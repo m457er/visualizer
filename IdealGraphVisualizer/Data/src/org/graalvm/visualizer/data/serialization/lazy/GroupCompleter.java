@@ -32,8 +32,13 @@ import org.graalvm.visualizer.data.Group.Feedback;
 import org.graalvm.visualizer.data.serialization.BinaryReader;
 import org.graalvm.visualizer.data.serialization.BinarySource;
 import java.io.IOException;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.nio.channels.ReadableByteChannel;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -42,13 +47,45 @@ final class GroupCompleter extends BaseCompleter<List<? extends FolderElement>, 
     private final StreamIndex streamIndex;
 
     /**
-     * First expansion ofthe group. During first expansion, some statistics are gathered
+     * First expansion of the group. During first expansion, some statistics are gathered
      */
     private boolean firstExpand = true;
-
+    
+    /**
+     * Loaded data
+     */
+    private volatile Reference<List<? extends FolderElement>> refData = new WeakReference<>(null);
+    
     public GroupCompleter(Env env, StreamIndex index, StreamEntry groupEntry) {
         super(env, groupEntry);
         this.streamIndex = index;
+    }
+    
+    public void removeData(FolderElement fe) {
+        List<? extends FolderElement> d = refData.get();
+        if (d != null) {
+            d.remove(fe);
+        }
+    }
+
+    @Override
+    protected List<? extends FolderElement> createEmpty() {
+        return new ArrayList<>();
+    }
+
+    @Override
+    protected List<? extends FolderElement> filter(List<? extends FolderElement> data) {
+        Set<String> names = getModel().getExcludedNames();
+        if (names.isEmpty()) {
+            return data;
+        }
+        for (Iterator<? extends FolderElement> it = data.iterator(); it.hasNext(); ) {
+           FolderElement el = it.next();
+           if (names.contains(el.getName())) {
+               it.remove();
+           }
+        }
+        return data;
     }
 
     @Override
@@ -66,26 +103,29 @@ final class GroupCompleter extends BaseCompleter<List<? extends FolderElement>, 
                 }
             };
         }
-        for (FolderElement f : data) {
-            if (f instanceof ChangedEventProvider) {
-                // just keep a backreference to the whole list
-                ((ChangedEventProvider) f).getChangedEvent().addListener(l);
+        if (data != null) {
+            for (FolderElement f : data) {
+                if (f instanceof ChangedEventProvider) {
+                    // just keep a backreference to the whole list
+                    ((ChangedEventProvider) f).getChangedEvent().addListener(l);
+                }
             }
-            f.setParent(element());
         }
+        refData = new WeakReference<>(data);
         return data;
     }
 
     protected List<? extends FolderElement> load(ReadableByteChannel channel, int majorVersion, int minorVersion, Feedback feedback) throws IOException {
-        BinarySource bs = new BinarySource(channel, majorVersion, minorVersion);
+        BinarySource bs = new BinarySource(channel, majorVersion, minorVersion, entry.getStart());
         SingleGroupBuilder builder = new SingleGroupBuilder(
-                        toComplete, env(), bs,
-                        streamIndex, entry,
-                        feedback,
-                        firstExpand);
+                            toComplete, env(), bs,
+                            streamIndex, entry,
+                            feedback,
+                            firstExpand, 
+                            this::setPartialData);
         firstExpand = false;
         new BinaryReader(bs, builder).parse();
-        return builder.getItems();
+        List<? extends FolderElement> els = builder.getItems();
+        return els;
     }
-
 }

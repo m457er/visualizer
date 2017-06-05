@@ -14,10 +14,16 @@ package org.graalvm.visualizer.data.serialization;
 public class SkipRootException extends RuntimeException {
     private final long start;
     private final long end;
+    private ConstantPool    readFromPool;
 
-    public SkipRootException(long start, long end) {
+    public SkipRootException(long start, long end, ConstantPool pool) {
         this.start = start;
         this.end = end;
+        this.readFromPool = pool;
+    }
+    
+    public ConstantPool getConstantPool() {
+        return readFromPool;
     }
 
     public long getStart() {
@@ -26,5 +32,9 @@ public class SkipRootException extends RuntimeException {
 
     public long getEnd() {
         return end;
+    }
+    
+    public String toString() {
+        return "Skip[from " + start + " to " + end + ", pool=" + Integer.toHexString(readFromPool == null ? 0 : System.identityHashCode(readFromPool));
     }
 }

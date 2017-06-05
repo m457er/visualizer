@@ -40,6 +40,13 @@ interface Completer<T> {
      * @return future content
      */
     public Future<T> completeContents(Feedback feedback);
+    
+    /**
+     * Retrieves partial data. May return {@code null} to indicate that no partial data is
+     * expected at all
+     * @return partial data or {@code null}
+     */
+    public T partialData();
 
     /**
      * Determines whether completer can be called now. Returns false if invoked during completion
