@@ -24,6 +24,7 @@
  */
 package org.graalvm.visualizer.connection;
 
+import org.graalvm.visualizer.data.serialization.NetworkStreamContent;
 import java.io.EOFException;
 import org.graalvm.visualizer.data.serialization.lazy.ScanningModelBuilder;
 import org.graalvm.visualizer.data.GraphDocument;
@@ -38,7 +39,7 @@ import javax.swing.SwingUtilities;
 import org.graalvm.visualizer.data.serialization.BinaryReader;
 import org.graalvm.visualizer.data.serialization.BinarySource;
 import org.graalvm.visualizer.data.serialization.ModelBuilder;
-import org.graalvm.visualizer.data.serialization.lazy.StreamPool;
+import org.openide.modules.Places;
 import org.openide.util.Exceptions;
 import org.openide.util.RequestProcessor;
 
@@ -78,15 +79,14 @@ public class Client implements Runnable {
             LOG.log(Level.FINE, "Client {0} starting for remote {1}", new Object[]{id, socket.getRemoteAddress()});
             final SocketChannel channel = socket;
             channel.configureBlocking(true);
-            try (NetworkStreamContent captureChannel = new NetworkStreamContent(channel)) {
+            try (NetworkStreamContent captureChannel = new NetworkStreamContent(channel, Places.getCacheSubdirectory("igv"))) { // NOI18N
                 if (binary) {
                     BinarySource bs = new BinarySource(captureChannel);
                     ModelBuilder mb = new ScanningModelBuilder(
                                     bs, captureChannel, rootDocument, callback,
                                     null,
                                     this::runInAWT,
-                                    loader,
-                                    new StreamPool());
+                                    loader);
                     BinaryReader reader = new BinaryReader(bs, mb);
                     reader.parse();
                 } else {

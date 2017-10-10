@@ -1,0 +1,113 @@
+
+jdk-downloads: {
+  java7 : {name : oraclejdk, version : "7",    platformspecific: true}
+  java8 : {name : labsjdk, version : "8u121-jvmci-0.26", platformspecific: true}
+  java9 : {name : labsjdk, version : "9-20170429-102349", platformspecific: true}
+  java9EA : {name : labsjdk, version : "9-ea+168", platformspecific: true}
+  java8Debug : {name : labsjdk, version : "8u121-jvmci-0.26-fastdebug", platformspecific: true}
+}
+
+# Overlay placeholder for pinning mx to a specific revision
+mx : {}
+
+common : ${mx} {
+  timelimit : "30:00"
+  packages : {
+    "apache/ant" : ">=1.9.4"
+  }
+  catch_files : [
+    "Graal diagnostic output saved in (?P<filename>.+\.zip)"
+  ]
+}
+
+linux : ${common} {
+  packages : {
+    git : ">=1.8.3"
+    mercurial : ">=2.2"
+    "pip:astroid" : "==1.1.0"
+    "pip:pylint" : "==1.1.0"
+  }
+}
+
+solaris : ${common} {
+  packages : {
+    git : ">=1.8.3"
+    mercurial : ">=2.2"
+    "pip:astroid" : "==1.1.0"
+    "pip:pylint" : "==1.1.0"
+  }
+}
+
+darwin : ${common} {
+  packages : {
+    # Brew does not support versions
+    mercurial : ""
+    "pip:astroid" : "==1.1.0"
+    "pip:pylint" : "==1.1.0"
+  }
+  environment : {
+    PATH : "/usr/local/bin:$PATH"
+  }
+}
+
+linux-amd64 : ${linux} {
+  capabilities : [linux, amd64]
+}
+
+darwin-amd64 : ${darwin} {
+  capabilities : [darwin, amd64]
+}
+
+solaris-sparcv9 : ${solaris} {
+  capabilities : [solaris, sparcv9]
+}
+
+java8 : {
+  downloads : {
+    EXTRA_JAVA_HOMES : { pathlist :[
+      ${jdk-downloads.java7}
+    ]}
+    JAVA_HOME : ${jdk-downloads.java8}
+  }
+}
+
+java8Debug : {
+  downloads : {
+    EXTRA_JAVA_HOMES : { pathlist :[
+      ${jdk-downloads.java7}
+    ]}
+    JAVA_HOME : ${jdk-downloads.java8Debug}
+  }
+}
+
+java9 : {
+  downloads : {
+    EXTRA_JAVA_HOMES : { pathlist :[
+      ${jdk-downloads.java7}
+      ${jdk-downloads.java8}
+    ]}
+    JAVA_HOME : ${jdk-downloads.java9}
+  }
+}
+
+java9EA : ${java9} {
+  downloads : {
+    JAVA_HOME : ${jdk-downloads.java9EA}
+  }
+}
+
+eclipse : {
+  downloads : {
+    ECLIPSE : {name: eclipse, version: "4.5.2", platformspecific: true}
+  }
+  environment : {
+    ECLIPSE_EXE : "$ECLIPSE/eclipse"
+  }
+}
+
+jdt : {
+  downloads : {
+    JDT : {name: ecj, version: "4.5.1", platformspecific: false}
+  }
+}
+

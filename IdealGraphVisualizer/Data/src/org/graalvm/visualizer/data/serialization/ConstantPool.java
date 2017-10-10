@@ -35,14 +35,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ConstantPool {
     private List<Object> data = new ArrayList<>();
     private int entriesAdded;
-    private BinaryReader replaceInReader;
     public static AtomicInteger totalEntries = new AtomicInteger();
 
     public ConstantPool() {
-    }
-
-    void withReader(BinaryReader r) {
-        this.replaceInReader = r;
     }
 
     /**
@@ -126,8 +121,17 @@ public class ConstantPool {
      * 
      * @param data initial data
      */
-    protected ConstantPool(List<Object> data) {
+    public ConstantPool(List<Object> data) {
         this.data = data;
+    }
+    
+    /**
+     * Makes a copy of the pool contents.
+     * 
+     * @return new instance of the pool, with identical data as this instance.
+     */
+    public synchronized ConstantPool clone() {
+        return copy();
     }
 
     /**
@@ -135,7 +139,7 @@ public class ConstantPool {
      * 
      * @return new instance of the pool, with identical data as this instance.
      */
-    public final ConstantPool clone() {
+    public synchronized ConstantPool copy() {
         return create(new ArrayList<>(data));
     }
 
@@ -162,5 +166,13 @@ public class ConstantPool {
 
     public int getEntriesAdded() {
         return entriesAdded;
+    }
+
+    /**
+     * Returns copy of the the pool's entries
+     * @return pool entries
+     */
+    public synchronized List<Object> copyData() {
+        return new ArrayList(data);
     }
 }

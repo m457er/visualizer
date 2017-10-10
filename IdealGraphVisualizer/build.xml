@@ -13,4 +13,9 @@
     
     <!-- Local (environment-specific) extensions/modifications to the build -->
     <import file="build-local.xml" optional="true" />
+
+
+    <target name="patch-test">
+        <replaceregexp file="nbplatform/harness/common.xml" match="&lt;fail.*Some tests failed.*/fail&gt;" replace="&lt;fail if='tests.failed'/&gt;"/>
+    </target>
 </project>

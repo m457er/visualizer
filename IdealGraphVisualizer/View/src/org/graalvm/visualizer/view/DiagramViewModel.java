@@ -42,8 +42,14 @@ import java.util.*;
 import org.graalvm.visualizer.util.ListenerSupport;
 import java.util.stream.Collectors;
 import org.openide.util.Lookup;
+import javax.swing.SwingUtilities;
+import org.openide.util.RequestProcessor;
 
 public class DiagramViewModel extends RangeSliderModel implements ChangedListener<RangeSliderModel> {
+    /**
+     * Delay to batch group changes before the range slider will be updated with new filtered group contents.
+     */
+    private static final int GROUP_UPDATE_DELAY = 300;
 
     // Warning: Update setData method if fields are added
     private Group group;
@@ -213,14 +219,35 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
             oldGroup = group;
         }
     };
-
+    
+    private static final RequestProcessor REFRESH_RP = new RequestProcessor(DiagramViewModel.class.getName());
+    
+    // @GuardedBy(this)
+    private RequestProcessor.Task refreshTask;
+    
+    private void doGroupContentUpdate() {
+        assert SwingUtilities.isEventDispatchThread();
+        synchronized (this) {
+            refreshTask = null;
+        }
+        filterGraphs();
+        setSelectedNodes(selectedNodes);
+    }
+    
     private final ChangedListener<Group> groupContentChangedListener = new ChangedListener<Group>() {
 
         @Override
         public void changed(Group source) {
             assert source == group;
-            filterGraphs();
-            setSelectedNodes(selectedNodes);
+            synchronized (DiagramViewModel.this) {
+                // wait some time before re-layouting the graph, at most 0,5sec, then process
+                // the state.
+                if (refreshTask == null) {
+                    refreshTask = REFRESH_RP.post(() -> {
+                            SwingUtilities.invokeLater(DiagramViewModel.this::doGroupContentUpdate);}, 
+                            GROUP_UPDATE_DELAY);
+                }
+            }
         }
     };
 
@@ -477,7 +504,14 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     @Override
     public void changed(RangeSliderModel source) {
+        InputGraph oldGraph = this.inputGraph;
         inputGraph = null;
+        InputGraph curGraph = getGraphToView();
+        if (curGraph == oldGraph) {
+            // the range slider may change, but the current input graph / diagram may is still the same.
+            // No need to throw away the current diagram.
+            return;
+        }
         hiddenCurrentGraphNodes = null;
         diagramChanged();
     }

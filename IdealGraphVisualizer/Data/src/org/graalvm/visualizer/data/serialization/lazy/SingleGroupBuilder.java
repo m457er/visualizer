@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,7 +58,7 @@ import java.util.logging.Logger;
 public class SingleGroupBuilder extends DelegatingBuilder {
     private static final Logger LOG = Logger.getLogger(SingleGroupBuilder.class.getName());
 
-    private static final int LARGE_GRAPH_THRESHOLD = StreamEntry.LARGE_ENTRY_THRESHOLD;
+    private static int largeGraphThreshold = StreamEntry.LARGE_ENTRY_THRESHOLD;
 
     /**
      * Result items to be reported
@@ -82,7 +83,8 @@ public class SingleGroupBuilder extends DelegatingBuilder {
     private final Root rootBuilder;
     private final StreamEntry rootEntry;
     private final Feedback feedback;
-
+    private GroupCompleter completer;
+    
     private GraphMetadata gInfo;
 
     private long rootStartOffset;
@@ -133,6 +135,8 @@ public class SingleGroupBuilder extends DelegatingBuilder {
     private boolean collectChanges;
 
     private StreamEntry entry;
+    
+    private final Consumer<List<? extends FolderElement>> partialCallback;
 
     /**
      * Helper class, saves one level info on creation + clears out the data. Restores data in its
@@ -142,6 +146,7 @@ public class SingleGroupBuilder extends DelegatingBuilder {
         Map<Integer, Properties> props;
         GraphMetadata meta;
         StreamEntry e;
+        GroupCompleter c;
         boolean changes;
         boolean counts;
         int gIndex;
@@ -153,15 +158,18 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             this.changes = collectChanges;
             this.counts = collectCounts;
             this.gIndex = graphIndex;
+            this.c = completer;
 
             if (graphLevel > 1) {
                 nodeProperties = new HashMap<>();
             }
             gInfo = null;
             entry = null;
+            completer = null;
         }
 
         void restore() {
+            completer = c;
             nodeProperties = props;
             gInfo = meta;
             entry = e;
@@ -170,6 +178,8 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             graphIndex = gIndex;
         }
     }
+    
+    private final Logger instLog;
 
     public SingleGroupBuilder(Group toComplete,
                     Env env,
@@ -177,10 +187,11 @@ public class SingleGroupBuilder extends DelegatingBuilder {
                     StreamIndex streamIndex,
                     StreamEntry entry,
                     Feedback feedback,
-                    boolean firstExpand) {
+                    boolean firstExpand,
+                    Consumer<List<? extends FolderElement>> partialCallback) {
         this.env = env;
         this.toComplete = toComplete;
-        this.pool = entry.getInitialPool().clone();
+        this.pool = entry.getInitialPool().copy();
         this.rootDocument = new GraphDocument();
         this.streamIndex = streamIndex;
         this.dataSource = dataSource;
@@ -188,21 +199,31 @@ public class SingleGroupBuilder extends DelegatingBuilder {
         this.firstExpand = firstExpand;
         this.feedback = feedback;
         this.rootEntry = entry;
-
+        this.partialCallback = partialCallback;
         this.entry = rootEntry;
+        
+        instLog = Logger.getLogger(LOG.getName() + "." + Integer.toHexString(System.identityHashCode(this)));
+        instLog.log(Level.FINE, "Reading group {0}, entry {1}, dataSource {2}", new Object[] { toComplete.getName(), entry, dataSource});
         rootBuilder = new Root();
         delegateTo(rootBuilder);
     }
+    
+    // test only
+    static void setLargeEntryThreshold(int size) {
+        largeGraphThreshold = size;
+    }
 
     public List<? extends FolderElement> getItems() {
-        return items;
+        synchronized (items) {
+            return new ArrayList<>(items);
+        }
     }
 
     @Override
     public void endGroup() {
+        super.endGroup();
         levels.pop().restore();
         groupLevel--;
-        super.endGroup();
     }
 
     @Override
@@ -235,31 +256,50 @@ public class SingleGroupBuilder extends DelegatingBuilder {
 
     @Override
     public InputGraph endGraph() {
-        levels.pop().restore();
-        graphLevel--;
+        if (instLog.isLoggable(Level.FINE)) {
+            instLog.log(Level.FINE, "endGraph, range = {0}-{1}", new Object[]{entry.getStart(), entry.getEnd()});
+        }
 
         switch (graphLevel) {
-            case 0:
-                LOG.log(Level.FINE, "Switch to root builder");
+            case 1:
+                instLog.log(Level.FINER, "Switch to root builder");
                 delegateTo(rootBuilder);
                 break;
-            case 1:
+            case 2:
                 // time to switch from a subgraph to the group's child builder
-                LOG.log(Level.FINE, "Switch to lazy builder");
+                instLog.log(Level.FINER, "Switch to lazy builder");
                 delegateTo(rootGraphBuilder);
                 rootGraphBuilder = null;
         }
+        levels.pop().restore();
+        graphLevel--;
         return super.endGraph();
     }
 
     @Override
     public void startRoot() {
         rootStartOffset = dataSource.getMark();
+        streamIndex.waitOffset(rootStartOffset);
+        long end = rootEntry.getEnd();
+        if (end > -1 && rootStartOffset > end) {
+            instLog.log(Level.FINER, "Encountered root after rootEntry {0} at {1}, skip rest of stream", new Object[] { rootEntry, rootStartOffset });
+            throw new SkipRootException(entry.getStart(), -1, null);
+        }
         super.startRoot();
     }
 
-    long absPosition(long p) {
-        return startOffset + p;
+
+    private void waitEntryFinished() {
+        synchronized (entry) {
+            while (!entry.isFinished()) {
+                try {
+                    instLog.log(Level.FINER, "Waiting for entry {0}", entry);
+                    entry.wait();
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(SingleGroupBuilder.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
     }
 
     /**
@@ -267,20 +307,52 @@ public class SingleGroupBuilder extends DelegatingBuilder {
      * maybe identify also large groups and load them as lazy.
      */
     class Root extends ModelBuilder {
-        private boolean newEntry;
-
         public Root() {
             super(rootDocument, env.getModelExecutor(), null, new ParseMonitorBridge(entry, feedback, dataSource));
         }
 
         @Override
+        public void startRoot() {
+            //rootStartPos = dataSource.getMark();
+            super.startRoot();
+        }
+
+        @Override
+        public void startGroupContent() {
+            if (groupLevel > 1) {
+                instLog.log(Level.FINE, "Starting group {0}, ", ((Group)folder()).getName());
+            }
+            super.startGroupContent();
+            if (groupLevel > 1 && folder() instanceof LazyGroup) {
+                skipRoot();
+            }
+        }
+        
+        @Override
         protected Group createGroup(Folder parent) {
             if (parent == rootDocument) {
                 // do not create a Group for the completed instance, use the actual object
+                entry = rootEntry;
                 return toComplete;
-            } else {
+            } 
+            entry = streamIndex.get(rootStartOffset);
+            instLog.log(Level.FINER, "Create group entry {0}", entry);
+            // unfinished entries have size MAX_VALUE
+            if (entry.size() < largeGraphThreshold) {
                 return super.createGroup(parent);
             }
+            assert completer == null;
+            GroupCompleter grc = new GroupCompleter(env, streamIndex, entry);
+            completer = grc;
+            LazyGroup g = new LazyGroup(folder(), grc);
+            completer.attachTo(g, null);
+            return g;
+        }
+
+        @Override
+        public void endGroup() {
+            waitEntryFinished();
+            super.endGroup(); 
         }
 
         @Override
@@ -290,23 +362,31 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             }
             if (parent == toComplete) {
                 // do not put items into the completed group, fill them all at once at the end
-                items.add(item);
+                item.setParent(parent);
+                synchronized (items) {
+                    items.add(item);
+                }
+                if (partialCallback != null) {
+                    partialCallback.accept(getItems());
+                }
             } else {
                 // ignore threading, the item should have no listeners yet.
-                parent.addElement(item);
+                modelExecutor.execute(() -> parent.addElement(item));
             }
         }
 
         @Override
         protected InputGraph createGraph(String title, String name, Properties.Entity parent) {
-            if (rootEntry.size() < LARGE_GRAPH_THRESHOLD && (entry == null || entry.size() < LARGE_GRAPH_THRESHOLD)) {
+            if (rootEntry.size() < largeGraphThreshold && (entry == null || entry.size() < largeGraphThreshold)) {
                 // let Graph to keep entire group data in memory
-                return new LazyGroup.LoadedGraph(title, graphLevel == 1 ? gInfo : null);
+                InputGraph g = new LazyGroup.LoadedGraph(title, graphLevel == 1 ? gInfo : null);
+                instLog.log(Level.FINE, "Started full graph {0}, entry {1}", new Object[]{g.getName(), entry});
+                return g;
             }
             GraphCompleter completer = new GraphCompleter(env, entry);
             LazyGraph g = new LazyGraph(title, gInfo, completer);
             completer.attachTo(g, title);
-            LOG.log(Level.FINE, "Started lazy graph {0}, positions {1}-{2}",
+            instLog.log(Level.FINE, "Started lazy graph {0}, positions {1}-{2}",
                             new Object[]{g.getName(), entry.getStart(), entry.getEnd()});
             // switch to lazygraph builder
             ChildGraphBuilder gb = new ChildGraphBuilder(g);
@@ -315,38 +395,27 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             return g;
         }
 
+        // XXX pro lazy graph se prepina do child builderu; test na graphLevel patri TAM
         @Override
         public void startGraphContents(InputGraph g) {
-            if (graphLevel == 1 && !collectChanges) {
-                // the graph was already seen, we can safely skip it, metadata was already collected
-                replacePool(entry.getSkipPool().clone());
-                endGraph();
-                throw new SkipRootException(entry.getStart(), entry.getEnd());
+            if (graphLevel == 1 && !collectChanges && !(g instanceof LazyGroup.LoadedGraph)) {
+                // the graph was already seen, we can safely skip it if it is lazy-loaded, metadata was already collected
+                skipRoot();
             }
             super.startGraphContents(g);
         }
-
+        
         public InputGraph startGraph(String title) {
-            entry = streamIndex.get(absPosition(rootStartOffset));
-            if (entry != null) {
-                if (entry.size() > 1024 * 1024) {
-                    reportState(title);
-                }
-                gInfo = entry.getGraphMeta();
-                collectCounts = false;
-                collectChanges = firstExpand;
-                newEntry = false;
-            } else {
-                gInfo = new GraphMetadata();
-                if (rootEntry.size() >= LARGE_GRAPH_THRESHOLD) {
-                    entry = new StreamEntry(startOffset, getConstantPool());
-                    newEntry = true;
-                    entry.setMetadata(gInfo);
-                }
-                // will not be lazy expanded, no constant pool info
-                collectCounts = true;
-                collectChanges = true;
+            long pos = rootStartOffset;
+            entry = streamIndex.get(pos);
+            instLog.log(Level.FINER, "Start contents graph entry {0}", entry);
+            waitEntryFinished();
+            if (entry.size() > 1024 * 1024) {
+                reportState(title);
             }
+            gInfo = entry.getGraphMeta();
+            collectCounts = false;
+            collectChanges = firstExpand;
             return super.startGraph(title);
         }
 
@@ -354,21 +423,11 @@ public class SingleGroupBuilder extends DelegatingBuilder {
         public InputGraph endGraph() {
             InputGraph g = graph();
             if (g instanceof LazyGraph) {
-                if (newEntry) {
-                    entry.end(startOffset, pool);
-                    replacePool(pool = ((StreamPool) pool).forkIfNeeded());
-                    streamIndex.addEntry(entry);
-                }
                 // avoid call to getNodes() in super
                 popContext();
                 registerToParent(folder(), g);
             } else {
                 g = super.endGraph();
-            }
-            if (rootGraphBuilder != null) {
-                g = rootGraphBuilder.g;
-                LOG.log(Level.FINE, "Finished lazy graph {0}", g.getName());
-                reportState(((Group) folder()).getName());
             }
             rootGraphBuilder = null;
             return g;
@@ -405,8 +464,25 @@ public class SingleGroupBuilder extends DelegatingBuilder {
                 }
             }
         }
+
+        private void skipRoot() {
+            waitEntryFinished();
+            ConstantPool nextPool = entry.getSkipPool().copy();
+            replacePool(nextPool);
+            instLog.log(Level.FINER, "Skipping entry {0}, restart from pool {1}", new Object[] { entry, Integer.toHexString(System.identityHashCode(nextPool))} );
+            throw new SkipRootException(entry.getStart(), entry.getEnd(),  nextPool);
+        }
     }
 
+    /**
+     * Builds direct graph child of a group. If this group is processed for the first time, {@link StreamEntry#getGraphMeta()} does not
+     * have full information, just number of nodes and edges from the initial scan. In this mode ({@link #collectChanges} == true)
+     * the ChildGraphBuilder processes node properties incl. block presence and compares them against previous graph's meta.
+     * The preceding graph is either full (data immediately available) or lazy, but its {@link StreamEntry#getGraphMeta()} is already
+     * filled in.
+     * <p/>
+     * In subsequent reads, entire graphs are skipped just after their properties are read.
+     */
     class ChildGraphBuilder extends ModelBuilder {
         private InputGraph nested;
         private final LazyGraph g;
@@ -508,14 +584,14 @@ public class SingleGroupBuilder extends DelegatingBuilder {
             assert nested != null;
             InputGraph n = nested;
             nested = null;
-            LOG.log(Level.FINE, "Resuming operation after property {0}", getNestedProperty());
-            return nested;
+            instLog.log(Level.FINE, "Resuming operation after property {0}", getNestedProperty());
+            return n;
         }
 
         @Override
         public InputGraph startGraph(String title) {
             assert getNestedProperty() != null;
-            LOG.log(Level.FINE, "Ignoring nested graph in property {0}", getNestedProperty());
+            instLog.log(Level.FINE, "Ignoring nested graph in property {0}", getNestedProperty());
             nested = super.startGraph(title);
             Builder sub = new Ignore();
             delegateTo(sub);
@@ -524,9 +600,9 @@ public class SingleGroupBuilder extends DelegatingBuilder {
     }
 
     /**
-     * Builder which throws everything away
+     * Builder which throws everything away, used for PROPERTY_GRAPHs.
      */
-    final class Ignore implements Builder {
+    static class Ignore implements Builder {
         @Override
         public void addBlockEdge(int from, int to) {
         }
@@ -658,5 +734,8 @@ public class SingleGroupBuilder extends DelegatingBuilder {
         @Override
         public void successorEdge(Builder.Port p, int from, int to, char num, int index) {
         }
+        
+        @Override
+        public void setModelControl(ModelControl exchg) {}
     }
 }

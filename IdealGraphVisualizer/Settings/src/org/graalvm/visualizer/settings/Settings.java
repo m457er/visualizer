@@ -38,6 +38,7 @@ public class Settings {
     public final static String PORT_BINARY_DEFAULT = "4445";
     public final static String DIRECTORY = "directory";
     public final static String DIRECTORY_DEFAULT = System.getProperty("user.dir");
+    public final static String MAP = "map";
 
     public static Preferences get() {
         return Preferences.userNodeForPackage(Settings.class);

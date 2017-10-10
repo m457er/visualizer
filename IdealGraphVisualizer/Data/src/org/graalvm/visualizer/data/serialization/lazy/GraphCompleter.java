@@ -52,9 +52,9 @@ final class GraphCompleter extends BaseCompleter<GraphData, LazyGraph> {
     }
 
     @Override
-    protected GraphData load(ReadableByteChannel channel, Feedback feedback) throws IOException {
+    protected GraphData load(ReadableByteChannel channel, int majorVersion, int minorVersion, Feedback feedback) throws IOException {
         GraphDocument doc = new GraphDocument();
-        BinarySource bs = new BinarySource(channel);
+        BinarySource bs = new BinarySource(channel, majorVersion, minorVersion, entry.getStart());
         GraphBuilder builder = new GraphBuilder(doc,
                         env().getModelExecutor(),
                         toComplete, future(),

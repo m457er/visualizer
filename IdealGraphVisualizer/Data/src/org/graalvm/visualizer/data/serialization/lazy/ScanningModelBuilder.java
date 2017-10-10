@@ -35,17 +35,14 @@ import org.graalvm.visualizer.data.Group;
 import org.graalvm.visualizer.data.InputBlock;
 import org.graalvm.visualizer.data.InputEdge;
 import org.graalvm.visualizer.data.InputGraph;
-import org.graalvm.visualizer.data.InputNode;
 import org.graalvm.visualizer.data.Properties;
 import org.graalvm.visualizer.data.serialization.BinarySource;
 import org.graalvm.visualizer.data.serialization.ConstantPool;
 import org.graalvm.visualizer.data.serialization.ModelBuilder;
 import org.graalvm.visualizer.data.serialization.ParseMonitor;
 import org.graalvm.visualizer.data.services.GroupCallback;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,20 +54,16 @@ import java.util.logging.Logger;
  * Data may load in a separate thread defined by `fetchExecutor', but since the whole data model is
  * single-threaded, modelExecutor is then used to attach the loaded data to the LazyContent group.
  * <p/>
- * The loaded group content may be GCed when no one holds a reference to the loaded items (graphs
- * and groups).
- * <p/>
  * This class blocks most of the {@link ModelBuilder} functionality so it creates only a few objects
- * during initial stream reading.
+ * during initial stream reading. It loads just toplevel groups.
  */
 public class ScanningModelBuilder extends ModelBuilder {
     private static final Logger LOG = Logger.getLogger(ScanningModelBuilder.class.getName());
 
-    private CachedContent streamContent;
-    private BinarySource dataSource;
-    private final Map<Group, BaseCompleter> completors = new LinkedHashMap<>();
+    private final CachedContent streamContent;
+    private final BinarySource dataSource;
+    private final Map<Group, GroupCompleter> completors = new LinkedHashMap<>();
     private final ScheduledExecutorService fetchExecutor;
-    private StreamPool pool;
     private final Properties dummyProperties = new Properties() {
         @Override
         protected void setPropertyInternal(String name, String value) {
@@ -78,16 +71,15 @@ public class ScanningModelBuilder extends ModelBuilder {
         }
     };
 
-    private int groupLevel;
+    // for testing
+    int groupLevel;
     private int graphLevel;
     private GroupCompleter completer;
-    private long graphStart;
-
+    
     /**
-     * Index information for Groups and Graphs in the stream. Only large groups/graphs are
-     * collected;
+     * Index information for Groups and Graphs in the stream.
      */
-    private final StreamIndex index = new StreamIndex();
+    protected final StreamIndex index = new StreamIndex();
 
     private final Deque<StreamEntry> entryStack = new LinkedList<>();
 
@@ -111,15 +103,31 @@ public class ScanningModelBuilder extends ModelBuilder {
                     GroupCallback callback,
                     ParseMonitor monitor,
                     Executor modelExecutor,
+                    ScheduledExecutorService fetchExecutor) {
+        this(dataSource, content, rootDocument, callback, monitor, modelExecutor, fetchExecutor, new StreamPool());
+    }
+
+        @SuppressWarnings("OverridableMethodCallInConstructor")
+    ScanningModelBuilder(
+                    BinarySource dataSource,
+                    CachedContent content,
+                    GraphDocument rootDocument,
+                    GroupCallback callback,
+                    ParseMonitor monitor,
+                    Executor modelExecutor,
                     ScheduledExecutorService fetchExecutor,
                     StreamPool initialPool) {
         super(rootDocument, modelExecutor, callback, monitor);
         this.dataSource = dataSource;
         this.streamContent = content;
-        this.pool = initialPool;
+        replacePool(initialPool);
         this.fetchExecutor = fetchExecutor;
     }
-
+    
+    protected StreamPool pool() {
+        return (StreamPool)getConstantPool();
+    }
+    
     @Override
     protected void registerToParent(Folder parent, FolderElement graph) {
         if (parent instanceof GraphDocument) {
@@ -223,20 +231,31 @@ public class ScanningModelBuilder extends ModelBuilder {
         entry.getGraphMeta().markDuplicate();
     }
 
-    private void registerEntry(StreamEntry en, long pos) {
-        en.end(pos, pool);
-        replacePool(pool = pool.forkIfNeeded());
-        index.addEntry(en);
+    protected void registerEntry(StreamEntry en, long pos) {
+        StreamPool n = pool().forkIfNeeded();
+        if (LOG.isLoggable(Level.FINER)) {
+            if (n != pool()) {
+                LOG.log(Level.FINER, "Replaced pool {0} for {1}", new Object[] { 
+                    Integer.toHexString(System.identityHashCode(pool())),
+                    Integer.toHexString(System.identityHashCode(n))
+                });
+            }
+        }
+        replacePool(n);
+        en.end(pos, n);
+        if (LOG.isLoggable(Level.FINER)) {
+            LOG.log(Level.FINER, "{0} Entry {1}:{2}", new Object[] { logIndent(), en.getStart(), en.getEnd()});
+        }
     }
-
+    
     @Override
     public void endGroup() {
-        registerEntry(entry, dataSource.getMark());
+        // register end as rootStartPos, which is the offset of the 'close group'
+        registerEntry(entry, rootStartPos);
         if (--groupLevel == 0) {
             LazyGroup g = (LazyGroup) folder();
             completer.end(entry.getEnd());
             super.endGroup();
-            replacePool(pool = pool.forkIfNeeded());
             completer = null;
         }
         entry = entryStack.pop();
@@ -246,14 +265,20 @@ public class ScanningModelBuilder extends ModelBuilder {
     public void startGroupContent() {
         if (groupLevel == 1) {
             super.startGroupContent();
-            LOG.log(Level.FINER, "Starting group {0}, start = {1}", new Object[]{currentGroupName, rootStartPos});
+            if (LOG.isLoggable(Level.FINER)) {
+                LOG.log(Level.FINER, "{2} Group {0}, start = {1}", new Object[]{currentGroupName, rootStartPos, logIndent()});
+            }
         }
     }
-
+    
     @Override
     public Group startGroup() {
+        checkConstantPool();
         entryStack.push(entry);
-        entry = new StreamEntry(rootStartPos, getConstantPool());
+        entry = addEntry(new StreamEntry(
+            dataSource.getMajorVersion(), dataSource.getMinorVersion(),
+            rootStartPos, forkPool()
+        ));
         if (groupLevel++ > 0) {
             return null;
         }
@@ -265,22 +290,19 @@ public class ScanningModelBuilder extends ModelBuilder {
         completors.put(g, grc);
         return pushGroup(g);
     }
-
-    GroupCompleter createCompleter(long start) {
-        return new GroupCompleter(
-                        new Env(streamContent, modelExecutor, fetchExecutor),
-                        index, entry);
-    }
-
+    
     private String tlGraphName;
 
     private boolean scanGraph;
-    private GraphMetadata tlGraphInfo;
 
     @Override
     public InputGraph startGraph(String title) {
+        checkConstantPool();
         entryStack.push(entry);
-        entry = new StreamEntry(rootStartPos, getConstantPool()).setMetadata(new GraphMetadata());
+        entry = addEntry(new StreamEntry(
+            dataSource.getMajorVersion(), dataSource.getMinorVersion(),
+            rootStartPos, forkPool()
+        ).setMetadata(new GraphMetadata()));
         graphLevel++;
         scanGraph = false;
         if (graphLevel == 1) {
@@ -288,10 +310,6 @@ public class ScanningModelBuilder extends ModelBuilder {
             LOG.log(Level.FINER, "Starting graph {0} at {1}", new Object[]{title, rootStartPos});
 
             scanGraph = true;
-            if (groupLevel == 1) {
-                graphStart = rootStartPos;
-                tlGraphInfo = entry.getGraphMeta();
-            }
         }
         reportProgress();
         return null;
@@ -300,6 +318,8 @@ public class ScanningModelBuilder extends ModelBuilder {
     @Override
     public void end() {
         super.end();
+        index.close();
+        LOG.log(Level.FINE, "Scan terminated");
     }
 
     @Override
@@ -307,21 +327,11 @@ public class ScanningModelBuilder extends ModelBuilder {
         super.start();
     }
 
-    private void finishTLGraph() {
-        long end = dataSource.getMark();
-        long len = end - graphStart;
-        replacePool(pool = pool.forkIfNeeded());
-        tlGraphInfo = null;
-    }
-
     @Override
     public InputGraph endGraph() {
         registerEntry(entry, dataSource.getMark());
         graphLevel--;
         if (graphLevel == 0) {
-            if (groupLevel == 1) {
-                finishTLGraph();
-            }
             LOG.log(Level.FINER, "Graph {0} ends at {1}, contains {2} nodes", new Object[]{
                             tlGraphName, dataSource.getMark(), entry.getGraphMeta().getNodeCount()
             });
@@ -342,13 +352,38 @@ public class ScanningModelBuilder extends ModelBuilder {
         }
     }
 
-    @Override
-    public void resetStreamData() {
-        pool = (StreamPool) this.pool.restart();
+    private void checkConstantPool() {
+        assert getReaderPool() == getConstantPool();
     }
 
-    @Override
-    public ConstantPool getConstantPool() {
-        return pool;
+    // user by tests
+    private String logIndent() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < groupLevel; i++) {
+            sb.append("  ");
+        }
+        return sb.toString();
+    }
+    
+    public ConstantPool forkPool() {
+        StreamPool sp = pool();
+        ConstantPool np = sp.forkIfNeeded();
+        replacePool(np);
+        return np;
+    }
+    
+    protected StreamEntry addEntry(StreamEntry m) {
+        StreamEntry e = index.addEntry(m);
+        return e;
+    }
+
+    GroupCompleter getCompleter(Group g) {
+        return (GroupCompleter)completors.get(g);
+    }
+
+    GroupCompleter createCompleter(long start) {
+        return new GroupCompleter(
+                        new Env(streamContent, modelExecutor, fetchExecutor),
+                        index, entry);
     }
 }

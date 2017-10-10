@@ -334,6 +334,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
             Set<InputNode> nodeSelection = new HashSet<>();
             Set<InputBlock> blockSelection = new HashSet<>();
+            Set<Integer> nodeSelectionIds = new HashSet<>();
             for (Object o : newSet) {
                 InstanceContent nodeContent = new InstanceContent();
                 Lookup nodeLookup = new AbstractLookup(nodeContent);
@@ -361,12 +362,14 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
                         nodeContent.add(n);
                     }
                     nodeSelection.addAll(((Figure) o).getSource().getSourceNodes());
+                    nodeSelectionIds.addAll(((Figure) o).getSource().getSourceNodeIds());
                 } else if (o instanceof Slot) {
                     Slot s = (Slot)o;
                     for (InputNode n : s.getSource().getSourceNodes()) {
                         nodeContent.add(n);
                     }
                     nodeSelection.addAll(((Slot) o).getSource().getSourceNodes());
+                    nodeSelectionIds.addAll(((Slot) o).getSource().getSourceNodeIds());
                 } else if (o instanceof InputBlock) {
                     blockSelection.add((InputBlock) o);
                 }
@@ -379,7 +382,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
             boolean b = selectedCoordinatorListener.isEnabled();
             selectedCoordinatorListener.setEnabled(false);
-            SelectionCoordinator.getInstance().setSelectedObjects(nodeSelection);
+            SelectionCoordinator.getInstance().setSelectedObjects(nodeSelectionIds);
             selectedCoordinatorListener.setEnabled(b);
 
         }

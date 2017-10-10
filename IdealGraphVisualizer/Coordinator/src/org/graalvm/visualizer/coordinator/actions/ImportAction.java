@@ -94,7 +94,7 @@ public final class ImportAction extends SystemAction {
      * Request processor used to lazy-load; shared with the network receiver, but could be also
      * separated.
      */
-    private static final RequestProcessor LOADER_RP = Server.LOADER_RP;
+    private static final RequestProcessor LOADER_RP = new RequestProcessor(ImportAction.class.getName(), 10);
 
     @NbBundle.Messages({
                     "# {0} - file name",
@@ -177,7 +177,7 @@ public final class ImportAction extends SystemAction {
                                         src,
                                         content,
                                         new GraphDocument(), monitor,
-                                        (r) -> r.run(), LOADER_RP);
+                                        SwingUtilities::invokeLater, LOADER_RP);
                         parser = new BinaryReader(src, bld);
                     } else {
                         parser = null;
