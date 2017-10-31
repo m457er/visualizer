@@ -86,10 +86,11 @@ import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import java.util.stream.Collectors;
+import org.graalvm.visualizer.view.actions.*;
 
 public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
 
-    private DiagramViewer scene;
+    private DiagramScene scene;
     private InstanceContent content;
     private InstanceContent graphContent;
     private EnableBlockLayoutAction blockLayoutAction;
@@ -252,6 +253,14 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.add(ShowAllAction.get(HideAction.class));
         toolBar.add(ShowAllAction.get(ShowAllAction.class));
         toolBar.addSeparator();
+
+        SwitchLayoutingAlgorithmAction switchLayoutAction = SwitchLayoutingAlgorithmAction.get(
+                SwitchLayoutingAlgorithmAction.class);
+        JToggleButton buttonSwitchLayout = new JToggleButton(switchLayoutAction);
+        buttonSwitchLayout.setSelected(true);
+        toolBar.add(buttonSwitchLayout);
+        toolBar.addSeparator();
+
         toolBar.add(CollapseAllBlocksAction.get(CollapseAllBlocksAction.class));
         toolBar.add(ExpandAllBlocksAction.get(ExpandAllBlocksAction.class));
         toolBar.addSeparator();
@@ -381,6 +390,10 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             }
         }
     };
+
+    public DiagramScene getScene() {
+        return scene;
+    }
 
     public DiagramViewModel getDiagramModel() {
         return rangeSliderModel;

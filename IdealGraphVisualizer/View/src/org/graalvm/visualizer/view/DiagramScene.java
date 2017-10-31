@@ -92,7 +92,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.IntStream;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
@@ -129,7 +128,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
     private DiagramViewModel modelCopy;
     private final WidgetAction zoomAction;
     private boolean rebuilding;
-    private boolean newLayouting = true;
+    private boolean stableLayout = true;
 
     /**
      * The alpha level of partially visible figures.
@@ -291,6 +290,14 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
     public void setScrollPosition(Point p) {
         getScrollPane().getViewport().setViewPosition(p);
+    }
+
+    public boolean isStableLayouting() {
+        return stableLayout;
+    }
+
+    public void setStableLayouting(boolean b) {
+        this.stableLayout = b;
     }
 
     private JScrollPane createScrollPane() {
@@ -619,7 +626,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
         for (Figure f : diagram.getFigures()) {
             FigureWidget w = getWidget(f);
-            if (newLayouting) {
+            if (stableLayout) {
                 figures.add(f);
                 f.setVisible(w.isVisible());
             } else {
@@ -632,7 +639,7 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         HashSet<Connection> edges = new HashSet<>();
 
         for (Connection c : diagram.getConnections()) {
-            if (newLayouting) {
+            if (stableLayout) {
                 edges.add(c);
                 c.setVisible(isVisible(c));
             } else {
@@ -643,12 +650,12 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
         }
 
         if (getModel().getShowBlocks()) {
-            if (newLayouting) {
+            if (stableLayout) {
                 StableHierarchicalClusterLayoutManager m = new StableHierarchicalClusterLayoutManager();
-                StableHierarchicalLayoutManager manager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NONE, StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
+                StableHierarchicalLayoutManager manager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NODE_BASED, StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
                 
                 manager.setLongEdgeMaxLayers(2);
-                StableHierarchicalLayoutManager subManager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NONE, StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
+                StableHierarchicalLayoutManager subManager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NODE_BASED, StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
                 subManager.setLongEdgeMaxLayers(10);
                 subManager.setIgnoreTooLongEdges(false);
                 m.setManager(manager);
@@ -689,9 +696,9 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
             }
             
         } else {
-            if(newLayouting)
+            if(stableLayout)
             {
-                StableHierarchicalLayoutManager manager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NONE,  StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
+                StableHierarchicalLayoutManager manager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NODE_BASED,  StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
                 manager.setLongEdgeMaxLayers(10);
                 manager.setIgnoreTooLongEdges(false);
                 
