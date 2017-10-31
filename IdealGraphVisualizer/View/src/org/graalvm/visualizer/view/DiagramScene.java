@@ -128,7 +128,9 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
     private DiagramViewModel modelCopy;
     private final WidgetAction zoomAction;
     private boolean rebuilding;
+    
     private boolean stableLayout = true;
+    private StableLayoutProperties stableLayoutProperties = new StableLayoutProperties();
 
     /**
      * The alpha level of partially visible figures.
@@ -298,6 +300,10 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
     public void setStableLayouting(boolean b) {
         this.stableLayout = b;
+    }
+
+    public StableLayoutProperties getStableLayoutProperties() {
+        return stableLayoutProperties;
     }
 
     private JScrollPane createScrollPane() {
@@ -651,13 +657,15 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
 
         if (getModel().getShowBlocks()) {
             if (stableLayout) {
-                StableHierarchicalClusterLayoutManager m = new StableHierarchicalClusterLayoutManager();
                 StableHierarchicalLayoutManager manager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NODE_BASED, StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
-                
                 manager.setLongEdgeMaxLayers(2);
+                stableLayoutProperties.initActiveLayoutManager(manager);
+                
                 StableHierarchicalLayoutManager subManager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NODE_BASED, StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
                 subManager.setLongEdgeMaxLayers(10);
                 subManager.setIgnoreTooLongEdges(false);
+                
+                StableHierarchicalClusterLayoutManager m = new StableHierarchicalClusterLayoutManager();
                 m.setManager(manager);
                 m.setSubManager(subManager);
 
@@ -686,13 +694,14 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
             }
             else
             {
-            HierarchicalClusterLayoutManager m = new HierarchicalClusterLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-            HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-            manager.setMaxLayerLength(9);
-            manager.setMinLayerDifference(3);
-            m.setManager(manager);
-            m.setSubManager(new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS));
-            m.doLayout(new LayoutGraph(edges, figures));
+                stableLayoutProperties.initActiveLayoutManager(null);
+                HierarchicalClusterLayoutManager m = new HierarchicalClusterLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
+                HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
+                manager.setMaxLayerLength(9);
+                manager.setMinLayerDifference(3);
+                m.setManager(manager);
+                m.setSubManager(new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS));
+                m.doLayout(new LayoutGraph(edges, figures));
             }
             
         } else {
@@ -701,7 +710,8 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
                 StableHierarchicalLayoutManager manager = new StableHierarchicalLayoutManager(StableHierarchicalLayoutManager.InputCombination.NODE_BASED,  StableHierarchicalLayoutManager.OutputCombination.PORT_BASED);
                 manager.setLongEdgeMaxLayers(10);
                 manager.setIgnoreTooLongEdges(false);
-                
+                stableLayoutProperties.initActiveLayoutManager(manager);
+
                 List<Figure> figureList = new ArrayList<>(figures);
                 
                 Collections.sort(figureList, new Comparator<Figure>() {
@@ -728,10 +738,11 @@ public final class DiagramScene extends ObjectScene implements DiagramViewer {
             }
             else
             {
-            HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
-            manager.setMaxLayerLength(10);
-            manager.doLayout(new LayoutGraph(edges, figures));
-        }
+                stableLayoutProperties.initActiveLayoutManager(null);
+                HierarchicalLayoutManager manager = new HierarchicalLayoutManager(HierarchicalLayoutManager.Combine.SAME_OUTPUTS);
+                manager.setMaxLayerLength(10);
+                manager.doLayout(new LayoutGraph(edges, figures));
+            }
         }
 
         relayoutWithoutLayout(oldVisibleWidgets);

@@ -66,6 +66,11 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
      */
     protected boolean optimizeSlots = true;
     /**
+     * Should algorithm try to optimize positions of nodes after main algorithm
+     * finished. (this may take a long time on large graphs)
+     */
+    protected boolean alwaysOptimizeSlots = false;
+    /**
      * Maximum difference of layers for which an edge will still be shown.
      */
     protected int longEdgeMaxLayers = -1;
@@ -2624,8 +2629,7 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
             }
             
             boolean optimization = optimizeSlots;
-            if(graph.realEdgeCount >= 300)
-            {
+            if(!alwaysOptimizeSlots && graph.realEdgeCount >= 300) {
                 optimization = false;
             }
             
@@ -2994,5 +2998,9 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
 
     public void setIgnoreTooLongEdges(boolean ignoreTooLongEdges) {
         this.ignoreTooLongEdges = ignoreTooLongEdges;
+    }
+
+    public void setAlwaysOptimizeSlots(boolean alwaysOptimizeSlots) {
+        this.alwaysOptimizeSlots = alwaysOptimizeSlots;
     }
 }

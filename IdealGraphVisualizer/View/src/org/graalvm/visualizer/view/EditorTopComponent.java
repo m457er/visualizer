@@ -259,6 +259,12 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         JToggleButton buttonSwitchLayout = new JToggleButton(switchLayoutAction);
         buttonSwitchLayout.setSelected(true);
         toolBar.add(buttonSwitchLayout);
+        
+        SwitchAlwaysOptimizeSlotsAction switchAlwaysOptimizeSlotsAction = SwitchAlwaysOptimizeSlotsAction.get(
+                SwitchAlwaysOptimizeSlotsAction.class);
+        JToggleButton buttonAlwaysOptimizeSlots = new JToggleButton(switchAlwaysOptimizeSlotsAction);
+        buttonAlwaysOptimizeSlots.setSelected(false);
+        toolBar.add(buttonAlwaysOptimizeSlots);
         toolBar.addSeparator();
 
         toolBar.add(CollapseAllBlocksAction.get(CollapseAllBlocksAction.class));
