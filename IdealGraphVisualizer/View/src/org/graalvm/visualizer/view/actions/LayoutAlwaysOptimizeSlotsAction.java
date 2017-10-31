@@ -14,7 +14,7 @@ import org.openide.util.actions.CallableSystemAction;
  *
  * @author Patrik Harag
  */
-public class SwitchAlwaysOptimizeSlotsAction extends CallableSystemAction {
+public class LayoutAlwaysOptimizeSlotsAction extends CallableSystemAction {
 
     @Override
     public void performAction() {
@@ -26,11 +26,11 @@ public class SwitchAlwaysOptimizeSlotsAction extends CallableSystemAction {
             properties.setAlwaysOptimizeSlots(!properties.isAlwaysOptimizeSlots());
             putProperty(SELECTED_KEY, properties.isAlwaysOptimizeSlots());
             
-            SwitchLayoutingAlgorithmAction.update(editor);
+            LayoutSwitchAlgorithmAction.update(editor);
         }
     }
 
-    public SwitchAlwaysOptimizeSlotsAction() {
+    public LayoutAlwaysOptimizeSlotsAction() {
         putValue(Action.SHORT_DESCRIPTION, "Always optimize slots");
         putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK));
     }

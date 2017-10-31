@@ -10,12 +10,14 @@ public class StableLayoutProperties {
 
     private StableHierarchicalLayoutManager activeLayoutManager;
     private boolean alwaysOptimizeSlots = false;
+    private boolean dynamicLayerHeight = true;
 
     public void initActiveLayoutManager(StableHierarchicalLayoutManager activeLayoutManager) {
         this.activeLayoutManager = activeLayoutManager;
         
         if (activeLayoutManager != null) {
             activeLayoutManager.setAlwaysOptimizeSlots(alwaysOptimizeSlots);
+            activeLayoutManager.setDynamicLayerHeight(dynamicLayerHeight);
         }
     }
 
@@ -31,4 +33,16 @@ public class StableLayoutProperties {
         }
     }
 
+    public boolean isDynamicLayerHeight() {
+        return dynamicLayerHeight;
+    }
+    
+    public void setDynamicLayerHeight(boolean dynamicLayerHeight) {
+        this.dynamicLayerHeight = dynamicLayerHeight;
+        
+        if (activeLayoutManager != null) {
+            activeLayoutManager.setDynamicLayerHeight(dynamicLayerHeight);
+        }
+    }
+    
 }

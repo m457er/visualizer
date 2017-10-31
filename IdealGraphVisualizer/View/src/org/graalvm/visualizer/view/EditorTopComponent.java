@@ -254,17 +254,23 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         toolBar.add(ShowAllAction.get(ShowAllAction.class));
         toolBar.addSeparator();
 
-        SwitchLayoutingAlgorithmAction switchLayoutAction = SwitchLayoutingAlgorithmAction.get(
-                SwitchLayoutingAlgorithmAction.class);
+        LayoutSwitchAlgorithmAction switchLayoutAction = 
+                LayoutSwitchAlgorithmAction.get(LayoutSwitchAlgorithmAction.class);
         JToggleButton buttonSwitchLayout = new JToggleButton(switchLayoutAction);
         buttonSwitchLayout.setSelected(true);
         toolBar.add(buttonSwitchLayout);
-        
-        SwitchAlwaysOptimizeSlotsAction switchAlwaysOptimizeSlotsAction = SwitchAlwaysOptimizeSlotsAction.get(
-                SwitchAlwaysOptimizeSlotsAction.class);
+
+        LayoutAlwaysOptimizeSlotsAction switchAlwaysOptimizeSlotsAction = 
+                LayoutAlwaysOptimizeSlotsAction.get(LayoutAlwaysOptimizeSlotsAction.class);
         JToggleButton buttonAlwaysOptimizeSlots = new JToggleButton(switchAlwaysOptimizeSlotsAction);
         buttonAlwaysOptimizeSlots.setSelected(false);
         toolBar.add(buttonAlwaysOptimizeSlots);
+
+        LayoutDynamicLayerHeight switchDynamicLayerHeigh = 
+                LayoutDynamicLayerHeight.get(LayoutDynamicLayerHeight.class);
+        JToggleButton buttonDynamicLayerHeigh = new JToggleButton(switchDynamicLayerHeigh);
+        buttonDynamicLayerHeigh.setSelected(true);
+        toolBar.add(buttonDynamicLayerHeigh);
         toolBar.addSeparator();
 
         toolBar.add(CollapseAllBlocksAction.get(CollapseAllBlocksAction.class));

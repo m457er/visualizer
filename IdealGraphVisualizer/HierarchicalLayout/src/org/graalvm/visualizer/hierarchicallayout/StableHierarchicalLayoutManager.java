@@ -78,7 +78,7 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
      * Allows to control if layer height should be changed to prevent high
      * angles.
      */
-    protected final boolean dynamicLayerHeight = true;
+    protected boolean dynamicLayerHeight = true;
     /**
      * Minimal gap that should be left between layers.
      */
@@ -3003,4 +3003,9 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
     public void setAlwaysOptimizeSlots(boolean alwaysOptimizeSlots) {
         this.alwaysOptimizeSlots = alwaysOptimizeSlots;
     }
+
+    public void setDynamicLayerHeight(boolean dynamicLayerHeight) {
+        this.dynamicLayerHeight = dynamicLayerHeight;
+    }
+
 }
