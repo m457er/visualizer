@@ -20,6 +20,8 @@ import org.graalvm.visualizer.layout.StableLayoutManager;
  */
 public class StableHierarchicalLayoutManager implements StableLayoutManager {
     
+    public static final int DEFAULT_MAX_LAYER_GAP = 300;
+
     /**
      * Temporary storage for loops.
      */
@@ -87,7 +89,7 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
      * Maximum gap that should be left between layers.
      * (Cannot override input/output backedge offsets)
      */
-    protected final int maxLayerGap = 300;
+    protected int maxLayerGap = DEFAULT_MAX_LAYER_GAP;
     
     /**
      * Specifies if tool ong edges shouldn't be drawn, otherwise short edges will be used.
@@ -3006,6 +3008,10 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
 
     public void setDynamicLayerHeight(boolean dynamicLayerHeight) {
         this.dynamicLayerHeight = dynamicLayerHeight;
+    }
+
+    public void setMaxLayerGap(int max) {
+        this.maxLayerGap = max;
     }
 
 }

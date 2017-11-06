@@ -86,6 +86,7 @@ import org.openide.windows.Mode;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 import java.util.stream.Collectors;
+import org.graalvm.visualizer.hierarchicallayout.StableHierarchicalLayoutManager;
 import org.graalvm.visualizer.view.actions.*;
 
 public final class EditorTopComponent extends TopComponent implements PropertyChangeListener {
@@ -271,6 +272,16 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         JToggleButton buttonDynamicLayerHeigh = new JToggleButton(switchDynamicLayerHeigh);
         buttonDynamicLayerHeigh.setSelected(true);
         toolBar.add(buttonDynamicLayerHeigh);
+
+        LayoutMaxLayerGap layoutMaxLayerGapAction = LayoutMaxLayerGap.get(LayoutMaxLayerGap.class);
+        JTextField maxLayerHeight = new JTextField();
+        Dimension d = new Dimension(50, (int) maxLayerHeight.getPreferredSize().getHeight());
+        maxLayerHeight.setText("" + StableHierarchicalLayoutManager.DEFAULT_MAX_LAYER_GAP);
+        maxLayerHeight.setMaximumSize(d);
+        maxLayerHeight.setMinimumSize(d);
+        maxLayerHeight.addActionListener(layoutMaxLayerGapAction);
+        toolBar.add(new JLabel(" Max layer gap:"));
+        toolBar.add(maxLayerHeight);
         toolBar.addSeparator();
 
         toolBar.add(CollapseAllBlocksAction.get(CollapseAllBlocksAction.class));

@@ -11,6 +11,7 @@ public class StableLayoutProperties {
     private StableHierarchicalLayoutManager activeLayoutManager;
     private boolean alwaysOptimizeSlots = false;
     private boolean dynamicLayerHeight = true;
+    private int maxLayerGap = StableHierarchicalLayoutManager.DEFAULT_MAX_LAYER_GAP;
 
     public void initActiveLayoutManager(StableHierarchicalLayoutManager activeLayoutManager) {
         this.activeLayoutManager = activeLayoutManager;
@@ -18,6 +19,7 @@ public class StableLayoutProperties {
         if (activeLayoutManager != null) {
             activeLayoutManager.setAlwaysOptimizeSlots(alwaysOptimizeSlots);
             activeLayoutManager.setDynamicLayerHeight(dynamicLayerHeight);
+            activeLayoutManager.setMaxLayerGap(maxLayerGap);
         }
     }
 
@@ -44,5 +46,16 @@ public class StableLayoutProperties {
             activeLayoutManager.setDynamicLayerHeight(dynamicLayerHeight);
         }
     }
-    
+
+    public void setMaxLayerGap(int maxLayerGap) {
+        this.maxLayerGap = maxLayerGap;
+        if (activeLayoutManager != null) {
+            activeLayoutManager.setMaxLayerGap(maxLayerGap);
+        }
+    }
+
+    public int getMaxLayerGap() {
+        return maxLayerGap;
+    }
+
 }
