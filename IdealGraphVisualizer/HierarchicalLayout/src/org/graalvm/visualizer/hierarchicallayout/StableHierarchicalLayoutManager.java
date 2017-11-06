@@ -19,8 +19,12 @@ import org.graalvm.visualizer.layout.StableLayoutManager;
  *
  */
 public class StableHierarchicalLayoutManager implements StableLayoutManager {
-    
+
     public static final int DEFAULT_MAX_LAYER_GAP = 300;
+    public static final int DEFAULT_MIN_LAYER_GAP = 40;
+    public static final boolean DEFAULT_DYNAMIC_LAYER_HEIGHT = true;
+    public static final boolean DEFAULT_OPTIMIZE_SLOTS = true;
+    public static final boolean DEFAULT_ALWAYS_OPTIMIZE_SLOTS = false;
 
     /**
      * Temporary storage for loops.
@@ -66,12 +70,12 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
      * Should algorithm try to optimize positions of nodes after main algorithm
      * finished. (When instance is small enough)
      */
-    protected boolean optimizeSlots = true;
+    protected boolean optimizeSlots = DEFAULT_OPTIMIZE_SLOTS;
     /**
      * Should algorithm try to optimize positions of nodes after main algorithm
      * finished. (this may take a long time on large graphs)
      */
-    protected boolean alwaysOptimizeSlots = false;
+    protected boolean alwaysOptimizeSlots = DEFAULT_ALWAYS_OPTIMIZE_SLOTS;
     /**
      * Maximum difference of layers for which an edge will still be shown.
      */
@@ -80,11 +84,11 @@ public class StableHierarchicalLayoutManager implements StableLayoutManager {
      * Allows to control if layer height should be changed to prevent high
      * angles.
      */
-    protected boolean dynamicLayerHeight = true;
+    protected boolean dynamicLayerHeight = DEFAULT_DYNAMIC_LAYER_HEIGHT;
     /**
      * Minimal gap that should be left between layers.
      */
-    protected final int minimalLayerGap = 40;
+    protected final int minimalLayerGap = DEFAULT_MIN_LAYER_GAP;
     /**
      * Maximum gap that should be left between layers.
      * (Cannot override input/output backedge offsets)
