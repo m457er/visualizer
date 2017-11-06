@@ -257,25 +257,25 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
         LayoutSwitchAlgorithmAction switchLayoutAction = 
                 LayoutSwitchAlgorithmAction.get(LayoutSwitchAlgorithmAction.class);
         JToggleButton buttonSwitchLayout = new JToggleButton(switchLayoutAction);
-        buttonSwitchLayout.setSelected(true);
+        buttonSwitchLayout.setSelected(getScene().isStableLayouting());
         toolBar.add(buttonSwitchLayout);
 
         LayoutAlwaysOptimizeSlotsAction switchAlwaysOptimizeSlotsAction = 
                 LayoutAlwaysOptimizeSlotsAction.get(LayoutAlwaysOptimizeSlotsAction.class);
         JToggleButton buttonAlwaysOptimizeSlots = new JToggleButton(switchAlwaysOptimizeSlotsAction);
-        buttonAlwaysOptimizeSlots.setSelected(StableLayoutProperties.DEFAULT_ALWAYS_OPTIMIZE_SLOTS);
+        buttonAlwaysOptimizeSlots.setSelected(getScene().getStableLayoutProperties().isAlwaysOptimizeSlots());
         toolBar.add(buttonAlwaysOptimizeSlots);
 
         LayoutDynamicLayerHeight switchDynamicLayerHeigh = 
                 LayoutDynamicLayerHeight.get(LayoutDynamicLayerHeight.class);
         JToggleButton buttonDynamicLayerHeigh = new JToggleButton(switchDynamicLayerHeigh);
-        buttonDynamicLayerHeigh.setSelected(StableLayoutProperties.DEFAULT_DYNAMIC_LAYER_HEIGHT);
+        buttonDynamicLayerHeigh.setSelected(getScene().getStableLayoutProperties().isDynamicLayerHeight());
         toolBar.add(buttonDynamicLayerHeigh);
 
         LayoutMaxLayerGap layoutMaxLayerGapAction = LayoutMaxLayerGap.get(LayoutMaxLayerGap.class);
         JTextField maxLayerHeight = new JTextField();
         Dimension d = new Dimension(50, (int) maxLayerHeight.getPreferredSize().getHeight());
-        maxLayerHeight.setText("" + StableLayoutProperties.DEFAULT_MAX_LAYER_GAP);
+        maxLayerHeight.setText("" + getScene().getStableLayoutProperties().getMaxLayerGap());
         maxLayerHeight.setMaximumSize(d);
         maxLayerHeight.setMinimumSize(d);
         maxLayerHeight.addActionListener(layoutMaxLayerGapAction);

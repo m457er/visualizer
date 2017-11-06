@@ -8,14 +8,14 @@ import org.graalvm.visualizer.hierarchicallayout.StableHierarchicalLayoutManager
  */
 public class StableLayoutProperties {
 
-    public static final int DEFAULT_MAX_LAYER_GAP = StableHierarchicalLayoutManager.DEFAULT_MAX_LAYER_GAP;
-    public static final boolean DEFAULT_DYNAMIC_LAYER_HEIGHT = StableHierarchicalLayoutManager.DEFAULT_DYNAMIC_LAYER_HEIGHT;
     public static final boolean DEFAULT_ALWAYS_OPTIMIZE_SLOTS = StableHierarchicalLayoutManager.DEFAULT_ALWAYS_OPTIMIZE_SLOTS;
+    public static final boolean DEFAULT_DYNAMIC_LAYER_HEIGHT = StableHierarchicalLayoutManager.DEFAULT_DYNAMIC_LAYER_HEIGHT;
+    public static final int DEFAULT_MAX_LAYER_GAP = StableHierarchicalLayoutManager.DEFAULT_MAX_LAYER_GAP;
 
     private StableHierarchicalLayoutManager activeLayoutManager;
-    private boolean alwaysOptimizeSlots = false;
-    private boolean dynamicLayerHeight = true;
-    private int maxLayerGap = StableHierarchicalLayoutManager.DEFAULT_MAX_LAYER_GAP;
+    private boolean alwaysOptimizeSlots = DEFAULT_ALWAYS_OPTIMIZE_SLOTS;
+    private boolean dynamicLayerHeight = DEFAULT_DYNAMIC_LAYER_HEIGHT;
+    private int maxLayerGap = DEFAULT_MAX_LAYER_GAP;
 
     public void initActiveLayoutManager(StableHierarchicalLayoutManager activeLayoutManager) {
         this.activeLayoutManager = activeLayoutManager;
